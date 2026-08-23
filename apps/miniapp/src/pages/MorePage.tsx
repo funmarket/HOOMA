@@ -10,6 +10,7 @@ import { get } from '../shared/api/http-client';
 type PlatformAdminAccess = {
   isPlatformAdmin: boolean;
   roles: string[];
+  bootstrapAvailable: boolean;
 };
 
 export function MorePage() {
@@ -29,6 +30,9 @@ export function MorePage() {
       navigate('/login', { replace: true });
     }
   }
+
+  const showPlatformAdminEntry =
+    platformAdmin.data?.isPlatformAdmin || platformAdmin.data?.bootstrapAvailable;
 
   return (
     <div className="page-shell vintage-page">
@@ -51,11 +55,15 @@ export function MorePage() {
             variant="vintage"
           />
         )}
-        {platformAdmin.data?.isPlatformAdmin ? (
+        {showPlatformAdminEntry ? (
           <ActionRow
             icon={<Crown />}
-            title="HOOMA Admin"
-            subtitle="Global application administration"
+            title={platformAdmin.data?.isPlatformAdmin ? 'HOOMA Admin' : 'HOOMA Admin Setup'}
+            subtitle={
+              platformAdmin.data?.isPlatformAdmin
+                ? 'Global application administration'
+                : 'Claim the one-time creator Platform Admin role'
+            }
             onClick={() => navigate('/app-admin')}
             variant="vintage"
           />
