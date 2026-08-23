@@ -199,7 +199,11 @@ export class PrismaTeamRosterRepository implements TeamRosterRepository {
         } else {
           const displayName = input.displayName?.trim();
           if (!displayName) {
-            throw new AppError(400, 'TEAM_GUEST_PLAYER_NAME_REQUIRED', 'Guest player name is required.');
+            throw new AppError(
+              400,
+              'TEAM_GUEST_PLAYER_NAME_REQUIRED',
+              'Guest player name is required.',
+            );
           }
           saved = await tx.teamPlayer.create({
             data: {
