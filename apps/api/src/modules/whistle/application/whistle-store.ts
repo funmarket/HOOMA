@@ -59,14 +59,20 @@ export interface WhistleStore {
 }
 
 export class WhistleStoreUnavailableError extends Error {
-  constructor(message = 'Whistle storage is unavailable.', options?: ErrorOptions) {
+  constructor(
+    message = 'Whistle storage is unavailable.',
+    options?: ErrorOptions,
+  ) {
     super(message, options);
     this.name = 'WhistleStoreUnavailableError';
   }
 }
 
 export class WhistleStoreCorruptError extends Error {
-  constructor(message = 'Whistle storage is inconsistent.', options?: ErrorOptions) {
+  constructor(
+    message = 'Whistle storage is inconsistent.',
+    options?: ErrorOptions,
+  ) {
     super(message, options);
     this.name = 'WhistleStoreCorruptError';
   }
