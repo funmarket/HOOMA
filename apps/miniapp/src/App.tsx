@@ -116,6 +116,11 @@ const TeamChallengeDetailPage = lazy(() =>
     default: module.TeamChallengeDetailPage,
   })),
 );
+const TeamControlRoomPage = lazy(() =>
+  import('./pages/TeamControlRoomPage').then((module) => ({
+    default: module.TeamControlRoomPage,
+  })),
+);
 const TeamGameDetailPage = lazy(() =>
   import('./pages/TeamGameDetailPage').then((module) => ({
     default: module.TeamGameDetailPage,
@@ -169,6 +174,7 @@ export default function App() {
           <Route path="/community" element={routeElement(<CommunityPage />)} />
           <Route path="/teams" element={routeElement(<TeamsPage />)} />
           <Route path="/teams/:teamId" element={routeElement(<TeamProfilePage />)} />
+          <Route path="/teams/:teamId/control" element={routeElement(<TeamControlRoomPage />)} />
           <Route path="/teams/:teamId/lineup" element={routeElement(<TeamLineupBuilderPage />)} />
           <Route
             path="/teams/:teamId/challenge"
