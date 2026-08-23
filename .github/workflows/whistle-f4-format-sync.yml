@@ -1,0 +1,34 @@
+name: Whistle F4 Format Sync
+
+on:
+  push:
+    branches: [feat/whistle-foundation-v1]
+    paths:
+      - '.github/workflows/whistle-f4-format-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write apps/api/src/modules/whistle/application/whistle.service.ts apps/api/src/modules/whistle/http/whistle.controller.ts
+      - name: Commit exact repository formatting
+        run: |
+          if git diff --quiet -- apps/api/src/modules/whistle/application/whistle.service.ts apps/api/src/modules/whistle/http/whistle.controller.ts; then
+            echo 'F4 Whistle sources are already formatted.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/api/src/modules/whistle/application/whistle.service.ts apps/api/src/modules/whistle/http/whistle.controller.ts
+          git commit -m 'style(whistle): apply F4 repository Prettier'
+          git push origin HEAD:${GITHUB_REF_NAME}
