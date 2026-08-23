@@ -101,12 +101,12 @@
 .quick-action-card-artwork > strong {
   position: absolute;
   left: 50%;
-  top: 80.5%;
+  top: 58.5%;
   z-index: 1;
-  width: 78%;
+  width: 74%;
   margin: 0;
   transform: translate(-50%, -50%);
-  color: #d8bd82;
+  color: #fff;
   font-family: Georgia, 'Times New Roman', serif;
   font-size: clamp(0.62rem, 2.45vw, 1.18rem);
   font-weight: 700;
