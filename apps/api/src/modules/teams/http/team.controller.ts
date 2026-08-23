@@ -174,6 +174,13 @@ export function teamRouter(service: TeamService) {
     ),
   );
 
+  router.get(
+    '/:teamId/player-candidates',
+    asyncHandler(async (req, res) =>
+      res.json(await service.rosterCandidates(getAuth(req).user.id, String(req.params.teamId))),
+    ),
+  );
+
   router.post(
     '/:teamId/players',
     asyncHandler(async (req, res) =>
