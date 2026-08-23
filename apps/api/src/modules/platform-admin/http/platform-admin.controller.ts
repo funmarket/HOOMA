@@ -1,6 +1,8 @@
+import { gamerGameCreateSchema, gamerGameUpdateSchema } from '@hooma/contracts';
 import { z } from 'zod';
 import { Router } from 'express';
 import { env } from '../../../config/env.js';
+import type { GamerService } from '../../gamers/application/gamer.service.js';
 import type { PlatformAdminService } from '../application/platform-admin.service.js';
 import { asyncHandler } from '../../../http/middleware/async-handler.js';
 import { getAuth } from '../../../http/middleware/auth.js';
@@ -10,7 +12,7 @@ const bootstrapSchema = z.object({
   token: z.string().min(32).max(256),
 });
 
-export function platformAdminRouter(service: PlatformAdminService) {
+export function platformAdminRouter(service: PlatformAdminService, gamers: GamerService) {
   const router = Router();
 
   router.get(
@@ -48,6 +50,29 @@ export function platformAdminRouter(service: PlatformAdminService) {
         isPlatformAdmin: roles.includes('PLATFORM_ADMIN'),
         roles,
       });
+    }),
+  );
+
+  router.post(
+    '/gamers/games',
+    asyncHandler(async (req, res) => {
+      const userId = getAuth(req).user.id;
+      await service.requirePlatformAdmin(userId);
+      const game = await gamers.createGame(parseBody(gamerGameCreateSchema, req));
+      res.status(201).json(game);
+    }),
+  );
+
+  router.patch(
+    '/gamers/games/:gameId',
+    asyncHandler(async (req, res) => {
+      const userId = getAuth(req).user.id;
+      await service.requirePlatformAdmin(userId);
+      const game = await gamers.updateGame(
+        String(req.params.gameId),
+        parseBody(gamerGameUpdateSchema, req),
+      );
+      res.json(game);
     }),
   );
 
