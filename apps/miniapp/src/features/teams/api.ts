@@ -30,14 +30,18 @@ export type TeamRosterPage = { items: TeamRosterPlayer[] };
 
 export type TeamDelegatedPermission = TeamAssistantDelegationInput['permissions'][number];
 
-export type TeamAssistantItem = {
+export type TeamAssistantAssignment = {
   id: string;
   userId: string;
   role: 'ASSISTANT';
   permissions: TeamDelegatedPermission[];
   appointedByUserId: string;
+  revokedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type TeamAssistantItem = TeamAssistantAssignment & {
   player: {
     id: string;
     userId?: string | null;
@@ -109,11 +113,11 @@ export function listTeamAssistants(teamId: string) {
 }
 
 export function saveTeamAssistant(teamId: string, input: TeamAssistantDelegationInput) {
-  return post<TeamAssistantItem>(`/api/v1/teams/${teamId}/assistants`, input);
+  return post<TeamAssistantAssignment>(`/api/v1/teams/${teamId}/assistants`, input);
 }
 
 export function revokeTeamAssistant(teamId: string, responsibilityId: string) {
-  return del<TeamAssistantItem>(`/api/v1/teams/${teamId}/assistants/${responsibilityId}`);
+  return del<TeamAssistantAssignment>(`/api/v1/teams/${teamId}/assistants/${responsibilityId}`);
 }
 
 export function listIncomingChallenges() {
