@@ -11,6 +11,7 @@ import { fundraiserRouter } from '../../modules/fundraising/http/fundraiser.cont
 import { watchRouter } from '../../modules/watch/http/watch.controller.js';
 import { placeRouter } from '../../modules/places/http/place.controller.js';
 import { pitchRouter } from '../../modules/pitch/http/pitch.controller.js';
+import { gamerRouter } from '../../modules/gamers/http/gamers.controller.js';
 import { playRouter } from '../../modules/play/http/play.controller.js';
 import { chatRouter } from '../../modules/chat/http/chat.controller.js';
 import { adminRouter } from '../../modules/admin/http/admin.controller.js';
@@ -47,6 +48,11 @@ export function v1Router(container: AppContainer) {
     '/pitch',
     rateLimit(container.rateLimitStore, { scope: 'pitch', windowMs: 60_000, max: 120 }),
     pitchRouter(container.services.pitch),
+  );
+  router.use(
+    '/gamers',
+    rateLimit(container.rateLimitStore, { scope: 'gamers', windowMs: 60_000, max: 120 }),
+    gamerRouter(container.services.gamers),
   );
   router.use('/play', playRouter(container.services.play));
   router.use(
