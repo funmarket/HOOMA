@@ -21,6 +21,11 @@ export function communityRouter(service: CommunityService) {
     asyncHandler(async (req, res) => res.json(await service.list(getAuth(req).user.id))),
   );
 
+  router.get(
+    '/now',
+    asyncHandler(async (req, res) => res.json(await service.now(getAuth(req).user.id))),
+  );
+
   router.post(
     '/',
     asyncHandler(async (req, res) =>
