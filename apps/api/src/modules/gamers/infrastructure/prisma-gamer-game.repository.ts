@@ -1,10 +1,7 @@
 import { Prisma } from '@hooma/database';
 import type { GamerGameListQuery } from '@hooma/contracts';
 import type { DatabaseClient } from '../../../infrastructure/database/prisma.js';
-import {
-  decodeTimeIdCursor,
-  encodeTimeIdCursor,
-} from '../../../infrastructure/database/cursor.js';
+import { decodeTimeIdCursor, encodeTimeIdCursor } from '../../../infrastructure/database/cursor.js';
 import type {
   GamerGameRecord,
   GamerGameRepository,
@@ -68,7 +65,8 @@ export class PrismaGamerGameRepository implements GamerGameRepository {
     const last = selected.at(-1);
     return {
       items: selected.map(mapPublic),
-      nextCursor: hasMore && last ? encodeTimeIdCursor(last.createdAt, last.id) : null,
+      nextCursor:
+        hasMore && last ? encodeTimeIdCursor(last.createdAt, last.id) : null,
     };
   }
 
