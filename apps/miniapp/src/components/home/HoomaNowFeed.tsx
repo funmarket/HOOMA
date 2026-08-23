@@ -3,21 +3,23 @@ import { FundCupIcon } from '../../icons/FundCupIcon';
 import { RequestFlagIcon } from '../../icons/RequestFlagIcon';
 import { money } from '../../lib/format';
 import type {
-  EventItem,
-  FundItem,
-  RequestItem,
-  RideOfferItem,
-  RideRequestItem,
-} from '../../types/domain';
+  HoomaNowCommunity,
+  HoomaNowEvent,
+  HoomaNowFund,
+  HoomaNowRequest,
+  HoomaNowRideOffer,
+  HoomaNowRideRequest,
+} from '../../types/hooma-now';
 import './HoomaNowFeed.css';
 
 type HoomaNowFeedProps = {
   communityName: string | undefined;
-  events: EventItem[];
-  requests: RequestItem[];
-  rideOffers: RideOfferItem[];
-  rideRequests: RideRequestItem[];
-  funds: FundItem[];
+  communities: HoomaNowCommunity[];
+  events: HoomaNowEvent[];
+  requests: HoomaNowRequest[];
+  rideOffers: HoomaNowRideOffer[];
+  rideRequests: HoomaNowRideRequest[];
+  funds: HoomaNowFund[];
   isLoading: boolean;
   hasError: boolean;
   onNavigate: (path: string) => void;
@@ -25,6 +27,10 @@ type HoomaNowFeedProps = {
 
 type FeedCard = {
   id: string;
+  communityId: string;
+  communityName: string;
+  communityRank: number;
+  distanceKm: number | null;
   priority: number;
   sortAt: number;
   kicker: string;
@@ -60,116 +66,89 @@ function compactTime(value: string) {
   }).format(new Date(value));
 }
 
-function futureEvents(events: EventItem[], now: number) {
-  return events
-    .filter((event) => timestamp(event.startsAt) >= now)
-    .sort((left, right) => timestamp(left.startsAt) - timestamp(right.startsAt));
-}
-
-function claimedQuantity(request: RequestItem) {
+function claimedQuantity(request: HoomaNowRequest) {
   return (request.claims ?? [])
     .filter((claim) => claim.status !== 'WITHDRAWN')
     .reduce((sum, claim) => sum + claim.quantity, 0);
 }
 
-function activeRequests(requests: RequestItem[], now: number) {
-  return requests
-    .filter(
-      (request) =>
-        timestamp(request.expiresAt) >= now && claimedQuantity(request) < request.quantity,
-    )
-    .sort((left, right) => timestamp(left.expiresAt) - timestamp(right.expiresAt));
-}
-
-function openSeats(ride: RideOfferItem) {
+function openSeats(ride: HoomaNowRideOffer) {
   const used = (ride.matches ?? [])
     .filter((match) => ['REQUESTED', 'ACCEPTED'].includes(match.status))
     .reduce((sum, match) => sum + match.seats, 0);
   return Math.max(0, ride.seatsTotal - used);
 }
 
-function fundProgress(fund: FundItem) {
+function fundProgress(fund: HoomaNowFund) {
   const goal = Number(fund.goalMinor);
   if (!Number.isFinite(goal) || goal <= 0) return 0;
   return Math.min(100, Math.round((Number(fund.collectedMinor) / goal) * 100));
 }
 
-function buildCards({
-  events,
-  requests,
-  rideOffers,
-  rideRequests,
-  funds,
-}: Pick<
-  HoomaNowFeedProps,
-  'events' | 'requests' | 'rideOffers' | 'rideRequests' | 'funds'
->): FeedCard[] {
+function buildCards(props: HoomaNowFeedProps): FeedCard[] {
   const now = Date.now();
-  const upcoming = futureEvents(events, now);
-  const play = upcoming.find((event) => event.type === 'PLAY');
-  const watch = upcoming.find((event) => event.type === 'WATCH');
-  const request = activeRequests(requests, now)[0];
-  const rideOffer = [...rideOffers]
-    .filter((ride) => timestamp(ride.departureAt) >= now && openSeats(ride) > 0)
-    .sort((left, right) => timestamp(left.departureAt) - timestamp(right.departureAt))[0];
-  const rideRequest = [...rideRequests]
-    .filter((ride) => timestamp(ride.desiredDepartureAt) >= now)
-    .sort(
-      (left, right) => timestamp(left.desiredDepartureAt) - timestamp(right.desiredDepartureAt),
-    )[0];
-  const fund = [...funds]
-    .filter(
-      (item) =>
-        item.status !== 'COMPLETED' &&
-        item.status !== 'CANCELLED' &&
-        (!item.deadline || timestamp(item.deadline) >= now),
-    )
-    .sort((left, right) => fundProgress(right) - fundProgress(left))[0];
-
+  const communityById = new Map(props.communities.map((community) => [community.id, community]));
   const cards: FeedCard[] = [];
 
-  if (play) {
-    cards.push({
-      id: `play-${play.id}`,
-      priority: 10,
-      sortAt: timestamp(play.startsAt),
-      kicker: 'PLAY · NEXT MATCH',
-      title: play.title,
-      meta: `${matchTime(play.startsAt)} · ${play._count?.rsvps ?? 0}${play.capacity ? `/${play.capacity}` : ''} going`,
-      detail: play.venueName || play.address || undefined,
-      action: 'Open match',
-      path: `/events/${play.id}`,
-      tone: 'match',
-      icon: 'match',
-    });
-  }
+  const source = (communityId: string, fallbackName?: string) => {
+    const community = communityById.get(communityId);
+    return {
+      communityId,
+      communityName: community?.name ?? fallbackName ?? 'HOOMA',
+      communityRank: community?.rank ?? Number.MAX_SAFE_INTEGER,
+      distanceKm: community?.distanceKm ?? null,
+    };
+  };
 
-  if (watch) {
-    const home = watch.watchDetails?.homeClub?.name;
-    const away = watch.watchDetails?.awayClub?.name;
+  for (const event of props.events) {
+    if (timestamp(event.startsAt) < now) continue;
+    const common = source(event.communityId, event.community?.name);
+    if (event.type === 'PLAY') {
+      cards.push({
+        id: `play-${event.id}`,
+        ...common,
+        priority: 10,
+        sortAt: timestamp(event.startsAt),
+        kicker: 'PLAY · NEXT MATCH',
+        title: event.title,
+        meta: `${matchTime(event.startsAt)} · ${event._count?.rsvps ?? 0}${event.capacity ? `/${event.capacity}` : ''} going`,
+        detail: event.venueName || event.address || undefined,
+        action: 'Open match',
+        path: `/events/${event.id}`,
+        tone: 'match',
+        icon: 'match',
+      });
+      continue;
+    }
+
+    const home = event.watchDetails?.homeClub?.name;
+    const away = event.watchDetails?.awayClub?.name;
     cards.push({
-      id: `watch-${watch.id}`,
+      id: `watch-${event.id}`,
+      ...common,
       priority: 20,
-      sortAt: timestamp(watch.startsAt),
+      sortAt: timestamp(event.startsAt),
       kicker: 'WATCH · MATCHDAY',
-      title: home && away ? `${home} vs ${away}` : watch.title,
-      meta: `${matchTime(watch.startsAt)} · ${watch._count?.rsvps ?? 0} going`,
+      title: home && away ? `${home} vs ${away}` : event.title,
+      meta: `${matchTime(event.startsAt)} · ${event._count?.rsvps ?? 0} going`,
       detail:
-        watch.watchDetails?.fanHub?.place?.name ||
-        watch.venueName ||
-        watch.watchDetails?.fanHub?.venueName ||
+        event.watchDetails?.fanHub?.place?.name ||
+        event.venueName ||
+        event.watchDetails?.fanHub?.venueName ||
         undefined,
       action: 'View watch event',
-      path: `/events/${watch.id}`,
+      path: `/events/${event.id}`,
       tone: 'watch',
       icon: 'match',
     });
   }
 
-  if (request) {
+  for (const request of props.requests) {
     const claimed = claimedQuantity(request);
+    if (timestamp(request.expiresAt) < now || claimed >= request.quantity) continue;
     cards.push({
       id: `request-${request.id}`,
+      ...source(request.communityId, request.community?.name),
       priority: 5,
       sortAt: timestamp(request.expiresAt),
       kicker: 'COMMUNITY NEEDS YOU',
@@ -183,33 +162,39 @@ function buildCards({
     });
   }
 
-  if (rideOffer) {
-    const seats = openSeats(rideOffer);
+  for (const ride of props.rideOffers) {
+    const seats = openSeats(ride);
+    if (timestamp(ride.departureAt) < now || seats <= 0) continue;
     cards.push({
-      id: `ride-offer-${rideOffer.id}`,
+      id: `ride-offer-${ride.id}`,
+      ...source(ride.communityId, ride.community?.name),
       priority: 15,
-      sortAt: timestamp(rideOffer.departureAt),
+      sortAt: timestamp(ride.departureAt),
       kicker: 'GET THERE · RIDE',
       title: `${seats} seat${seats === 1 ? '' : 's'} available`,
-      meta: `${compactTime(rideOffer.departureAt)} · ${rideOffer.originLabel} → ${rideOffer.destinationLabel}`,
+      meta: `${compactTime(ride.departureAt)} · ${ride.originLabel} → ${ride.destinationLabel}`,
       detail:
-        rideOffer.costSplitMode === 'FREE'
+        ride.costSplitMode === 'FREE'
           ? 'Free ride'
-          : `${money(rideOffer.seatPriceMinor, rideOffer.currency)} / seat`,
+          : `${money(ride.seatPriceMinor, ride.currency)} / seat`,
       action: 'View ride',
-      path: `/rides/${rideOffer.id}`,
+      path: `/rides/${ride.id}`,
       tone: 'ride',
       icon: 'ride',
     });
-  } else if (rideRequest) {
+  }
+
+  for (const ride of props.rideRequests) {
+    if (timestamp(ride.desiredDepartureAt) < now) continue;
     cards.push({
-      id: `ride-request-${rideRequest.id}`,
+      id: `ride-request-${ride.id}`,
+      ...source(ride.communityId, ride.community?.name),
       priority: 16,
-      sortAt: timestamp(rideRequest.desiredDepartureAt),
+      sortAt: timestamp(ride.desiredDepartureAt),
       kicker: 'RIDE NEEDED',
-      title: rideRequest.title,
-      meta: `${compactTime(rideRequest.desiredDepartureAt)} · ${rideRequest.seatsNeeded} seat${rideRequest.seatsNeeded === 1 ? '' : 's'} needed`,
-      detail: rideRequest.pickupLabel,
+      title: ride.title,
+      meta: `${compactTime(ride.desiredDepartureAt)} · ${ride.seatsNeeded} seat${ride.seatsNeeded === 1 ? '' : 's'} needed`,
+      detail: ride.pickupLabel,
       action: 'Open rides',
       path: '/rides',
       tone: 'ride',
@@ -217,10 +202,17 @@ function buildCards({
     });
   }
 
-  if (fund) {
+  for (const fund of props.funds) {
+    if (
+      !['OPEN', 'FUNDED'].includes(fund.status) ||
+      (fund.deadline && timestamp(fund.deadline) < now)
+    ) {
+      continue;
+    }
     const progress = fundProgress(fund);
     cards.push({
       id: `fund-${fund.id}`,
+      ...source(fund.communityId, fund.community?.name),
       priority: 40,
       sortAt: fund.deadline ? timestamp(fund.deadline) : Number.MAX_SAFE_INTEGER,
       kicker: `FUNDME · ${fund.purpose.replaceAll('_', ' ')}`,
@@ -235,15 +227,16 @@ function buildCards({
     });
   }
 
-  return cards
-    .sort((left, right) => {
-      const urgentWindow = 6 * 60 * 60 * 1000;
-      const leftUrgent = left.sortAt - now <= urgentWindow ? 0 : left.priority;
-      const rightUrgent = right.sortAt - now <= urgentWindow ? 0 : right.priority;
-      if (leftUrgent !== rightUrgent) return leftUrgent - rightUrgent;
-      return left.sortAt - right.sortAt;
-    })
-    .slice(0, 5);
+  return cards.sort((left, right) => {
+    if (left.communityRank !== right.communityRank) {
+      return left.communityRank - right.communityRank;
+    }
+    const urgentWindow = 6 * 60 * 60 * 1000;
+    const leftUrgent = left.sortAt - now <= urgentWindow ? 0 : left.priority;
+    const rightUrgent = right.sortAt - now <= urgentWindow ? 0 : right.priority;
+    if (leftUrgent !== rightUrgent) return leftUrgent - rightUrgent;
+    return left.sortAt - right.sortAt;
+  });
 }
 
 function FeedIcon({ icon }: Pick<FeedCard, 'icon'>) {
@@ -251,6 +244,14 @@ function FeedIcon({ icon }: Pick<FeedCard, 'icon'>) {
   if (icon === 'ride') return <Car size={20} />;
   if (icon === 'fund') return <FundCupIcon className="h-5 w-5" />;
   return <Users size={20} />;
+}
+
+function communityLabel(card: FeedCard) {
+  if (card.communityRank === 0) return `${card.communityName} · YOUR HOOMA`;
+  if (card.distanceKm !== null) {
+    return `${card.communityName} · ${card.distanceKm < 10 ? card.distanceKm.toFixed(1) : Math.round(card.distanceKm)} km`;
+  }
+  return card.communityName;
 }
 
 export function HoomaNowFeed(props: HoomaNowFeedProps) {
@@ -264,8 +265,8 @@ export function HoomaNowFeed(props: HoomaNowFeedProps) {
           <h2 id="hooma-now-title">HOOMA NOW</h2>
           <p>
             {props.communityName
-              ? `What's moving in ${props.communityName}.`
-              : 'What matters next.'}
+              ? `${props.communityName} first, then nearby activity across HOOMA.`
+              : 'Nearby activity first, then the rest of HOOMA.'}
           </p>
         </div>
         <span className="hooma-now-live" aria-label="Live">
@@ -289,7 +290,9 @@ export function HoomaNowFeed(props: HoomaNowFeedProps) {
                 <FeedIcon icon={card.icon} />
               </span>
               <span className="hooma-now-copy">
-                <span className="hooma-now-kicker">{card.kicker}</span>
+                <span className="hooma-now-kicker">
+                  {communityLabel(card)} · {card.kicker}
+                </span>
                 <strong>{card.title}</strong>
                 <span className="hooma-now-meta">
                   <Clock3 size={13} /> {card.meta}
@@ -315,8 +318,8 @@ export function HoomaNowFeed(props: HoomaNowFeedProps) {
         <div className="hooma-now-empty">
           <strong>The board is quiet.</strong>
           <span>
-            Real matches, watch events, requests, rides and fundraisers will surface here as they
-            become active.
+            Real matches, watch events, requests, rides and fundraisers will surface here from
+            across HOOMA as they become active.
           </span>
         </div>
       )}

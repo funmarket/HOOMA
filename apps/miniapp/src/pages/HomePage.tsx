@@ -21,6 +21,7 @@ import type {
   RequestPage,
   RideListResponse,
 } from '../types/domain';
+import type { HoomaNowResponse } from '../types/hooma-now';
 
 function dateParts(value: string) {
   const date = new Date(value);
@@ -83,18 +84,13 @@ export function HomePage() {
     queryFn: () => get<FundPage>(`/api/v1/fundraisers?communityId=${id}`),
     enabled: !!id,
   });
+  const hoomaNow = useQuery({
+    queryKey: ['hooma-now', id],
+    queryFn: () => get<HoomaNowResponse>('/api/v1/communities/now'),
+    enabled: !!id,
+  });
   const rideCount = (rides.data?.offers.length || 0) + (rides.data?.requests.length || 0);
   const nextEvent = nextUpcomingEvent(events.data?.items ?? []);
-  const hoomaNowHasData =
-    (events.data?.items.length ?? 0) > 0 ||
-    (requests.data?.items.length ?? 0) > 0 ||
-    (rides.data?.offers.length ?? 0) > 0 ||
-    (rides.data?.requests.length ?? 0) > 0 ||
-    (funds.data?.items.length ?? 0) > 0;
-  const hoomaNowLoading =
-    !hoomaNowHasData &&
-    (events.isLoading || requests.isLoading || rides.isLoading || funds.isLoading);
-  const hoomaNowHasError = events.isError || requests.isError || rides.isError || funds.isError;
 
   return (
     <div className="page-shell vintage-page">
@@ -208,13 +204,14 @@ export function HomePage() {
 
       <HoomaNowFeed
         communityName={active?.name}
-        events={events.data?.items ?? []}
-        requests={requests.data?.items ?? []}
-        rideOffers={rides.data?.offers ?? []}
-        rideRequests={rides.data?.requests ?? []}
-        funds={funds.data?.items ?? []}
-        isLoading={hoomaNowLoading}
-        hasError={hoomaNowHasError}
+        communities={hoomaNow.data?.communities ?? []}
+        events={hoomaNow.data?.events ?? []}
+        requests={hoomaNow.data?.requests ?? []}
+        rideOffers={hoomaNow.data?.rideOffers ?? []}
+        rideRequests={hoomaNow.data?.rideRequests ?? []}
+        funds={hoomaNow.data?.funds ?? []}
+        isLoading={hoomaNow.isLoading}
+        hasError={hoomaNow.isError}
         onNavigate={navigate}
       />
     </div>
