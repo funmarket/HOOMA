@@ -13,20 +13,20 @@ import type { AuthContext, AuthenticatedRequest } from '../apps/api/src/http/mid
 import { errorHandler } from '../apps/api/src/http/middleware/error-handler.js';
 
 class FakePlatformAdminRepository implements PlatformAdminRepository {
-  readonly bootstrapCalls: Array<{ userId: string; normalizedAuthUsername: string }> = [];
+  readonly bootstrapCalls: string[] = [];
 
-  constructor(private readonly activeRolesByUserId: ReadonlyMap<string, readonly PlatformRole[]>) {}
+  constructor(
+    private readonly activeRolesByUserId: ReadonlyMap<string, readonly PlatformRole[]>,
+    private readonly bootstrapResult: PlatformAdminBootstrapResult = 'already-initialized',
+  ) {}
 
   getActiveRoles(userId: string): Promise<PlatformRole[]> {
     return Promise.resolve([...(this.activeRolesByUserId.get(userId) ?? [])]);
   }
 
-  bootstrapPlatformAdmin(
-    userId: string,
-    normalizedAuthUsername: string,
-  ): Promise<PlatformAdminBootstrapResult> {
-    this.bootstrapCalls.push({ userId, normalizedAuthUsername });
-    return Promise.resolve('identity-mismatch');
+  bootstrapFirstPlatformAdmin(userId: string): Promise<PlatformAdminBootstrapResult> {
+    this.bootstrapCalls.push(userId);
+    return Promise.resolve(this.bootstrapResult);
   }
 }
 
@@ -58,6 +58,7 @@ async function withPlatformAdminServer(
   run: (baseUrl: string) => Promise<void>,
 ): Promise<void> {
   const app = express();
+  app.use(express.json());
   app.use((req: Request, _res: Response, next: NextFunction) => {
     (req as AuthenticatedRequest).auth = authContext(userId);
     next();
@@ -107,30 +108,12 @@ test('Platform Admin authority rejects a user without an active platform role', 
 
 test('Community owner authority alone does not grant Platform Admin authority', async () => {
   const service = serviceWithActiveAdmin();
-
   assert.equal(await service.isPlatformAdmin('community-owner'), false);
-  await assert.rejects(
-    () => service.requirePlatformAdmin('community-owner'),
-    (error: unknown) =>
-      typeof error === 'object' &&
-      error !== null &&
-      'code' in error &&
-      error.code === 'PLATFORM_ADMIN_REQUIRED',
-  );
 });
 
 test('Community admin authority alone does not grant Platform Admin authority', async () => {
   const service = serviceWithActiveAdmin();
-
   assert.equal(await service.isPlatformAdmin('community-admin'), false);
-  await assert.rejects(
-    () => service.requirePlatformAdmin('community-admin'),
-    (error: unknown) =>
-      typeof error === 'object' &&
-      error !== null &&
-      'code' in error &&
-      error.code === 'PLATFORM_ADMIN_REQUIRED',
-  );
 });
 
 test('Revoked Platform Admin authority is treated as absent by the active-role boundary', async () => {
@@ -145,25 +128,40 @@ test('Revoked Platform Admin authority is treated as absent by the active-role b
 
   assert.equal(await service.isPlatformAdmin('active-admin'), true);
   assert.equal(await service.isPlatformAdmin('revoked-admin'), false);
+});
+
+test('creator bootstrap requires the server-configured secret before touching the repository', async () => {
+  const repository = new FakePlatformAdminRepository(new Map(), 'granted');
+  const service = new PlatformAdminService(repository);
+  const configured = '0123456789abcdef0123456789abcdef';
+
   await assert.rejects(
-    () => service.requirePlatformAdmin('revoked-admin'),
+    () => service.bootstrapFirstPlatformAdmin('creator-user-id', 'wrong-token-value-that-is-long-enough', configured),
     (error: unknown) =>
       typeof error === 'object' &&
       error !== null &&
       'code' in error &&
-      error.code === 'PLATFORM_ADMIN_REQUIRED',
+      error.code === 'PLATFORM_ADMIN_BOOTSTRAP_INVALID',
   );
+  assert.deepEqual(repository.bootstrapCalls, []);
+
+  await service.bootstrapFirstPlatformAdmin('creator-user-id', configured, configured);
+  assert.deepEqual(repository.bootstrapCalls, ['creator-user-id']);
 });
 
-test('configured creator bootstrap is delegated to the canonical Platform Admin repository', async () => {
-  const repository = new FakePlatformAdminRepository(new Map());
+test('creator bootstrap cannot initialize a second Platform Admin', async () => {
+  const repository = new FakePlatformAdminRepository(new Map(), 'already-initialized');
   const service = new PlatformAdminService(repository);
+  const configured = '0123456789abcdef0123456789abcdef';
 
-  await service.bootstrapConfiguredCreator('creator-user-id', 'creator.login');
-
-  assert.deepEqual(repository.bootstrapCalls, [
-    { userId: 'creator-user-id', normalizedAuthUsername: 'creator.login' },
-  ]);
+  await assert.rejects(
+    () => service.bootstrapFirstPlatformAdmin('second-user-id', configured, configured),
+    (error: unknown) =>
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 'PLATFORM_ADMIN_BOOTSTRAP_CLOSED',
+  );
 });
 
 test('app-admin access endpoint reports only canonical Platform Admin authority', async () => {
@@ -172,11 +170,13 @@ test('app-admin access endpoint reports only canonical Platform Admin authority'
     const body = (await response.json()) as {
       isPlatformAdmin: boolean;
       roles: PlatformRole[];
+      bootstrapAvailable: boolean;
     };
 
     assert.equal(response.status, 200);
     assert.equal(body.isPlatformAdmin, true);
     assert.deepEqual(body.roles, ['PLATFORM_ADMIN']);
+    assert.equal(typeof body.bootstrapAvailable, 'boolean');
   });
 
   await withPlatformAdminServer('community-admin', async (baseUrl) => {
