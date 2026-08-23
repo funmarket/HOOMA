@@ -77,7 +77,11 @@ export function TeamLineupBuilderPage() {
   if (!team || !canManageLineup) {
     return (
       <div className="page-shell vintage-page">
-        <button type="button" className="ghost-button mb-4" onClick={() => navigate(`/teams/${teamId}`)}>
+        <button
+          type="button"
+          className="ghost-button mb-4"
+          onClick={() => navigate(`/teams/${teamId}`)}
+        >
           <ArrowLeft size={16} /> Team HQ
         </button>
         <div className="vintage-empty">
@@ -101,7 +105,11 @@ export function TeamLineupBuilderPage() {
     const error = rosterQuery.error ?? lineupQuery.error;
     return (
       <div className="page-shell vintage-page">
-        <button type="button" className="ghost-button mb-4" onClick={() => navigate(`/teams/${teamId}`)}>
+        <button
+          type="button"
+          className="ghost-button mb-4"
+          onClick={() => navigate(`/teams/${teamId}`)}
+        >
           <ArrowLeft size={16} /> Team HQ
         </button>
         <div className="vintage-empty" role="alert">
@@ -113,7 +121,11 @@ export function TeamLineupBuilderPage() {
 
   return (
     <div className="page-shell vintage-page">
-      <button type="button" className="ghost-button mb-4" onClick={() => navigate(`/teams/${teamId}`)}>
+      <button
+        type="button"
+        className="ghost-button mb-4"
+        onClick={() => navigate(`/teams/${teamId}`)}
+      >
         <ArrowLeft size={16} /> Team HQ
       </button>
       <TeamLineupManager
