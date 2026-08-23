@@ -17,7 +17,7 @@ export type TeamListInput = {
 
 export interface TeamRepository {
   listPublic(input: TeamListInput): Promise<unknown>;
-  listManagedTeams(userId: string): Promise<unknown>;
+  listManagedTeams(teamIds: string[]): Promise<unknown>;
   getPublic(teamId: string): Promise<unknown>;
   getChallenge(challengeId: string, managedTeamIds: string[]): Promise<unknown>;
   getGame(gameId: string): Promise<unknown>;
