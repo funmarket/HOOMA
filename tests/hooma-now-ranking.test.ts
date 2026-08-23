@@ -33,7 +33,10 @@ test('HOOMA NOW uses same-city fallback when precise activity coordinates are un
     ranked.map((community) => community.id),
     ['home', 'same-city', 'other-city'],
   );
-  assert.equal(ranked.every((community) => community.distanceKm === null), true);
+  assert.equal(
+    ranked.every((community) => community.distanceKm === null),
+    true,
+  );
 });
 
 test('HOOMA NOW distance uses real geographic coordinates', () => {
@@ -44,5 +47,8 @@ test('HOOMA NOW distance uses real geographic coordinates', () => {
 
   assert.ok(tunisToAriana !== null);
   assert.ok(tunisToAriana > 5 && tunisToAriana < 8);
-  assert.equal(distanceKm({ latitude: null, longitude: null }, { latitude: 1, longitude: 1 }), null);
+  assert.equal(
+    distanceKm({ latitude: null, longitude: null }, { latitude: 1, longitude: 1 }),
+    null,
+  );
 });
