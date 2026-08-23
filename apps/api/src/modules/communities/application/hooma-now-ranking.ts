@@ -48,7 +48,7 @@ export function rankHoomaNowCommunities(
   candidates: HoomaNowCommunityCandidate[],
 ): RankedHoomaNowCommunity[] {
   const active = activeCommunityId
-    ? candidates.find((candidate) => candidate.id === activeCommunityId) ?? null
+    ? (candidates.find((candidate) => candidate.id === activeCommunityId) ?? null)
     : null;
   const activeCity = normalizedCity(active?.city ?? null);
 
@@ -60,13 +60,7 @@ export function rankHoomaNowCommunities(
           ? activeCity === normalizedCity(candidate.city)
           : false;
       const bucket =
-        candidate.id === activeCommunityId
-          ? 0
-          : distance !== null
-            ? 1
-            : sameCity
-              ? 2
-              : 3;
+        candidate.id === activeCommunityId ? 0 : distance !== null ? 1 : sameCity ? 2 : 3;
 
       return { candidate, distance, bucket };
     })
