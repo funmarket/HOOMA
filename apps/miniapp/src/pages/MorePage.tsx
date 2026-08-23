@@ -1,14 +1,25 @@
-import { LogOut, Settings, ShieldCheck, UserRound } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Crown, LogOut, Settings, ShieldCheck, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ActionRow } from '../components/ui/ActionRow';
 import { logout } from '../features/auth/api';
 import { clearWebSession, getWebSession } from '../features/auth/session';
 import { useCommunity } from '../providers/CommunityProvider';
+import { get } from '../shared/api/http-client';
+
+type PlatformAdminAccess = {
+  isPlatformAdmin: boolean;
+  roles: string[];
+};
 
 export function MorePage() {
   const navigate = useNavigate();
   const { active } = useCommunity();
   const webSession = getWebSession();
+  const platformAdmin = useQuery({
+    queryKey: ['app-admin', 'me'],
+    queryFn: () => get<PlatformAdminAccess>('/api/v1/app-admin/me'),
+  });
 
   async function signOut() {
     try {
@@ -35,10 +46,20 @@ export function MorePage() {
           <ActionRow
             icon={<ShieldCheck />}
             title="Coach Control Room"
+            subtitle="Manage your scoped Team and community responsibilities"
             onClick={() => navigate('/admin')}
             variant="vintage"
           />
         )}
+        {platformAdmin.data?.isPlatformAdmin ? (
+          <ActionRow
+            icon={<Crown />}
+            title="HOOMA Admin"
+            subtitle="Global application administration"
+            onClick={() => navigate('/app-admin')}
+            variant="vintage"
+          />
+        ) : null}
         <ActionRow
           icon={<Settings />}
           title="Settings"

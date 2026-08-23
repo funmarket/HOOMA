@@ -14,6 +14,7 @@ import { pitchRouter } from '../../modules/pitch/http/pitch.controller.js';
 import { playRouter } from '../../modules/play/http/play.controller.js';
 import { chatRouter } from '../../modules/chat/http/chat.controller.js';
 import { adminRouter } from '../../modules/admin/http/admin.controller.js';
+import { platformAdminRouter } from '../../modules/platform-admin/http/platform-admin.controller.js';
 import { teamRouter } from '../../modules/teams/http/team.controller.js';
 import { rateLimit } from '../middleware/rate-limit.js';
 
@@ -54,6 +55,7 @@ export function v1Router(container: AppContainer) {
     chatRouter(container.services.chat),
   );
   router.use('/admin', adminRouter(container.services.admin));
+  router.use('/app-admin', platformAdminRouter(container.services.platformAdmin));
   router.use(
     '/teams',
     rateLimit(container.rateLimitStore, { scope: 'teams', windowMs: 60_000, max: 120 }),
