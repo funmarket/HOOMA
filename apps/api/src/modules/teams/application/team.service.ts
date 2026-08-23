@@ -31,12 +31,18 @@ export class TeamService {
   }
 
   async managedTeams(userId: string) {
-    const editableTeamIds = new Set(await this.authorizedTeamIds(userId, 'EDIT_TEAM'));
-    if (!editableTeamIds.size) return { items: [] };
+    const authorities = (await this.authority.list(userId)).filter((item) =>
+      teamAuthorityHasCapability(item, 'EDIT_TEAM'),
+    );
+    if (!authorities.length) return { items: [] };
 
+    const authorityByTeamId = new Map(authorities.map((item) => [item.teamId, item]));
     const managed = await this.repo.listManagedTeams(userId);
     return {
-      items: managed.items.filter((team) => editableTeamIds.has(team.id)),
+      items: managed.items.flatMap((team) => {
+        const access = authorityByTeamId.get(team.id);
+        return access ? [{ ...team, authority: access }] : [];
+      }),
     };
   }
 
