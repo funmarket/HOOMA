@@ -21,7 +21,7 @@ const server = app.listen(env.PORT, () => {
 async function shutdown(signal: string) {
   console.log(`HOOMA API received ${signal}; shutting down.`);
   server.close(async () => {
-    await container.db.$disconnect();
+    await Promise.allSettled([container.redis.close(), container.db.$disconnect()]);
     process.exit(0);
   });
   setTimeout(() => process.exit(1), 10_000).unref();
