@@ -26,7 +26,10 @@ function baseStore(overrides: Partial<WhistleStore> = {}): WhistleStore {
 
 const identity = {
   async getMe() {
-    return { displayName: 'HOOMA Tester', photoUrl: 'https://example.com/avatar.png' };
+    return {
+      effectiveDisplayName: 'HOOMA Tester',
+      effectivePhotoUrl: 'https://example.com/avatar.png',
+    };
   },
 };
 
