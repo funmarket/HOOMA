@@ -50,7 +50,11 @@ export class PrismaTeamRosterRepository implements TeamRosterRepository {
             SELECT id FROM "User" WHERE id = ${input.userId} AND "deletedAt" IS NULL FOR UPDATE
           `;
           if (!users.length) {
-            throw new AppError(404, 'TEAM_PLAYER_USER_NOT_FOUND', 'HOOMA user not found.');
+            throw new AppError(
+              404,
+              'TEAM_PLAYER_USER_NOT_FOUND',
+              'HOOMA user not found.',
+            );
           }
 
           const existingRows = await tx.teamPlayer.findMany({
@@ -152,7 +156,11 @@ export class PrismaTeamRosterRepository implements TeamRosterRepository {
           select: rosterPlayerSelect,
         });
         if (!player) {
-          throw new AppError(404, 'TEAM_PLAYER_NOT_FOUND', 'Active Team player not found.');
+          throw new AppError(
+            404,
+            'TEAM_PLAYER_NOT_FOUND',
+            'Active Team player not found.',
+          );
         }
 
         const responsibility = player.userId
