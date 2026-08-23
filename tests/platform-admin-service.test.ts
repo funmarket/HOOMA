@@ -8,10 +8,7 @@ import type {
 } from '../apps/api/src/modules/platform-admin/application/platform-admin.repository.js';
 import { PlatformAdminService } from '../apps/api/src/modules/platform-admin/application/platform-admin.service.js';
 import { platformAdminRouter } from '../apps/api/src/modules/platform-admin/http/platform-admin.controller.js';
-import type {
-  AuthContext,
-  AuthenticatedRequest,
-} from '../apps/api/src/http/middleware/auth.js';
+import type { AuthContext, AuthenticatedRequest } from '../apps/api/src/http/middleware/auth.js';
 import { errorHandler } from '../apps/api/src/http/middleware/error-handler.js';
 
 class FakePlatformAdminRepository implements PlatformAdminRepository {
