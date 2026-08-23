@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import { AppError } from '../../../http/errors/app-error.js';
 import type { PlatformAdminRepository, PlatformRole } from './platform-admin.repository.js';
 
@@ -8,8 +9,25 @@ export class PlatformAdminService {
     return this.repo.getActiveRoles(userId);
   }
 
-  async bootstrapConfiguredCreator(userId: string, normalizedAuthUsername: string): Promise<void> {
-    await this.repo.bootstrapPlatformAdmin(userId, normalizedAuthUsername);
+  async bootstrapFirstPlatformAdmin(
+    userId: string,
+    suppliedToken: string,
+    configuredToken: string,
+  ): Promise<void> {
+    const supplied = Buffer.from(suppliedToken);
+    const configured = Buffer.from(configuredToken);
+    if (supplied.length !== configured.length || !timingSafeEqual(supplied, configured)) {
+      throw new AppError(403, 'PLATFORM_ADMIN_BOOTSTRAP_INVALID', 'Invalid bootstrap credentials');
+    }
+
+    const result = await this.repo.bootstrapFirstPlatformAdmin(userId);
+    if (result !== 'granted') {
+      throw new AppError(
+        409,
+        'PLATFORM_ADMIN_BOOTSTRAP_CLOSED',
+        'Platform admin bootstrap has already been initialized',
+      );
+    }
   }
 
   async isPlatformAdmin(userId: string): Promise<boolean> {
