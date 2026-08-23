@@ -141,7 +141,10 @@ export function TeamAssistantManager({
       <div className="mt-4 grid gap-3">
         {assistants.length ? (
           assistants.map((assistant) => (
-            <article className="rounded-2xl border border-white/10 bg-white/5 p-4" key={assistant.id}>
+            <article
+              className="rounded-2xl border border-white/10 bg-white/5 p-4"
+              key={assistant.id}
+            >
               <div className="flex items-start gap-3">
                 <span className="team-profile-badge h-11 w-11 shrink-0 text-sm">
                   {assistant.player.photoUrl ? (
@@ -154,7 +157,9 @@ export function TeamAssistantManager({
                   <div className="font-black">{assistant.player.displayName}</div>
                   <div className="mt-1 text-xs muted">
                     {assistant.player.position ?? 'ANY'}
-                    {assistant.player.shirtNumber != null ? ` #${assistant.player.shirtNumber}` : ''}
+                    {assistant.player.shirtNumber != null
+                      ? ` #${assistant.player.shirtNumber}`
+                      : ''}
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {assistant.permissions.map((permission) => (
