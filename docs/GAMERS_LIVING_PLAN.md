@@ -2,9 +2,8 @@
 
 Last updated: 2026-08-23
 Repository: `funmarket/HOOMA`
-Working branch: `feat/gamers-foundation`
-Baseline main SHA at plan creation:
-`60bde2aff23c491ea43ef95b716cd5e838053ce1`
+Working branch: `feat/gamers-game-catalog`
+Current baseline main SHA: `56e11e5c565a98899ef8d177b10af09f9839e16b`
 
 ## Purpose
 
@@ -68,9 +67,11 @@ esports interfaces without cloning another product.
 - There is no canonical Gamers API or database domain on current main.
 - There is no shared Whistle domain available for Gamers on current main.
 - Home had a disabled Gamers Quick Action because `/gamers` did not exist.
-- Home PR #53 has since merged and must be reconciled before Home edits.
+- Home PR #53 has merged and must be preserved when Home is later updated.
 - Platform Admin is the canonical app-level authority boundary.
-- `packages/database/prisma/schema.prisma` is the database source of truth.
+- `packages/database/prisma.config.ts` sets `schema: 'prisma'`.
+- The full `packages/database/prisma/` schema folder is authoritative.
+- Existing domain schema files live under `packages/database/prisma/models/`.
 - The committed timestamped migration chain is authoritative.
 
 ## Architectural invariants
@@ -192,6 +193,7 @@ authority. Do not create a second generic Gamers admin role.
 ## Recommended source structure
 
 - `packages/contracts/src/gamers.ts`
+- `packages/database/prisma/models/gamers.prisma`
 - `apps/api/src/modules/gamers/{domain,application,infrastructure,http}`
 - `apps/miniapp/src/features/gamers/...`
 - Gamer pages/components following current Mini App conventions
@@ -217,10 +219,9 @@ Status: **COMPLETE**
 - [x] Confirm identity already contains `GAMER`.
 - [x] Confirm no Gamers API/schema domain exists.
 - [x] Confirm no shared Whistle domain is currently available.
-- [x] Create `feat/gamers-foundation`.
-- [x] Create this living plan.
+- [x] Create and merge the Gamers foundation plan and contracts.
 - [x] Inspect package scripts and CI quality gates.
-- [x] Inspect authoritative Prisma schema and migration convention.
+- [x] Inspect Prisma schema-folder and migration conventions.
 - [x] Inspect current Platform Admin authority boundary.
 
 ### G1 - Canonical game catalog and Gamers landing
@@ -342,11 +343,18 @@ pass before a slice is marked complete.
 
 ## Completed implementation log
 
-No implementation slice is merged yet.
+### 2026-08-23 - Foundation merged
 
-Current checkpoint:
-PR #57 contains the living plan and GamerGame contract foundation. CI run #444
-passed deployment preflight, Prisma validation/generation, architecture, lint,
-typecheck, migration deploy, and all 87 tests. It failed only on formatting of
-this document; this commit is the formatting correction. After green CI, merge
-PR #57 and start the Prisma GamerGame migration slice from the new `main`.
+- PR #57: `feat(gamers): establish living plan and game catalog contracts`.
+- Full CI run #449 passed.
+- Merge SHA: `56e11e5c565a98899ef8d177b10af09f9839e16b`.
+- Added the canonical living plan and GamerGame wire contracts.
+- No database/runtime behavior was introduced in that slice.
+
+### Current resume point
+
+Branch: `feat/gamers-game-catalog`.
+
+Implement `GamerGame` in the Prisma schema folder with a real migration, run
+full CI through a focused PR, update this plan with the successful evidence,
+merge it, then continue with repository/service/public API catalog reads.
