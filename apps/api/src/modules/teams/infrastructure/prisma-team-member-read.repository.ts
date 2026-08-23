@@ -27,13 +27,15 @@ const memberTeamSelect = {
     orderBy: [{ createdAt: 'asc' as const }, { id: 'asc' as const }],
   },
   lineups: {
-    where: { isPublished: true, deletedAt: null },
+    where: { isCurrent: true, isPublished: true, deletedAt: null },
     take: 1,
     select: {
       id: true,
       name: true,
       formation: true,
       matchFormat: true,
+      isCurrent: true,
+      isPublished: true,
       slots: {
         select: {
           id: true,
@@ -45,6 +47,7 @@ const memberTeamSelect = {
           player: {
             select: {
               id: true,
+              userId: true,
               displayName: true,
               shirtNumber: true,
               position: true,
