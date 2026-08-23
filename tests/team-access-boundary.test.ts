@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildDatabase } from '../apps/api/src/infrastructure/database/prisma.js';
-import type { TeamRepository } from '../apps/api/src/modules/teams/application/team-repository.js';
+import type {
+  TeamRepository,
+} from '../apps/api/src/modules/teams/application/team-repository.js';
 import { TeamService } from '../apps/api/src/modules/teams/application/team.service.js';
 import {
   legacyTeamRoleHasCapability,
@@ -188,7 +190,9 @@ test('roster removal deactivates player, clears current lineup, revokes Assistan
   const slotId = `roster_slot_${suffix}`;
   const requestId = `roster_request_${suffix}`;
 
-  await db.user.createMany({ data: [{ id: coachUserId }, { id: playerUserId }] });
+  await db.user.createMany({
+    data: [{ id: coachUserId }, { id: playerUserId }],
+  });
   await db.community.create({
     data: {
       id: communityId,
@@ -266,7 +270,10 @@ test('roster removal deactivates player, clears current lineup, revokes Assistan
 
   await service.removePlayer(coachUserId, teamId, playerId, `${requestId}_remove`);
 
-  assert.equal((await db.teamPlayer.findUnique({ where: { id: playerId } }))?.isActive, false);
+  assert.equal(
+    (await db.teamPlayer.findUnique({ where: { id: playerId } }))?.isActive,
+    false,
+  );
   assert.equal(
     (await db.teamLineupSlot.findUnique({ where: { id: slotId } }))?.playerId,
     null,
@@ -295,7 +302,10 @@ test('roster removal deactivates player, clears current lineup, revokes Assistan
   )) as { id: string; isActive: boolean };
   assert.equal(returned.id, playerId);
   assert.equal(returned.isActive, true);
-  assert.equal(await db.teamPlayer.count({ where: { teamId, userId: playerUserId } }), 1);
+  assert.equal(
+    await db.teamPlayer.count({ where: { teamId, userId: playerUserId } }),
+    1,
+  );
   assert.equal(
     await authority.get(playerUserId, teamId),
     null,
@@ -303,5 +313,7 @@ test('roster removal deactivates player, clears current lineup, revokes Assistan
   );
 
   await db.community.delete({ where: { id: communityId } });
-  await db.user.deleteMany({ where: { id: { in: [coachUserId, playerUserId] } } });
+  await db.user.deleteMany({
+    where: { id: { in: [coachUserId, playerUserId] } },
+  });
 });
