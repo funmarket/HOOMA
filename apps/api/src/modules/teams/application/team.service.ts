@@ -26,8 +26,14 @@ export class TeamService {
     return this.repo.listPublic(input);
   }
 
-  managedTeams(userId: string) {
-    return this.repo.listManagedTeams(userId);
+  async managedTeams(userId: string) {
+    const editableTeamIds = new Set(await this.authorizedTeamIds(userId, 'EDIT_TEAM'));
+    if (!editableTeamIds.size) return { items: [] };
+
+    const managed = await this.repo.listManagedTeams(userId);
+    return {
+      items: managed.items.filter((team) => editableTeamIds.has(team.id)),
+    };
   }
 
   async getPublic(teamId: string) {
