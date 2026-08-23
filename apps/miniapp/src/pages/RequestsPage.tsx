@@ -5,10 +5,7 @@ import { RequestFlagIcon } from '../icons/RequestFlagIcon';
 import { get, post } from '../shared/api/http-client';
 import { eventDate } from '../lib/format';
 import { notify } from '../lib/telegram';
-import type {
-  RankedRequestCommunity,
-  RequestDiscoveryResponse,
-} from '../types/request-discovery';
+import type { RankedRequestCommunity, RequestDiscoveryResponse } from '../types/request-discovery';
 
 function communityLabel(
   community: RankedRequestCommunity | undefined,
