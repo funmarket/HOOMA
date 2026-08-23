@@ -159,10 +159,7 @@ export class PrismaTeamAuthorityRepository implements TeamAuthorityRepository {
     for (const responsibility of responsibilities) {
       const communityId = activeTeams.get(responsibility.teamId);
       if (!communityId || responsibility.revokedAt) continue;
-      if (
-        responsibility.role === 'ASSISTANT' &&
-        !activePlayerTeamIds.has(responsibility.teamId)
-      ) {
+      if (responsibility.role === 'ASSISTANT' && !activePlayerTeamIds.has(responsibility.teamId)) {
         continue;
       }
       authorities.push(
@@ -180,9 +177,7 @@ export class PrismaTeamAuthorityRepository implements TeamAuthorityRepository {
       if (responsibilityTeamIds.has(team.id)) continue;
       const role = team.community.memberships[0]?.role;
       if (role !== 'OWNER' && role !== 'ADMIN') continue;
-      authorities.push(
-        legacyAuthority({ teamId: team.id, communityId: team.communityId, role }),
-      );
+      authorities.push(legacyAuthority({ teamId: team.id, communityId: team.communityId, role }));
     }
 
     return authorities;
@@ -340,11 +335,7 @@ export class PrismaTeamAuthorityRepository implements TeamAuthorityRepository {
           where: { id: responsibilityId, teamId, role: 'ASSISTANT' },
         });
         if (!existing) {
-          throw new AppError(
-            404,
-            'TEAM_ASSISTANT_NOT_FOUND',
-            'Assistant assignment not found.',
-          );
+          throw new AppError(404, 'TEAM_ASSISTANT_NOT_FOUND', 'Assistant assignment not found.');
         }
         if (existing.revokedAt) return existing;
 
