@@ -118,7 +118,10 @@ export class PrismaGamerGameRepository implements GamerGameRepository {
 
   async create(input: GamerGameCreateData) {
     try {
-      const game = await this.db.gamerGame.create({ data: createData(input), select: publicSelect });
+      const game = await this.db.gamerGame.create({
+        data: createData(input),
+        select: publicSelect,
+      });
       return { kind: 'created' as const, game: mapPublic(game) };
     } catch (error) {
       if (prismaCode(error) === 'P2002') return { kind: 'conflict' as const };
