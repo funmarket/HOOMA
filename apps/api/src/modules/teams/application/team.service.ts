@@ -230,7 +230,10 @@ export class TeamService {
     capabilities: TeamCapability[],
   ) {
     const access = await this.authority.get(userId, teamId);
-    if (!access || !capabilities.some((capability) => teamAuthorityHasCapability(access, capability))) {
+    if (
+      !access ||
+      !capabilities.some((capability) => teamAuthorityHasCapability(access, capability))
+    ) {
       throw new AppError(404, 'TEAM_NOT_FOUND', 'Team not found.');
     }
     return access;
