@@ -7,6 +7,7 @@ import {
   addTeamPlayer,
   getTeam,
   listManagedTeams,
+  listTeamPlayerCandidates,
   listTeamRoster,
   removeTeamPlayer,
   teamQueryKeys,
@@ -140,7 +141,9 @@ export function TeamProfilePage() {
   const [searchParams] = useSearchParams();
   const [editing, setEditing] = useState(searchParams.get('edit') === '1');
   const [addingPlayer, setAddingPlayer] = useState(false);
-  const [playerName, setPlayerName] = useState('');
+  const [addMode, setAddMode] = useState<'member' | 'guest'>('member');
+  const [selectedCandidateId, setSelectedCandidateId] = useState('');
+  const [guestPlayerName, setGuestPlayerName] = useState('');
 
   const managedTeamsQuery = useQuery({
     queryKey: teamQueryKeys.managed(),
@@ -162,12 +165,19 @@ export function TeamProfilePage() {
     enabled: Boolean(teamId) && canManage,
     retry: false,
   });
+  const candidatesQuery = useQuery({
+    queryKey: teamQueryKeys.rosterCandidates(teamId),
+    queryFn: () => listTeamPlayerCandidates(teamId),
+    enabled: Boolean(teamId) && canManage && addingPlayer && addMode === 'member',
+    retry: false,
+  });
   const lineup = team?.lineups?.[0] ?? null;
   const rosterPlayers = canManage ? (rosterQuery.data?.items ?? []) : (team?.players ?? []);
 
   const refreshTeam = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: teamQueryKeys.roster(teamId) }),
+      queryClient.invalidateQueries({ queryKey: teamQueryKeys.rosterCandidates(teamId) }),
       queryClient.invalidateQueries({ queryKey: teamQueryKeys.managed() }),
       queryClient.invalidateQueries({ queryKey: teamQueryKeys.detail(teamId) }),
       queryClient.invalidateQueries({ queryKey: teamQueryKeys.all }),
@@ -175,9 +185,10 @@ export function TeamProfilePage() {
   };
 
   const addPlayerMutation = useMutation({
-    mutationFn: () => addTeamPlayer(teamId, { displayName: playerName.trim() }),
+    mutationFn: (input: Parameters<typeof addTeamPlayer>[1]) => addTeamPlayer(teamId, input),
     onSuccess: async () => {
-      setPlayerName('');
+      setSelectedCandidateId('');
+      setGuestPlayerName('');
       setAddingPlayer(false);
       await refreshTeam();
       notify('success');
@@ -275,6 +286,9 @@ export function TeamProfilePage() {
               onClick={() => {
                 addPlayerMutation.reset();
                 setAddingPlayer((value) => !value);
+                setAddMode('member');
+                setSelectedCandidateId('');
+                setGuestPlayerName('');
               }}
             >
               <Plus size={17} /> {addingPlayer ? 'Close' : 'Add player'}
@@ -283,23 +297,127 @@ export function TeamProfilePage() {
         </div>
 
         {addingPlayer && canManage ? (
-          <div className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <label className="grid gap-2 text-[17px] font-semibold">
-              Player name
-              <input
-                className="hooma-input"
-                value={playerName}
-                onChange={(event) => {
+          <div className="mt-4 grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                className={addMode === 'member' ? 'accent-button' : 'ghost-button'}
+                onClick={() => {
                   addPlayerMutation.reset();
-                  setPlayerName(event.target.value);
+                  setAddMode('member');
                 }}
-                placeholder="Player display name"
-              />
-            </label>
-            <p className="text-sm muted">
-              This creates a guest roster entry. Existing HOOMA-account linking stays server-backed
-              and will use the canonical player selector rather than exposing internal user IDs.
-            </p>
+              >
+                HOOMA member
+              </button>
+              <button
+                type="button"
+                className={addMode === 'guest' ? 'accent-button' : 'ghost-button'}
+                onClick={() => {
+                  addPlayerMutation.reset();
+                  setAddMode('guest');
+                  setSelectedCandidateId('');
+                }}
+              >
+                Guest player
+              </button>
+            </div>
+
+            {addMode === 'member' ? (
+              <div className="grid gap-3">
+                <p className="text-sm leading-6 muted">
+                  Select a real HOOMA member. Their canonical account and profile photo stay linked
+                  to this Team roster.
+                </p>
+                {candidatesQuery.isLoading ? (
+                  <div className="vintage-empty">Loading eligible HOOMA members…</div>
+                ) : candidatesQuery.isError ? (
+                  <div className="vintage-empty">
+                    {candidatesQuery.error instanceof Error
+                      ? candidatesQuery.error.message
+                      : 'Eligible members could not be loaded.'}
+                  </div>
+                ) : candidatesQuery.data?.items.length ? (
+                  <div className="grid gap-2">
+                    {candidatesQuery.data.items.map((candidate) => (
+                      <button
+                        type="button"
+                        key={candidate.userId}
+                        className={`reference-row flex items-center gap-3 p-3 text-left ${
+                          selectedCandidateId === candidate.userId ? 'ring-1 ring-[var(--accent)]' : ''
+                        }`}
+                        onClick={() => {
+                          addPlayerMutation.reset();
+                          setSelectedCandidateId(candidate.userId);
+                        }}
+                      >
+                        <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-white/10 font-black">
+                          {candidate.photoUrl ? (
+                            <img
+                              className="h-full w-full object-cover"
+                              src={candidate.photoUrl}
+                              alt=""
+                            />
+                          ) : (
+                            candidate.displayName.slice(0, 1).toUpperCase()
+                          )}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <strong className="block truncate">{candidate.displayName}</strong>
+                          <small className="muted">
+                            {candidate.preferredPositions.length
+                              ? candidate.preferredPositions.join(' · ')
+                              : 'Any position'}
+                          </small>
+                        </span>
+                        <span className="chip shrink-0">HOOMA</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="vintage-empty">
+                    <strong>No unrostered HOOMA members.</strong>
+                    <small>
+                      Members who join the HOOMA appear here until the Coach adds them to the Team.
+                    </small>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="accent-button"
+                  disabled={addPlayerMutation.isPending || !selectedCandidateId}
+                  onClick={() => addPlayerMutation.mutate({ userId: selectedCandidateId })}
+                >
+                  {addPlayerMutation.isPending ? 'Adding…' : 'Add selected player'}
+                </button>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                <p className="text-sm leading-6 muted">
+                  Guest players are not linked to a HOOMA account or public player profile.
+                </p>
+                <label className="grid gap-2 text-[17px] font-semibold">
+                  Guest player name
+                  <input
+                    className="hooma-input"
+                    value={guestPlayerName}
+                    onChange={(event) => {
+                      addPlayerMutation.reset();
+                      setGuestPlayerName(event.target.value);
+                    }}
+                    placeholder="Player display name"
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="accent-button"
+                  disabled={addPlayerMutation.isPending || !guestPlayerName.trim()}
+                  onClick={() => addPlayerMutation.mutate({ displayName: guestPlayerName.trim() })}
+                >
+                  {addPlayerMutation.isPending ? 'Adding…' : 'Add guest player'}
+                </button>
+              </div>
+            )}
+
             {addPlayerMutation.isError ? (
               <div className="vintage-empty">
                 {addPlayerMutation.error instanceof Error
@@ -307,14 +425,6 @@ export function TeamProfilePage() {
                   : 'Player could not be added.'}
               </div>
             ) : null}
-            <button
-              type="button"
-              className="accent-button"
-              disabled={addPlayerMutation.isPending || !playerName.trim()}
-              onClick={() => addPlayerMutation.mutate()}
-            >
-              {addPlayerMutation.isPending ? 'Adding…' : 'Add to roster'}
-            </button>
           </div>
         ) : null}
 
