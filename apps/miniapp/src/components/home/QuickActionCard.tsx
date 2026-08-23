@@ -4,11 +4,12 @@ import { cn } from '../../lib/cn';
 
 export type QuickActionCardProps = {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   icon?: ReactNode;
   artworkSrc?: string;
   accentValue?: string;
-  onClick: () => void;
+  disabled?: boolean;
+  onClick?: () => void;
 };
 
 export function QuickActionCard({
@@ -17,14 +18,25 @@ export function QuickActionCard({
   icon,
   artworkSrc,
   accentValue,
+  disabled = false,
   onClick,
 }: QuickActionCardProps) {
-  const subtitleText = accentValue ? subtitle.replace(accentValue, '').trim() : subtitle;
+  const subtitleText = subtitle
+    ? accentValue
+      ? subtitle.replace(accentValue, '').trim()
+      : subtitle
+    : '';
 
   return (
     <button
       type="button"
-      className={cn('quick-action-card-pro', artworkSrc && 'quick-action-card-artwork')}
+      className={cn(
+        'quick-action-card-pro',
+        artworkSrc && 'quick-action-card-artwork',
+        disabled && 'quick-action-card-disabled',
+      )}
+      disabled={disabled}
+      aria-label={disabled ? `${title} — coming soon` : title}
       onClick={onClick}
     >
       {artworkSrc ? (
@@ -33,10 +45,12 @@ export function QuickActionCard({
         icon && <span className="quick-action-icon-pro">{icon}</span>
       )}
       <strong>{title}</strong>
-      <span>
-        {accentValue && <b>{accentValue}</b>}
-        {subtitleText}
-      </span>
+      {subtitle ? (
+        <span>
+          {accentValue && <b>{accentValue}</b>}
+          {subtitleText}
+        </span>
+      ) : null}
     </button>
   );
 }
