@@ -83,13 +83,25 @@ test('Mini App exposes My Team without turning player membership into management
   assert.match(teamsPage, /My Team \/ Team HQ/);
   assert.match(teamsPage, /queryFn: listMyTeams/);
   assert.match(teamProfilePage, /const memberTeam = myTeamsQuery\.data\?\.items\.find/);
-  assert.match(teamProfilePage, /const authority = managedTeam\?\.authority \?\? authorityQuery\.data \?\? null/);
+  assert.match(
+    teamProfilePage,
+    /const authority = managedTeam\?\.authority \?\? authorityQuery\.data \?\? null/,
+  );
   assert.match(teamProfilePage, /const canEditTeam = hasCapability\(authority, 'EDIT_TEAM'\)/);
-  assert.match(teamProfilePage, /const canManageRoster = hasCapability\(authority, 'MANAGE_ROSTER'\)/);
-  assert.match(teamProfilePage, /const canManageLineup = hasCapability\(authority, 'MANAGE_LINEUP'\)/);
+  assert.match(
+    teamProfilePage,
+    /const canManageRoster = hasCapability\(authority, 'MANAGE_ROSTER'\)/,
+  );
+  assert.match(
+    teamProfilePage,
+    /const canManageLineup = hasCapability\(authority, 'MANAGE_LINEUP'\)/,
+  );
   assert.match(teamProfilePage, /const isTeamPlayer = Boolean\(memberTeam\)/);
   assert.match(teamProfilePage, /team\.acceptingChallenges && !authority && !isTeamPlayer/);
   assert.match(teamProfilePage, /memberTeam\.players \?\? \[\]/);
-  assert.match(teamProfilePage, /authority \? 'Your Team' : isTeamPlayer \? 'My Team' : 'Public team'/);
+  assert.match(
+    teamProfilePage,
+    /authority \? 'Your Team' : isTeamPlayer \? 'My Team' : 'Public team'/,
+  );
   assert.doesNotMatch(teamProfilePage, /const canManage = Boolean\(managedTeam\)/);
 });
