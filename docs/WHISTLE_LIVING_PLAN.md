@@ -1,0 +1,196 @@
+# HOOMA Whistle Living Implementation Plan
+
+Last updated: 2026-08-23
+Repository: `funmarket/HOOMA`
+Working branch: `feat/whistle-foundation-v1`
+Baseline main SHA: `07b6130173259718473f41d087739b154efcd503`
+
+## Purpose
+
+This is the canonical living plan for the shared HOOMA Whistle domain. Update it after every verified implementation slice. Repository truth wins over chat history.
+
+## Non-negotiable working rules
+
+- Work only in `funmarket/HOOMA`.
+- Treat `funmarket/HoomaUltimate` as read-only reference only.
+- Re-read current `main` and open PRs before every slice.
+- Fix/build at the source. No patches, duplicate domains, workaround stores, or parallel authority systems.
+- One shared Whistle quota applies across every Whistle context.
+- Whistle must not become permanent chat or a permanent social feed.
+- No Whistle message body may be persisted in PostgreSQL.
+- No Prisma Whistle model or migration unless the product rules explicitly change later.
+- Redis is the authoritative transient Whistle store.
+- A slice may advance only after proof of success and an implementation score above 8/10.
+- After every verified slice record proof, touched files, created files, intentionally untouched files, conflict status, and score.
+
+## Canonical product rules
+
+1. Maximum message size: **33 Unicode graphemes** after trimming.
+2. Daily allowance: **11 Whistles per canonical HOOMA user across all contexts combined**.
+3. Quota window: UTC calendar day, never rolling 24 hours.
+4. Reset: **00:00 UTC** every day.
+5. Unused allowance does not roll over. Every UTC day starts at 11.
+6. Every Whistle message from the prior UTC day becomes inaccessible at midnight UTC and its Redis key expires at that same boundary.
+7. No 24-hour-per-message TTL.
+8. No 60-second per-viewer expiry or reveal state.
+9. No permanent message archive/history.
+10. PostgreSQL must not contain Whistle body/history copies.
+11. Notifications, when added later, must never contain the Whistle body.
+12. Redis quota enforcement must be atomic so concurrent sends cannot exceed 11.
+13. If Redis cannot enforce the quota, Whistle writes fail closed while unrelated HOOMA features remain available.
+14. V1 Play Whistle reads/writes require an authenticated active community member.
+15. Future Team and ULTRAS boards reuse the same domain and user quota; they must not introduce separate daily counters.
+
+## Target architecture
+
+### Shared contract
+
+`packages/contracts/src/whistle.ts`
+
+Owns Whistle constants, grapheme-aware body validation, and request/response contract types as they are introduced.
+
+### UTC window domain
+
+`apps/api/src/modules/whistle/domain/utc-day.ts`
+
+Owns canonical UTC day identity, start/reset timestamps, and current-window validation. Redis code must consume this helper rather than reproducing midnight arithmetic.
+
+### Redis infrastructure
+
+Planned source:
+
+- `apps/api/src/infrastructure/redis/client.ts`
+- `apps/api/src/modules/whistle/application/whistle-store.ts`
+- `apps/api/src/modules/whistle/infrastructure/redis-whistle.store.ts`
+
+Planned key families:
+
+- `whistle:v1:quota:<YYYY-MM-DD>:<userId>`
+- `whistle:v1:feed:<YYYY-MM-DD>:community:<communityId>`
+- future: Team and ULTRAS feed keys under the same UTC day namespace
+
+All keys use an absolute expiry at the next 00:00 UTC. API reads only the current UTC-day namespace.
+
+### Service / HTTP
+
+Planned source:
+
+- `apps/api/src/modules/whistle/application/whistle.service.ts`
+- `apps/api/src/modules/whistle/http/whistle.controller.ts`
+
+V1 routes:
+
+- `GET /api/v1/whistles/communities/:communityId`
+- `POST /api/v1/whistles/communities/:communityId`
+
+The service reuses existing canonical authentication and `CommunityService.requireMembership()`; it does not invent a second membership system.
+
+### Mini App
+
+Planned source:
+
+- `apps/miniapp/src/features/whistle/api.ts`
+- `apps/miniapp/src/components/whistle/WhistleBoard.tsx`
+- `apps/miniapp/src/components/whistle/WhistleBoard.css`
+- `apps/miniapp/src/pages/PlayPage.tsx`
+
+V1 presentation is an inline Play Whistle Board under the Play hero. It must use the shared HTTP client and HOOMA design tokens. No likes, comments, threads, permanent history, or generic social-feed mechanics.
+
+## Implementation ledger
+
+### F1 — Canonical contract + UTC calendar boundary
+
+Status: **IN PROGRESS**
+
+Deliverables:
+
+- canonical constants `11` and `33`
+- grapheme-aware validation
+- canonical UTC window helper
+- permanent tests for Unicode grapheme counting and midnight boundaries
+
+Proof: pending.
+
+Created files: pending.
+Modified files: pending.
+Intentionally untouched: Redis, Railway, Prisma, Team, Gamers, Play UI, API router/container.
+Conflict status: branch created from `07b6130...`; open Gamers work is not being edited in this slice.
+Score: pending.
+
+### F2 — Redis runtime foundation
+
+Status: **PENDING**
+
+Deliverables:
+
+- pinned Redis client dependency
+- Redis connection lifecycle/config
+- local Docker Redis
+- CI Redis service
+- production preflight requirement for `REDIS_URL`
+- isolated Redis availability/error behavior
+
+### F3 — Atomic Redis Whistle store
+
+Status: **PENDING**
+
+Deliverables:
+
+- daily quota + feed storage
+- one atomic send operation
+- exact midnight expiration
+- stale-window race protection
+- real Redis integration tests including concurrent sends
+
+### F4 — Whistle application service + community API
+
+Status: **PENDING**
+
+Deliverables:
+
+- active-community membership gate
+- GET/POST community endpoints
+- stable daily-limit and unavailable errors
+- current-day-only reads
+- API docs
+
+### F5 — Play Whistle Board
+
+Status: **PENDING**
+
+Deliverables:
+
+- Play-page inline board
+- remaining quota/reset display
+- 33-grapheme composer
+- loading/empty/error/exhausted states
+- polling through the existing shared HTTP architecture
+- responsive Telegram/web presentation using HOOMA tokens
+
+### F6 — Production Redis + release verification
+
+Status: **PENDING**
+
+Deliverables:
+
+- Railway Redis service/private connectivity
+- `REDIS_URL` wiring without exposing secrets
+- exact-head full CI green
+- conflict audit against current `main`
+- merge
+- verify exact merged SHA deployed successfully to HOOMA API and Mini App
+- smoke-check health and Whistle failure boundaries
+
+### F7 — Team / ULTRAS integrations
+
+Status: **BLOCKED UNTIL THEIR CANONICAL MEMBER SURFACES ARE STABLE**
+
+Reuse F1-F6. No new quotas, no duplicate store, no parallel Whistle domain.
+
+## Verification policy
+
+A step is only **VERIFIED COMPLETE** when evidence exists. Implementation scoring:
+
+- 10/10: architecture correct, tests/CI green, no known defects/conflicts, deployment proof when applicable.
+- 9/10: fully correct and verified with only non-blocking polish remaining.
+- 8/10 or below: do not advance; repair/retest the same step.
