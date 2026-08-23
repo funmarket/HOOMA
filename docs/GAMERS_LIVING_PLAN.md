@@ -2,8 +2,8 @@
 
 Last updated: 2026-08-23
 Repository: `funmarket/HOOMA`
-Working branch: `feat/gamers-catalog-public-api`
-Current baseline main SHA: `e5bb2bd3aacb0eea9bd8159cd678cd09e3a43b51`
+Working branch: `feat/gamers-catalog-admin`
+Current baseline main SHA: `07b6130173259718473f41d087739b154efcd503`
 
 ## Purpose
 
@@ -99,6 +99,18 @@ Public API behavior validated in PR #59:
 - Gamers owns its repository/service/controller boundary
 - no Team or Platform Admin authority is imported into the Gamers read domain
 
+Platform Admin catalog behavior validated in PR #60:
+
+- `POST /api/v1/app-admin/gamers/games`
+- `PATCH /api/v1/app-admin/gamers/games/:gameId`
+- existing `PlatformAdminService.requirePlatformAdmin` is the only authorization boundary
+- name normalization and slug generation remain owned by the Gamers domain
+- renaming a game regenerates both canonical `normalizedName` and `slug`
+- Prisma unique races become stable `GAMER_GAME_CONFLICT` responses
+- missing updates become stable `GAMER_GAME_NOT_FOUND` responses
+- status and featured changes use the same canonical update path
+- no new admin role, Team authority, repository, schema, or migration was introduced
+
 ## Future domain models
 
 ### GamerProfile
@@ -185,7 +197,7 @@ Status: **IN PROGRESS**
 - [x] Prisma GamerGame model and real migration.
 - [x] Repository/service normalization helpers and public catalog reads.
 - [x] Public `/api/v1/gamers/games` routes.
-- [ ] Platform Admin catalog create/update/status/featured management.
+- [x] Platform Admin catalog create/update/status/featured management.
 - [ ] `/gamers` route and real landing page.
 - [ ] Real game cards with loading/error/empty/image fallbacks.
 - [ ] Enable Home Gamers action after the real route exists.
@@ -267,16 +279,25 @@ Status: **BLOCKED ON SHARED WHISTLE DOMAIN**
 - CI #453: final full success.
 - Merge SHA: `e5bb2bd3aacb0eea9bd8159cd678cd09e3a43b51`.
 
-### 2026-08-23 - Public catalog API validated
+### 2026-08-23 - Public catalog API merged
 
 - PR #59: read-only public GamerGame repository/service/API boundary.
-- CI #473: full success on code head `637e4b943682fed81c15acd8b44e3afe85b0f377`.
-- All 87 tests passed; Prisma, migration deploy/status, architecture, lint, typecheck, formatting,
+- CI #474: final full success after living-plan checkpoint.
+- Merge SHA: `07b6130173259718473f41d087739b154efcd503`.
+
+### 2026-08-23 - Platform Admin catalog management validated
+
+- PR #60: canonical Platform Admin GamerGame create/update/status/featured management.
+- CI #486: full success on code head `c7618ad5390215d9d4c96074d20e5ff67019fbdf`.
+- All 90 tests passed; Prisma, migration deploy/status, architecture, lint, typecheck, formatting,
   build, and security passed.
+- A temporary formatter diagnostic used during development was removed before this validated head.
 - This living-plan update is the only change after that validated code head.
 
 ### Current resume point
 
-Run final CI for this plan-only checkpoint, merge PR #59, then branch from the new `main` for
-Platform Admin-owned GamerGame create/update/status/featured management. After that merge, build the
-real `/gamers` landing against the public API and only then enable the Home Gamers Quick Action.
+Run final CI for this plan-only checkpoint, merge PR #60, then branch from the new `main` for the
+real `/gamers` landing page. Re-check open PRs before frontend work. The landing must consume the
+public GamerGame API, include honest loading/error/empty/broken-image states, and contain no
+hardcoded production game catalog. Enable the Home Gamers Quick Action only after `/gamers` is
+functional and validated.
