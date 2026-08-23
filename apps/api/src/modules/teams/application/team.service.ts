@@ -37,7 +37,7 @@ export class TeamService {
     if (!authorities.length) return { items: [] };
 
     const authorityByTeamId = new Map(authorities.map((item) => [item.teamId, item]));
-    const managed = await this.repo.listManagedTeams(userId);
+    const managed = await this.repo.listManagedTeams([...authorityByTeamId.keys()]);
     return {
       items: managed.items.flatMap((team) => {
         const access = authorityByTeamId.get(team.id);
