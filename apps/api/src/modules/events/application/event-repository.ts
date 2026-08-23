@@ -12,6 +12,10 @@ export interface EventRepository {
       cursor?: string;
     },
   ): Promise<unknown>;
+  discover(
+    userId: string,
+    input: { type?: 'PLAY' | 'WATCH'; from: Date },
+  ): Promise<unknown>;
   create(userId: string, input: EventCreateInput): Promise<unknown>;
   update(
     eventId: string,
