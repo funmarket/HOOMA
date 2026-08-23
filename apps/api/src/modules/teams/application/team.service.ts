@@ -14,6 +14,7 @@ import {
   type TeamCapability,
 } from '../domain/team-access.js';
 import type { TeamAuthorityRepository } from './team-authority.repository.js';
+import type { TeamMemberReadRepository } from './team-member-read.repository.js';
 import type { TeamListInput, TeamRepository } from './team-repository.js';
 import type { TeamRosterRepository } from './team-roster.repository.js';
 
@@ -22,6 +23,7 @@ export class TeamService {
     private readonly repo: TeamRepository,
     private readonly authority: TeamAuthorityRepository,
     private readonly rosterRepo: TeamRosterRepository,
+    private readonly memberRead?: TeamMemberReadRepository,
   ) {}
 
   listPublic(input: TeamListInput) {
@@ -36,6 +38,13 @@ export class TeamService {
     return {
       items: managed.items.filter((team) => editableTeamIds.has(team.id)),
     };
+  }
+
+  myTeams(userId: string) {
+    if (!this.memberRead) {
+      throw new AppError(500, 'TEAM_MEMBER_READ_UNAVAILABLE', 'Team member read model unavailable.');
+    }
+    return this.memberRead.listMine(userId);
   }
 
   async getPublic(teamId: string) {
