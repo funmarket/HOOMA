@@ -3,61 +3,75 @@
 Last updated: 2026-08-23
 Repository: `funmarket/HOOMA`
 Working branch: `feat/gamers-foundation`
-Baseline main SHA at plan creation: `60bde2aff23c491ea43ef95b716cd5e838053ce1`
+Baseline main SHA at plan creation:
+`60bde2aff23c491ea43ef95b716cd5e838053ce1`
 
 ## Purpose
 
-This is the canonical living implementation plan for the HOOMA Gamers domain. It must be updated after every successfully completed implementation slice so future agents can resume from repository state instead of reconstructing work from chat history.
+This is the canonical living implementation plan for the HOOMA Gamers domain.
+Update it after every successful implementation slice so another agent can
+resume from repository state without reconstructing work from chat history.
 
-Before every slice, reconcile this plan with current `main`, open PRs, contracts, API routes, services, repositories, Prisma schema/migrations, frontend routes/components, design-system sources, and tests. Repository truth wins.
+Before every slice, reconcile this plan with current `main`, open PRs,
+contracts, API routes, services, repositories, Prisma schema and migrations,
+frontend routes and components, design-system sources, and tests.
+Repository truth wins.
 
 ## Non-negotiable rules
 
 - Work only in `funmarket/HOOMA` for this implementation.
 - Treat `funmarket/HoomaUltimate` as reference-only.
-- Fix and build at the source. No patches, wrappers, duplicate paths, or workaround layers.
-- No guessing. Inspect current implementation before each change.
+- Fix and build at the source; do not add patches or workaround layers.
+- Inspect current implementation before each change; do not guess.
 - Canonical HOOMA `User` remains the only account identity.
 - `GAMER` is an identity facet, not an authorization role.
-- `PLAYER` and `GAMER` are separate domains; never store gamer data in `PlayerProfile`.
-- `Team` and `GamerSquad` are separate domains; never reuse Team membership, Coach authority, TeamChallenge, or Team service ownership for Gamers.
+- Keep Gamer data out of `PlayerProfile`.
+- Keep `Team` and `GamerSquad` as separate domains.
+- Never reuse Team membership, Coach authority, or `TeamChallenge` for Gamers.
 - Keep server-side authorization and privacy authoritative.
-- Use real Prisma migrations for schema changes; never substitute `prisma db push` or direct production DB patching.
-- No fake production data or fake online/activity state.
-- No permanent Gamers chat workaround. Integrate Whistle only when current HOOMA has a canonical shared Whistle domain.
-- Preserve Telegram/web auth and shared backend data.
-- Respect existing HOOMA design tokens, safe areas, touch targets, accessibility, and bottom navigation.
-- Re-check open PRs before editing shared files, especially Home, App routing, Prisma, contracts, and Platform Admin.
-- A slice is not complete until validation is run and this plan is updated with evidence.
+- Use real Prisma migrations; never use `prisma db push` in production.
+- Never patch the production database directly.
+- Do not introduce fake production data or fake online/activity state.
+- Do not create a permanent Gamers chat workaround.
+- Integrate Whistle only through the canonical shared Whistle domain.
+- Preserve Telegram and web authentication over the shared backend data.
+- Respect HOOMA design tokens, safe areas, accessibility, and bottom nav.
+- Re-check open PRs before editing shared files.
+- Do not call a slice complete until validation passes and this plan is updated.
 
 ## Product promise
 
 **FIND YOUR NEXT OPPONENT**
 
-Secondary: **Challenge. Play. Prove it. Build your Squad.**
+Secondary promise: **Challenge. Play. Prove it. Build your Squad.**
 
-Core loop: Discover -> Gamer Card -> Challenge -> Play externally -> Submit/confirm result -> Build Squad -> trustworthy per-game record/ranking.
+Core loop:
+Discover -> Gamer Card -> Challenge -> Play externally -> Confirm result ->
+Build Squad -> trustworthy per-game record and ranking.
 
 ## Visual direction
 
-Competitive, premium, modern football-gaming presentation inspired by EA SPORTS FC / console / esports interfaces without cloning them.
+Build a premium football-gaming presentation inspired by modern console and
+esports interfaces without cloning another product.
 
-- Current HOOMA pitch-black / graphite surfaces, electric-lime accents, white text, restrained gold.
-- Large game artwork/logos, strong competitive typography, VS treatments, platform chips, score treatments, subtle grid/noise.
-- No childish visuals, excessive glow, unreadable neon-on-neon, or fake live indicators.
-- Reuse shared CSS variables/primitives; add shared abstractions only when truly repeated.
-- Mobile-first for Telegram widths, scaling cleanly to current app max width.
+- Use HOOMA pitch-black and graphite surfaces.
+- Use electric-lime accents, white text, and restrained gold.
+- Use large game artwork, competitive typography, VS treatments, and chips.
+- Avoid excessive glow, unreadable neon, childish visuals, and fake live state.
+- Reuse shared CSS variables and UI primitives.
+- Design mobile-first for Telegram, then scale to the current app max width.
 
-## Verified baseline at creation
+## Verified baseline
 
-- `main` SHA: `60bde2aff23c491ea43ef95b716cd5e838053ce1`.
-- Canonical identity contracts and Prisma enum already include `GAMER`.
-- Profile UI already allows Gamer as a selected identity.
-- Home has a disabled Gamers Quick Action because no real `/gamers` route exists.
-- API v1 router has no Gamers router.
-- Prisma has no Gamer game/profile/challenge/squad models.
-- No canonical shared Whistle module currently exists for Gamers.
-- Open PRs at creation: #53 Home presentation, #33 Pitch owner drafts, stale #26 Pitch. Avoid Home edits while #53 is active unless reconciled first.
+- `GAMER` already exists in the canonical identity contract and Prisma enum.
+- Profile UI already lets a user select Gamer as an identity.
+- There is no canonical Gamers API or database domain on current main.
+- There is no shared Whistle domain available for Gamers on current main.
+- Home had a disabled Gamers Quick Action because `/gamers` did not exist.
+- Home PR #53 has since merged and must be reconciled before Home edits.
+- Platform Admin is the canonical app-level authority boundary.
+- `packages/database/prisma/schema.prisma` is the database source of truth.
+- The committed timestamped migration chain is authoritative.
 
 ## Architectural invariants
 
@@ -69,199 +83,270 @@ Competitive, premium, modern football-gaming presentation inspired by EA SPORTS 
 - `GamerSquad` = game-specific gamer community.
 - `TeamChallenge` = football-team challenge.
 - `GamerChallenge` = gamer-vs-gamer competition.
-- Coach/Assistant authority = Teams only.
+- Coach and Assistant authority = Teams only.
 - Gamer Squad Leader authority = Gamers only.
-- Platform Admin = app-level authority for game catalog moderation and later dispute tooling.
+- Platform Admin = game catalog moderation and later dispute tooling.
 
-Shared infrastructure is allowed; shared business ownership is not.
+Shared infrastructure is allowed. Shared business ownership is not.
 
 ## Target data model
 
 ### GamerGame
+
 Canonical game catalog owned by Platform Admin.
 
-Fields target: `id`, `slug`, `name`, `normalizedName`, `description`, `logoUrl`, `coverUrl`, optional `publisher`, supported platforms, active/status, featured, timestamps.
+Target fields include `id`, `slug`, `name`, `normalizedName`, `description`,
+`logoUrl`, `coverUrl`, optional `publisher`, supported platforms, status,
+featured state, and timestamps.
 
-Users must not directly create duplicate canonical games. Add a moderated game-suggestion flow later only if needed.
+Users must not create duplicate canonical games directly.
 
 ### GamerProfile
+
 One Gamer Card per `(userId, gameId)`.
 
-Fields target: gamer tag, short game bio, `CASUAL | COMPETITIVE | RANKED`, `openToChallenge`, optional region/language/play-time metadata, optional showcase image URL, timestamps. Canonical display name/avatar/username remain on the HOOMA account/profile sources.
+Target data includes gamer tag, short bio, play style, challenge availability,
+optional region/language/play-time metadata, optional showcase image, and
+timestamps. Canonical display name, username, and avatar remain account data.
 
 ### GamerPlatformIdentity
-Gameplay IDs (EA ID, PSN, Xbox, Nintendo, Steam, Epic, game-specific username/mobile ID, Other). Model provider/type + handle/value + visibility; do not add one nullable column per provider.
+
+Store gameplay identities as provider/type plus handle/value and visibility.
+Examples include EA ID, PSN, Xbox, Nintendo, Steam, Epic, mobile game ID,
+game-specific username, and Other.
+
+Do not add one nullable database column for every provider.
 
 ### GamerSocialLink
-Social/contact links (Discord, Kik, YouTube, Twitch, TikTok, Other). Per-link privacy: `PUBLIC | MATCHED_ONLY | PRIVATE`. Backend response shaping enforces visibility.
+
+Store Discord, Kik, YouTube, Twitch, TikTok, and Other separately from gameplay
+identities. Per-link privacy is `PUBLIC`, `MATCHED_ONLY`, or `PRIVATE`.
+Privacy must be enforced by backend response shaping.
 
 ### GamerChallenge
-V1 1v1, same-game only. States: `PENDING`, `ACCEPTED`, `DECLINED`, `CANCELLED`, `EXPIRED`, `RESULT_PENDING`, `COMPLETED`, `DISPUTED`.
 
-Rules: no self challenge; same active game; target eligibility; no duplicate unresolved pair either direction; server-authorized concurrency-safe transitions; rematch creates a new row.
+V1 is 1v1 and same-game only.
+
+States:
+`PENDING`, `ACCEPTED`, `DECLINED`, `CANCELLED`, `EXPIRED`,
+`RESULT_PENDING`, `COMPLETED`, `DISPUTED`.
+
+Rules include no self challenge, active game requirement, target eligibility,
+no duplicate unresolved pair, concurrency-safe transitions, and new records
+for rematches.
 
 ### GamerResultSubmission
-First reporter never determines truth. Opponent confirms/contests; conflicts become `DISPUTED`; screenshot is evidence only; no OCR truth; draw is explicit with no winner profile.
 
-### GamerSquad / GamerSquadMembership
-Game-specific community with name/tag/description/logoUrl/bannerUrl and `OPEN | REQUEST | INVITE_ONLY`. Membership references `GamerProfile`; creator becomes `LEADER + ACTIVE` atomically. Initial roles: `LEADER`, `MEMBER` only.
+The first reporter never determines truth alone. The opponent confirms or
+contests. Conflicts become `DISPUTED`. Screenshots are evidence only. OCR must
+not decide results. Draws are explicit and have no winner profile.
+
+### GamerSquad and GamerSquadMembership
+
+A Squad is a game-specific gamer community with name, tag, description,
+`logoUrl`, `bannerUrl`, and join policy.
+
+Join policy values:
+`OPEN`, `REQUEST`, `INVITE_ONLY`.
+
+Membership references `GamerProfile`. The creator becomes `LEADER` and
+`ACTIVE` atomically. Initial roles are `LEADER` and `MEMBER` only.
 
 ### Later ratings
-`GamerRating` and `GamerRatingHistory` only after result truth is stable. Rating is per game only; never global cross-game Elo.
+
+Add `GamerRating` and `GamerRatingHistory` only after result truth is stable.
+Ratings are per game only and never global cross-game Elo.
 
 ## Media URL policy
 
-For game/squad/profile/result media: HTTPS only; reject unsafe schemes; backend must not blindly server-fetch user URLs; frontend provides designed broken-image fallbacks and lazy/async loading where applicable. Do not create Gamers-only storage.
+- Accept HTTPS media URLs only.
+- Reject unsafe protocols.
+- Do not blindly server-fetch arbitrary user URLs.
+- Use safe broken-image fallbacks in the frontend.
+- Use lazy and async image loading where appropriate.
+- Do not create Gamers-only media storage.
 
-## Frontend architecture
+## Frontend target
 
-- Home Gamers Quick Action enabled only after a real `/gamers` route exists and Home conflicts are reconciled.
-- `/gamers`: hero, My Gamer Cards, real game catalog, search/filter as needed, real counts, empty/loading/error states.
-- `/gamers/games/:gameId`: `Challengers | Squads | Arena | Rankings` (Rankings only when implemented). No fake global Whistle tab.
-- Gamer Card flow: choose game -> gamer identity -> gameplay identities -> social links -> privacy -> preview/publish.
-- Public Gamer Profile: canonical avatar/account identity + gamer tag/game/play style/open state/completed record/privacy-filtered handles+links/squads/challenge CTA.
-- Challengers: platform/play-style/region/open filters where data supports them.
-- Arena is a projection over `GamerChallenge`, never a standalone table.
-- Squad creation includes game/name/tag/description/logo URL/banner URL/join policy/social links/live preview.
-- Public Squad page + private member HQ with backend-owned leader/member permissions.
+- `/gamers` = hero, My Gamer Cards, real catalog, and honest states.
+- `/gamers/games/:gameId` = Challengers, Squads, Arena, and later Rankings.
+- Do not add a fake global Whistle tab.
+- Gamer Card flow covers game, gamer identity, gameplay IDs, social links,
+  privacy, preview, and publish.
+- Public Gamer Profile uses canonical HOOMA presentation plus game data.
+- Arena is a projection over `GamerChallenge`, never its own table.
+- Squad creation includes logo/banner image URLs and a live preview.
+- Squads have a public page plus a private member HQ.
 
 ## API target
 
-Dedicated `/api/v1/gamers` router with domain rate limit.
+Use a dedicated `/api/v1/gamers` router with a Gamers rate-limit scope.
 
-Public: games, game detail, challengers, public Gamer Profile, public Squads.
-Protected: Gamer Card CRUD, platform identities, social links/privacy, challenge lifecycle, Arena, results, Squad lifecycle.
-Platform Admin: canonical game catalog management under existing app-admin authority; no second generic Gamers admin role.
+Public reads cover games, game detail, challengers, Gamer Profiles, and Squads.
+Protected routes cover Gamer Cards, connections, challenges, Arena, results,
+and Squad lifecycle.
+
+Platform Admin owns canonical game catalog management through existing app-level
+authority. Do not create a second generic Gamers admin role.
 
 ## Recommended source structure
 
 - `packages/contracts/src/gamers.ts`
-- `apps/api/src/modules/gamers/{domain,application,infrastructure,http}` following current repository conventions
-- `apps/miniapp/src/features/gamers/...` plus Gamer pages/components following current feature conventions
+- `apps/api/src/modules/gamers/{domain,application,infrastructure,http}`
+- `apps/miniapp/src/features/gamers/...`
+- Gamer pages/components following current Mini App conventions
 
-Do not force this exact shape if source inspection shows a more canonical neighboring pattern.
+Do not force this exact shape if current source inspection shows a more
+canonical neighboring pattern.
 
 ## Whistle rule
 
-Do not create GamerChat, GamerMessage, SquadChat, Arena comments, or a permanent feed workaround. When current HOOMA contains canonical shared Whistle, integrate Gamers through it, preferably private `GAMER_SQUAD` context for active Squad members under global Whistle rules.
+Do not create `GamerChat`, `GamerMessage`, `SquadChat`, Arena comments, or a
+permanent feed workaround. When shared Whistle exists, integrate Gamers through
+that shared domain, preferably with private `GAMER_SQUAD` context for active
+Squad members.
 
 ## Implementation phases
 
 ### G0 - Source lock and coordination
-Status: **IN PROGRESS**
 
-- [x] Confirm target repo `funmarket/HOOMA`.
-- [x] Re-check current main.
-- [x] Re-check open PR conflicts.
-- [x] Confirm identity already contains GAMER.
+Status: **COMPLETE**
+
+- [x] Confirm target repository `funmarket/HOOMA`.
+- [x] Re-check current main and open PR conflicts.
+- [x] Confirm identity already contains `GAMER`.
 - [x] Confirm no Gamers API/schema domain exists.
-- [x] Confirm no shared Whistle domain currently available.
-- [x] Create `feat/gamers-foundation` from current main.
+- [x] Confirm no shared Whistle domain is currently available.
+- [x] Create `feat/gamers-foundation`.
 - [x] Create this living plan.
-- [ ] Inspect current package scripts/quality gates.
-- [ ] Inspect exact current Prisma/User relations and migration conventions immediately before schema editing.
-- [ ] Inspect current app-admin patterns before game-catalog writes.
+- [x] Inspect package scripts and CI quality gates.
+- [x] Inspect authoritative Prisma schema and migration convention.
+- [x] Inspect current Platform Admin authority boundary.
 
 ### G1 - Canonical game catalog and Gamers landing
-Status: **NOT STARTED**
 
-- [ ] GamerGame contracts and safe URL validation.
-- [ ] Prisma GamerGame + real migration.
-- [ ] Repository/service rules for normalized unique names/slugs and active catalog reads.
-- [ ] Public `/api/v1/gamers/games` reads.
-- [ ] Platform Admin catalog management.
-- [ ] `/gamers` route + real landing.
-- [ ] Real game cards + loading/error/empty/image fallbacks.
-- [ ] Enable Home Gamers action only after Home conflict is reconciled.
-- [ ] Validation passes.
-- [ ] Update this plan with PR/SHA evidence.
+Status: **IN PROGRESS**
+
+- [x] Add GamerGame contracts and HTTPS-only media validation.
+- [ ] Add Prisma `GamerGame` and a real migration.
+- [ ] Add normalized unique name/slug repository and service rules.
+- [ ] Add public `/api/v1/gamers/games` reads.
+- [ ] Add Platform Admin catalog management.
+- [ ] Add `/gamers` route and real landing page.
+- [ ] Add real game cards and loading/error/empty/image fallback states.
+- [ ] Enable Home Gamers action after route and Home reconciliation.
+- [ ] Pass full CI.
+- [ ] Update this plan with PR and merge evidence.
 
 ### G2 - Gamer Cards and privacy
+
 Status: **NOT STARTED**
 
-- [ ] GamerProfile + GamerPlatformIdentity + GamerSocialLink migrations.
-- [ ] unique `(userId, gameId)`.
-- [ ] backend PUBLIC/MATCHED_ONLY/PRIVATE shaping.
-- [ ] CRUD APIs + create flow + public profile + My Gamer Cards.
-- [ ] no Gamer data in PlayerProfile.
-- [ ] validation + plan update.
+- [ ] Add GamerProfile, GamerPlatformIdentity, and GamerSocialLink migrations.
+- [ ] Enforce unique `(userId, gameId)`.
+- [ ] Enforce PUBLIC/MATCHED_ONLY/PRIVATE on the backend.
+- [ ] Add CRUD, creation flow, public profile, and My Gamer Cards.
+- [ ] Verify no Gamer data enters `PlayerProfile`.
 
 ### G3 - Challenger discovery
+
 Status: **NOT STARTED**
 
-- [ ] game-specific challenger read model and filters.
-- [ ] challenger cards.
-- [ ] backend-only privacy enforcement.
-- [ ] honest challenge availability state.
-- [ ] validation + plan update.
+- [ ] Add game-specific challenger read model and real filters.
+- [ ] Add challenger cards.
+- [ ] Keep privacy backend-owned.
+- [ ] Show honest challenge availability state.
 
 ### G4 - Gamer challenge and Arena
+
 Status: **NOT STARTED**
 
-- [ ] GamerChallenge migration.
-- [ ] same-game/no-self/open rules.
-- [ ] duplicate unresolved-pair protection.
-- [ ] concurrency-safe transitions.
-- [ ] challenge UI + Arena projection.
-- [ ] no Arena table.
-- [ ] validation + plan update.
+- [ ] Add GamerChallenge migration.
+- [ ] Enforce same-game, no-self, and target eligibility rules.
+- [ ] Block duplicate unresolved pairs.
+- [ ] Make transitions concurrency-safe.
+- [ ] Add challenge UI and Arena projection.
+- [ ] Do not create an Arena table.
 
 ### G5 - Human-confirmed results
+
 Status: **NOT STARTED**
 
-- [ ] GamerResultSubmission migration.
-- [ ] submit/confirm/contest rules.
-- [ ] first reporter cannot complete truth alone.
-- [ ] conflict => DISPUTED.
-- [ ] screenshot evidence never auto-decides.
-- [ ] draw support + completed record projection.
-- [ ] rematch creates new challenge.
-- [ ] validation + plan update.
+- [ ] Add GamerResultSubmission migration.
+- [ ] Add submit, confirm, and contest rules.
+- [ ] Prevent the first reporter from deciding truth alone.
+- [ ] Resolve conflicting reports to `DISPUTED`.
+- [ ] Keep screenshot evidence non-authoritative.
+- [ ] Support draws and completed record projection.
+- [ ] Make rematch create a new challenge.
 
 ### G6 - Gamer Squads
+
 Status: **NOT STARTED**
 
-- [ ] GamerSquad + Membership migrations.
-- [ ] membership references GamerProfile and same-game domain.
-- [ ] creator LEADER+ACTIVE atomically.
-- [ ] join policy + backend permissions.
-- [ ] logo/banner URL form and fallbacks.
-- [ ] create/public/HQ flows + leadership transfer.
-- [ ] validation + plan update.
+- [ ] Add GamerSquad and GamerSquadMembership migrations.
+- [ ] Reference GamerProfile and enforce the same-game domain.
+- [ ] Create Leader + Active membership atomically.
+- [ ] Add join policy and backend permissions.
+- [ ] Add logo/banner URL form and fallbacks.
+- [ ] Add create, public page, HQ, and leadership transfer flows.
 
 ### G7 - Rankings, hardening, moderation
+
 Status: **NOT STARTED**
 
-- [ ] rankings only after G5 is stable.
-- [ ] per-game rating only; COMPLETED results only.
-- [ ] deterministic transparent rating logic/history as needed.
-- [ ] Platform Admin dispute tooling if needed.
-- [ ] security/concurrency/performance review.
-- [ ] validation + plan update.
+- [ ] Add ranking only after G5 is stable.
+- [ ] Count only `COMPLETED` results.
+- [ ] Keep rating per game.
+- [ ] Add deterministic rating history if needed.
+- [ ] Add Platform Admin dispute tooling if needed.
+- [ ] Run security, concurrency, and performance review.
 
 ### G8 - Shared Whistle integration
+
 Status: **BLOCKED ON SHARED WHISTLE DOMAIN**
 
 - [ ] Re-check main for canonical shared Whistle.
-- [ ] Integrate `GAMER_SQUAD` through shared rules only.
-- [ ] active Squad membership required.
-- [ ] no permanent body/history outside shared Whistle behavior.
-- [ ] validation + plan update.
+- [ ] Integrate `GAMER_SQUAD` only through shared rules.
+- [ ] Require active Squad membership.
+- [ ] Preserve shared transient-body and history rules.
 
 ## Acceptance gates
 
-Identity/boundaries: one User; GAMER grants no admin authority; GamerProfile separate from PlayerProfile; no Team authority or TeamChallenge reuse.
+Identity and boundaries:
+One User; GAMER grants no admin authority; GamerProfile stays separate from
+PlayerProfile; Team authority and TeamChallenge are never reused.
 
-Profiles/privacy: one GamerProfile per user/game; platform IDs separate from social links; backend privacy enforced; MATCHED_ONLY never leaked.
+Profiles and privacy:
+One GamerProfile per user/game; gameplay IDs remain separate from social links;
+backend privacy is authoritative; MATCHED_ONLY never leaks.
 
-Challenges/results: same game; no self; no duplicate unresolved pair; correct participant authorization; concurrency-safe transitions; first reporter not truth; conflict disputed; only COMPLETED affects record/rating.
+Challenges and results:
+Same game; no self challenge; no duplicate unresolved pair; correct participant
+authorization; concurrency-safe transitions; first reporter is not truth;
+conflicts are disputed; only completed results affect records or ratings.
 
-Squads: game-specific; membership references same-game GamerProfile; atomic creator leadership; non-leader cannot manage; safe explicit leadership transfer.
+Squads:
+Game-specific membership references the same-game GamerProfile; creator
+leadership is atomic; non-leaders cannot manage; leadership transfer is
+explicit and safe.
 
-Media: unsafe schemes rejected; no blind server fetch; broken images degrade safely.
+Media:
+Unsafe protocols are rejected; no blind server fetch occurs; broken images
+degrade safely.
 
-Integration: no fake data/stats/online/rankings; `/gamers` works before Home action is enabled; Telegram/web share backend truth; migrations and quality gates pass.
+Integration:
+No fake data, stats, online state, or rankings. `/gamers` must work before Home
+is enabled. Telegram and web share backend truth. Migrations and full CI must
+pass before a slice is marked complete.
 
 ## Completed implementation log
 
-No implementation slice completed yet. Append dated entries here after each successful slice with branch/PR/merge SHA, files/domains changed, validation evidence, and next exact resume point.
+No implementation slice is merged yet.
+
+Current checkpoint:
+PR #57 contains the living plan and GamerGame contract foundation. CI run #444
+passed deployment preflight, Prisma validation/generation, architecture, lint,
+typecheck, migration deploy, and all 87 tests. It failed only on formatting of
+this document; this commit is the formatting correction. After green CI, merge
+PR #57 and start the Prisma GamerGame migration slice from the new `main`.
