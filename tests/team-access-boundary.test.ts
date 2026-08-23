@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildDatabase } from '../apps/api/src/infrastructure/database/prisma.js';
+import type { TeamRepository } from '../apps/api/src/modules/teams/application/team-repository.js';
+import { TeamService } from '../apps/api/src/modules/teams/application/team.service.js';
 import {
   legacyTeamRoleHasCapability,
   teamAuthorityHasCapability,
@@ -9,6 +11,7 @@ import {
   type TeamCapability,
 } from '../apps/api/src/modules/teams/domain/team-access.ts';
 import { PrismaTeamAuthorityRepository } from '../apps/api/src/modules/teams/infrastructure/prisma-team-authority.repository.ts';
+import { PrismaTeamRosterRepository } from '../apps/api/src/modules/teams/infrastructure/prisma-team-roster.repository.ts';
 
 const capabilities: TeamCapability[] = [
   'CREATE_TEAM',
@@ -171,4 +174,134 @@ test('real Assistant lifecycle requires an active linked Team player and revocat
 
   await db.community.delete({ where: { id: communityId } });
   await db.user.deleteMany({ where: { id: { in: [coachUserId, assistantUserId] } } });
+});
+
+test('roster removal deactivates player, clears current lineup, revokes Assistant, and reuses membership on return', async () => {
+  const db = buildDatabase();
+  const suffix = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  const coachUserId = `roster_coach_${suffix}`;
+  const playerUserId = `roster_player_${suffix}`;
+  const communityId = `roster_community_${suffix}`;
+  const teamId = `roster_team_${suffix}`;
+  const playerId = `roster_player_row_${suffix}`;
+  const lineupId = `roster_lineup_${suffix}`;
+  const slotId = `roster_slot_${suffix}`;
+  const requestId = `roster_request_${suffix}`;
+
+  await db.user.createMany({ data: [{ id: coachUserId }, { id: playerUserId }] });
+  await db.community.create({
+    data: {
+      id: communityId,
+      slug: `roster-${suffix}`.slice(0, 48),
+      name: 'Roster lifecycle test',
+      createdByUserId: coachUserId,
+      memberships: {
+        create: [
+          { userId: coachUserId, role: 'OWNER', status: 'ACTIVE' },
+          { userId: playerUserId, role: 'MEMBER', status: 'ACTIVE' },
+        ],
+      },
+      team: {
+        create: {
+          id: teamId,
+          createdByUserId: coachUserId,
+          name: 'Roster FC',
+          players: {
+            create: {
+              id: playerId,
+              userId: playerUserId,
+              displayName: 'Roster Player',
+              isActive: true,
+            },
+          },
+        },
+      },
+    },
+  });
+  await db.teamLineup.create({
+    data: {
+      id: lineupId,
+      teamId,
+      createdByUserId: coachUserId,
+      name: 'Current XI',
+      formation: '4-3-3',
+      isCurrent: true,
+      isPublished: true,
+      slots: {
+        create: {
+          id: slotId,
+          playerId,
+          role: 'CM',
+          x: 50,
+          y: 50,
+          sortOrder: 1,
+        },
+      },
+    },
+  });
+
+  const authority = new PrismaTeamAuthorityRepository(db);
+  const roster = new PrismaTeamRosterRepository(db);
+  const repo = {} as TeamRepository;
+  const service = new TeamService(repo, authority, roster);
+
+  await authority.appointAssistant(
+    coachUserId,
+    teamId,
+    { teamPlayerId: playerId, permissions: ['MANAGE_ROSTER', 'MANAGE_LINEUP'] },
+    requestId,
+  );
+  assert.equal((await authority.get(playerUserId, teamId))?.role, 'ASSISTANT');
+
+  await assert.rejects(
+    () =>
+      service.addPlayer(
+        coachUserId,
+        teamId,
+        { userId: playerUserId, displayName: 'Duplicate Player' },
+        `${requestId}_duplicate`,
+      ),
+    /already an active player/i,
+  );
+
+  await service.removePlayer(coachUserId, teamId, playerId, `${requestId}_remove`);
+
+  assert.equal((await db.teamPlayer.findUnique({ where: { id: playerId } }))?.isActive, false);
+  assert.equal(
+    (await db.teamLineupSlot.findUnique({ where: { id: slotId } }))?.playerId,
+    null,
+  );
+  const responsibility = await db.teamResponsibility.findUnique({
+    where: { teamId_userId: { teamId, userId: playerUserId } },
+  });
+  assert.ok(responsibility?.revokedAt);
+  assert.equal(await authority.get(playerUserId, teamId), null);
+
+  const rosterAudit = await db.auditLog.findMany({
+    where: { requestId: `${requestId}_remove` },
+    select: { action: true },
+    orderBy: { createdAt: 'asc' },
+  });
+  assert.deepEqual(
+    rosterAudit.map((entry) => entry.action).sort(),
+    ['TEAM_ASSISTANT_REVOKED', 'TEAM_PLAYER_REMOVED'].sort(),
+  );
+
+  const returned = (await service.addPlayer(
+    coachUserId,
+    teamId,
+    { userId: playerUserId, displayName: 'Roster Player Returned', position: 'CM' },
+    `${requestId}_return`,
+  )) as { id: string; isActive: boolean };
+  assert.equal(returned.id, playerId);
+  assert.equal(returned.isActive, true);
+  assert.equal(await db.teamPlayer.count({ where: { teamId, userId: playerUserId } }), 1);
+  assert.equal(
+    await authority.get(playerUserId, teamId),
+    null,
+    'reactivating roster membership must not restore a revoked Assistant assignment',
+  );
+
+  await db.community.delete({ where: { id: communityId } });
+  await db.user.deleteMany({ where: { id: { in: [coachUserId, playerUserId] } } });
 });
