@@ -6,6 +6,9 @@ import { Layout } from './components/Layout';
 const AdminPage = lazy(() =>
   import('./pages/AdminPage').then((module) => ({ default: module.AdminPage })),
 );
+const AppAdminPage = lazy(() =>
+  import('./pages/AppAdminPage').then((module) => ({ default: module.AppAdminPage })),
+);
 const AddPlacePage = lazy(() =>
   import('./pages/AddPlacePage').then((module) => ({ default: module.AddPlacePage })),
 );
@@ -185,6 +188,7 @@ export default function App() {
           <Route path="/community/new" element={routeElement(<NewCommunityPage />)} />
           <Route path="/community/members" element={routeElement(<MembersPage />)} />
           <Route path="/admin" element={routeElement(<AdminPage />)} />
+          <Route path="/app-admin" element={routeElement(<AppAdminPage />)} />
           <Route path="/profile" element={routeElement(<ProfilePage />)} />
           <Route path="/settings" element={routeElement(<SettingsPage />)} />
           <Route path="*" element={routeElement(<NotFoundPage />)} />
