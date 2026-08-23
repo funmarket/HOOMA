@@ -1,8 +1,4 @@
-import type {
-  GamerGameListQuery,
-  GamerGamePlatform,
-  GamerGameStatus,
-} from '@hooma/contracts';
+import type { GamerGameListQuery, GamerGamePlatform, GamerGameStatus } from '@hooma/contracts';
 
 export type GamerGameRecord = {
   id: string;
