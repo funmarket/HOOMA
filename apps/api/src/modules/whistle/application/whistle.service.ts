@@ -6,10 +6,7 @@ import type {
   WhistleSendResult,
   WhistleStore,
 } from './whistle-store.js';
-import {
-  WhistleStoreCorruptError,
-  WhistleStoreUnavailableError,
-} from './whistle-store.js';
+import { WhistleStoreCorruptError, WhistleStoreUnavailableError } from './whistle-store.js';
 import { getWhistleUtcDayWindow, type WhistleUtcDayWindow } from '../domain/utc-day.js';
 
 interface CommunityMembershipGate {

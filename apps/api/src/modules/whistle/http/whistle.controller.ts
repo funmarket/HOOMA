@@ -11,9 +11,7 @@ export function whistleRouter(service: WhistleService) {
   router.get(
     '/communities/:communityId',
     asyncHandler(async (req, res) => {
-      res.json(
-        await service.listCommunity(getAuth(req).user.id, String(req.params.communityId)),
-      );
+      res.json(await service.listCommunity(getAuth(req).user.id, String(req.params.communityId)));
     }),
   );
 
