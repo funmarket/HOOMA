@@ -1,66 +1,19 @@
 import type { DatabaseClient } from '../../../infrastructure/database/prisma.js';
-import { rankHoomaNowCommunities } from '../application/hooma-now-ranking.js';
-
-type CoordinateAccumulator = {
-  latitude: number;
-  longitude: number;
-  count: number;
-};
-
-function finiteCoordinate(value: unknown) {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : null;
-}
-
-function addCoordinate(
-  anchors: Map<string, CoordinateAccumulator>,
-  communityId: string,
-  latitudeValue: unknown,
-  longitudeValue: unknown,
-) {
-  const latitude = finiteCoordinate(latitudeValue);
-  const longitude = finiteCoordinate(longitudeValue);
-  if (latitude === null || longitude === null) return;
-
-  const current = anchors.get(communityId) ?? { latitude: 0, longitude: 0, count: 0 };
-  current.latitude += latitude;
-  current.longitude += longitude;
-  current.count += 1;
-  anchors.set(communityId, current);
-}
+import {
+  loadCommunityProximityContext,
+  rankCommunityProximity,
+  type CommunityProximityPoint,
+} from './community-proximity.js';
 
 export async function loadHoomaNow(db: DatabaseClient, userId: string) {
   const now = new Date();
   const eventFrom = new Date(now.getTime() - 6 * 60 * 60_000);
-  const [preference, memberships] = await Promise.all([
-    db.userPreference.findUnique({ where: { userId }, select: { activeCommunityId: true } }),
-    db.membership.findMany({
-      where: { userId, status: 'ACTIVE', community: { deletedAt: null } },
-      select: { communityId: true, joinedAt: true },
-      orderBy: { joinedAt: 'asc' },
-    }),
-  ]);
-  const membershipIds = memberships.map((membership) => membership.communityId);
-  const activeCommunityId =
-    preference?.activeCommunityId && membershipIds.includes(preference.activeCommunityId)
-      ? preference.activeCommunityId
-      : (membershipIds[0] ?? null);
-
-  const communities = await db.community.findMany({
-    where: {
-      deletedAt: null,
-      OR: [
-        { visibility: 'PUBLIC' },
-        ...(membershipIds.length ? [{ id: { in: membershipIds } }] : []),
-      ],
-    },
-    select: { id: true, name: true, city: true, visibility: true },
-  });
-  const communityIds = communities.map((community) => community.id);
+  const context = await loadCommunityProximityContext(db, userId);
+  const communityIds = context.communities.map((community) => community.id);
 
   if (!communityIds.length) {
     return {
-      activeCommunityId,
+      activeCommunityId: context.activeCommunityId,
       communities: [],
       events: [],
       requests: [],
@@ -70,7 +23,7 @@ export async function loadHoomaNow(db: DatabaseClient, userId: string) {
     };
   }
 
-  const [events, requests, rideOffers, rideRequests, funds, places] = await Promise.all([
+  const [events, requests, rideOffers, rideRequests, funds] = await Promise.all([
     db.event.findMany({
       where: {
         communityId: { in: communityIds },
@@ -145,63 +98,52 @@ export async function loadHoomaNow(db: DatabaseClient, userId: string) {
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
     }),
-    db.place.findMany({
-      where: { communityId: { in: communityIds }, deletedAt: null },
-      select: { communityId: true, latitude: true, longitude: true },
-    }),
   ]);
 
-  const anchors = new Map<string, CoordinateAccumulator>();
-  for (const place of places) {
-    if (place.communityId) {
-      addCoordinate(anchors, place.communityId, place.latitude, place.longitude);
-    }
-  }
+  const points: CommunityProximityPoint[] = [];
   for (const event of events) {
-    addCoordinate(anchors, event.communityId, event.latitude, event.longitude);
+    points.push({
+      communityId: event.communityId,
+      latitude: event.latitude,
+      longitude: event.longitude,
+    });
   }
   for (const request of requests) {
     if (request.event) {
-      addCoordinate(anchors, request.communityId, request.event.latitude, request.event.longitude);
+      points.push({
+        communityId: request.communityId,
+        latitude: request.event.latitude,
+        longitude: request.event.longitude,
+      });
     }
   }
   for (const ride of rideOffers) {
-    addCoordinate(anchors, ride.communityId, ride.originLatitude, ride.originLongitude);
+    points.push({
+      communityId: ride.communityId,
+      latitude: ride.originLatitude,
+      longitude: ride.originLongitude,
+    });
   }
   for (const ride of rideRequests) {
-    addCoordinate(anchors, ride.communityId, ride.pickupLatitude, ride.pickupLongitude);
+    points.push({
+      communityId: ride.communityId,
+      latitude: ride.pickupLatitude,
+      longitude: ride.pickupLongitude,
+    });
   }
   for (const fund of funds) {
     if (fund.event) {
-      addCoordinate(anchors, fund.communityId, fund.event.latitude, fund.event.longitude);
+      points.push({
+        communityId: fund.communityId,
+        latitude: fund.event.latitude,
+        longitude: fund.event.longitude,
+      });
     }
   }
 
-  const rankedCommunities = rankHoomaNowCommunities(
-    activeCommunityId,
-    communities.map((community) => {
-      const anchor = anchors.get(community.id);
-      return {
-        id: community.id,
-        city: community.city,
-        latitude: anchor ? anchor.latitude / anchor.count : null,
-        longitude: anchor ? anchor.longitude / anchor.count : null,
-      };
-    }),
-  );
-  const rankByCommunityId = new Map(
-    rankedCommunities.map((community) => [community.id, community] as const),
-  );
-
   return {
-    activeCommunityId,
-    communities: communities
-      .map((community) => ({
-        ...community,
-        rank: rankByCommunityId.get(community.id)?.rank ?? Number.MAX_SAFE_INTEGER,
-        distanceKm: rankByCommunityId.get(community.id)?.distanceKm ?? null,
-      }))
-      .sort((left, right) => left.rank - right.rank),
+    activeCommunityId: context.activeCommunityId,
+    communities: rankCommunityProximity(context, points),
     events,
     requests,
     rideOffers,

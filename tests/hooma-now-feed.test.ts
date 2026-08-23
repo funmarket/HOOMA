@@ -19,16 +19,16 @@ test('HOOMA NOW has a dedicated global read endpoint without changing local Home
   assert.match(home, /events=\{hoomaNow\.data\?\.events \?\? \[\]\}/);
 });
 
-test('HOOMA NOW read model includes public HOOMAs but does not expose unrelated private HOOMAs', async () => {
-  const readModel = await read(
-    'apps/api/src/modules/communities/infrastructure/hooma-now-read-model.ts',
+test('shared proximity source includes public HOOMAs but does not expose unrelated private HOOMAs', async () => {
+  const source = await read(
+    'apps/api/src/modules/communities/infrastructure/community-proximity.ts',
   );
 
-  assert.match(readModel, /visibility: 'PUBLIC'/);
-  assert.match(readModel, /id: \{ in: membershipIds \}/);
-  assert.match(readModel, /db\.place\.findMany/);
-  assert.match(readModel, /deletedAt: null/);
-  assert.doesNotMatch(readModel, /visibility: \{ in: \['PUBLIC', 'PRIVATE'\] \}/);
+  assert.match(source, /visibility: 'PUBLIC'/);
+  assert.match(source, /id: \{ in: membershipIds \}/);
+  assert.match(source, /db\.place\.findMany/);
+  assert.match(source, /deletedAt: null/);
+  assert.doesNotMatch(source, /visibility: \{ in: \['PUBLIC', 'PRIVATE'\] \}/);
 });
 
 test('HOOMA NOW renders all eligible activity and orders community proximity before urgency', async () => {

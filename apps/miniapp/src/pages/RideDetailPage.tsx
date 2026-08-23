@@ -4,23 +4,17 @@ import { useParams } from 'react-router-dom';
 import { get, patch, post } from '../shared/api/http-client';
 import { eventDate, money } from '../lib/format';
 import { notify } from '../lib/telegram';
-import { useCommunity } from '../providers/CommunityProvider';
-import type { Me, RideListResponse, RideOfferItem } from '../types/domain';
+import type { Me } from '../types/domain';
+import type { DiscoveredRideOffer } from '../types/ride-discovery';
 
 export function RideDetailPage() {
   const { rideId = '' } = useParams();
-  const { active } = useCommunity();
   const queryClient = useQueryClient();
   const me = useQuery({ queryKey: ['me'], queryFn: () => get<Me>('/api/v1/me') });
   const query = useQuery({
-    queryKey: ['ride', rideId, active?.id],
-    queryFn: async () => {
-      const all = await get<RideListResponse>(`/api/v1/rides?communityId=${active?.id}`);
-      const ride = all.offers.find((item) => item.id === rideId);
-      if (!ride) throw new Error('Ride not found');
-      return ride;
-    },
-    enabled: Boolean(active && rideId),
+    queryKey: ['ride', rideId],
+    queryFn: () => get<DiscoveredRideOffer>(`/api/v1/rides/offers/${rideId}`),
+    enabled: Boolean(rideId),
   });
 
   const refresh = () => {
@@ -57,11 +51,13 @@ export function RideDetailPage() {
     onError: () => notify('error'),
   });
 
-  const ride: RideOfferItem | undefined = query.data;
+  const ride = query.data;
   if (!ride) {
     return (
       <div className="page-shell">
-        <div className="surface-card p-6">Loading ride…</div>
+        <div className="surface-card p-6">
+          {query.isError ? 'Ride could not be loaded.' : 'Loading ride…'}
+        </div>
       </div>
     );
   }
@@ -80,7 +76,7 @@ export function RideDetailPage() {
 
   return (
     <div className="page-shell pt-4">
-      <div className="section-kicker">Ride offer</div>
+      <div className="section-kicker">Ride offer · {ride.community.name}</div>
       <h1 className="section-title">{ride.title}</h1>
       <div className="surface-card mt-5 p-5">
         <div className="flex items-center justify-between gap-3">

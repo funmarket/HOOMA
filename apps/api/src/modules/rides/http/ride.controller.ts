@@ -21,6 +21,21 @@ export function rideRouter(service: RideService) {
   const router = Router();
 
   router.get(
+    '/discover',
+    asyncHandler(async (req, res) => {
+      const limit = typeof req.query.limit === 'string' ? Number(req.query.limit) : undefined;
+      res.json(await service.discover(getAuth(req).user.id, limit));
+    }),
+  );
+
+  router.get(
+    '/offers/:offerId',
+    asyncHandler(async (req, res) =>
+      res.json(await service.getOffer(getAuth(req).user.id, String(req.params.offerId))),
+    ),
+  );
+
+  router.get(
     '/',
     asyncHandler(async (req, res) => {
       const communityId =
