@@ -172,9 +172,9 @@ export function HomePage() {
           />
           <QuickActionCard
             title="Gamers"
-            subtitle="Coming soon"
+            subtitle="Find opponents"
             artworkSrc={gamersActionArtwork}
-            disabled
+            onClick={() => navigate('/gamers')}
           />
           <QuickActionCard
             title="Places"
