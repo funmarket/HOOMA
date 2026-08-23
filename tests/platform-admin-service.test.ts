@@ -3,6 +3,7 @@ import type { AddressInfo } from 'node:net';
 import test from 'node:test';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import type {
+  PlatformAdminBootstrapResult,
   PlatformAdminRepository,
   PlatformRole,
 } from '../apps/api/src/modules/platform-admin/application/platform-admin.repository.js';
@@ -12,10 +13,20 @@ import type { AuthContext, AuthenticatedRequest } from '../apps/api/src/http/mid
 import { errorHandler } from '../apps/api/src/http/middleware/error-handler.js';
 
 class FakePlatformAdminRepository implements PlatformAdminRepository {
+  readonly bootstrapCalls: Array<{ userId: string; normalizedAuthUsername: string }> = [];
+
   constructor(private readonly activeRolesByUserId: ReadonlyMap<string, readonly PlatformRole[]>) {}
 
   getActiveRoles(userId: string): Promise<PlatformRole[]> {
     return Promise.resolve([...(this.activeRolesByUserId.get(userId) ?? [])]);
+  }
+
+  bootstrapPlatformAdmin(
+    userId: string,
+    normalizedAuthUsername: string,
+  ): Promise<PlatformAdminBootstrapResult> {
+    this.bootstrapCalls.push({ userId, normalizedAuthUsername });
+    return Promise.resolve('identity-mismatch');
   }
 }
 
@@ -144,6 +155,17 @@ test('Revoked Platform Admin authority is treated as absent by the active-role b
   );
 });
 
+test('configured creator bootstrap is delegated to the canonical Platform Admin repository', async () => {
+  const repository = new FakePlatformAdminRepository(new Map());
+  const service = new PlatformAdminService(repository);
+
+  await service.bootstrapConfiguredCreator('creator-user-id', 'creator.login');
+
+  assert.deepEqual(repository.bootstrapCalls, [
+    { userId: 'creator-user-id', normalizedAuthUsername: 'creator.login' },
+  ]);
+});
+
 test('app-admin access endpoint reports only canonical Platform Admin authority', async () => {
   await withPlatformAdminServer('platform-admin', async (baseUrl) => {
     const response = await fetch(`${baseUrl}/api/v1/app-admin/me`);
@@ -159,10 +181,7 @@ test('app-admin access endpoint reports only canonical Platform Admin authority'
 
   await withPlatformAdminServer('community-admin', async (baseUrl) => {
     const response = await fetch(`${baseUrl}/api/v1/app-admin/me`);
-    const body = (await response.json()) as {
-      isPlatformAdmin: boolean;
-      roles: PlatformRole[];
-    };
+    const body = (await response.json()) as { isPlatformAdmin: boolean; roles: PlatformRole[] };
 
     assert.equal(response.status, 200);
     assert.equal(body.isPlatformAdmin, false);
