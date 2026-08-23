@@ -1,9 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ChevronRight, MapPin, Pencil, Shield, Users } from 'lucide-react';
+import { ChevronRight, MapPin, Pencil, Plus, Shield, Trash2, Users } from 'lucide-react';
 import { TeamLineupPitch } from '../components/teams/TeamLineupPitch';
-import { getTeam, listManagedTeams, teamQueryKeys, updateTeam } from '../features/teams/api';
+import {
+  addTeamPlayer,
+  getTeam,
+  listManagedTeams,
+  listTeamRoster,
+  removeTeamPlayer,
+  teamQueryKeys,
+  updateTeam,
+} from '../features/teams/api';
 import { notify } from '../lib/telegram';
 import type { TeamDetailItem } from '../types/domain';
 
@@ -128,8 +136,12 @@ function TeamEditForm({ team, onDone }: { team: TeamDetailItem; onDone: () => vo
 export function TeamProfilePage() {
   const { teamId = '' } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [editing, setEditing] = useState(searchParams.get('edit') === '1');
+  const [addingPlayer, setAddingPlayer] = useState(false);
+  const [playerName, setPlayerName] = useState('');
+
   const managedTeamsQuery = useQuery({
     queryKey: teamQueryKeys.managed(),
     queryFn: listManagedTeams,
@@ -143,8 +155,44 @@ export function TeamProfilePage() {
     enabled: Boolean(teamId) && !managedTeamsQuery.isLoading && !managedTeam,
   });
   const team = managedTeam ?? teamQuery.data;
-  const lineup = team?.lineups?.[0] ?? null;
   const canManage = Boolean(managedTeam);
+  const rosterQuery = useQuery({
+    queryKey: teamQueryKeys.roster(teamId),
+    queryFn: () => listTeamRoster(teamId),
+    enabled: Boolean(teamId) && canManage,
+    retry: false,
+  });
+  const lineup = team?.lineups?.[0] ?? null;
+  const rosterPlayers = canManage ? (rosterQuery.data?.items ?? []) : (team?.players ?? []);
+
+  const refreshTeam = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: teamQueryKeys.roster(teamId) }),
+      queryClient.invalidateQueries({ queryKey: teamQueryKeys.managed() }),
+      queryClient.invalidateQueries({ queryKey: teamQueryKeys.detail(teamId) }),
+      queryClient.invalidateQueries({ queryKey: teamQueryKeys.all }),
+    ]);
+  };
+
+  const addPlayerMutation = useMutation({
+    mutationFn: () => addTeamPlayer(teamId, { displayName: playerName.trim() }),
+    onSuccess: async () => {
+      setPlayerName('');
+      setAddingPlayer(false);
+      await refreshTeam();
+      notify('success');
+    },
+    onError: () => notify('error'),
+  });
+
+  const removePlayerMutation = useMutation({
+    mutationFn: (teamPlayerId: string) => removeTeamPlayer(teamId, teamPlayerId),
+    onSuccess: async () => {
+      await refreshTeam();
+      notify('success');
+    },
+    onError: () => notify('error'),
+  });
 
   if (managedTeamsQuery.isLoading || (!managedTeam && teamQuery.isLoading)) {
     return (
@@ -180,7 +228,7 @@ export function TeamProfilePage() {
             {[team.city, team.houma].filter(Boolean).join(', ') || 'Location TBA'}
           </p>
           <p className="team-profile-meta">
-            <Users size={16} /> {team._count?.players ?? team.players?.length ?? 0} players
+            <Users size={16} /> {team._count?.players ?? rosterPlayers.length} players
           </p>
         </div>
         {canManage ? (
@@ -215,11 +263,74 @@ export function TeamProfilePage() {
       </section>
 
       <section className="teams-section">
-        <div className="vintage-kicker">Roster</div>
-        <h2 className="section-title">Players</h2>
+        <div className="vintage-section-heading">
+          <div>
+            <div className="vintage-kicker">Roster</div>
+            <h2 className="section-title">Players</h2>
+          </div>
+          {canManage ? (
+            <button
+              type="button"
+              className="ghost-button shrink-0 px-3 py-2.5"
+              onClick={() => {
+                addPlayerMutation.reset();
+                setAddingPlayer((value) => !value);
+              }}
+            >
+              <Plus size={17} /> {addingPlayer ? 'Close' : 'Add player'}
+            </button>
+          ) : null}
+        </div>
+
+        {addingPlayer && canManage ? (
+          <div className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <label className="grid gap-2 text-[17px] font-semibold">
+              Player name
+              <input
+                className="hooma-input"
+                value={playerName}
+                onChange={(event) => {
+                  addPlayerMutation.reset();
+                  setPlayerName(event.target.value);
+                }}
+                placeholder="Player display name"
+              />
+            </label>
+            <p className="text-sm muted">
+              This creates a guest roster entry. Existing HOOMA-account linking stays server-backed
+              and will use the canonical player selector rather than exposing internal user IDs.
+            </p>
+            {addPlayerMutation.isError ? (
+              <div className="vintage-empty">
+                {addPlayerMutation.error instanceof Error
+                  ? addPlayerMutation.error.message
+                  : 'Player could not be added.'}
+              </div>
+            ) : null}
+            <button
+              type="button"
+              className="accent-button"
+              disabled={addPlayerMutation.isPending || !playerName.trim()}
+              onClick={() => addPlayerMutation.mutate()}
+            >
+              {addPlayerMutation.isPending ? 'Adding…' : 'Add to roster'}
+            </button>
+          </div>
+        ) : null}
+
+        {removePlayerMutation.isError ? (
+          <div className="vintage-empty mt-4">
+            {removePlayerMutation.error instanceof Error
+              ? removePlayerMutation.error.message
+              : 'Player could not be removed.'}
+          </div>
+        ) : null}
+
         <div className="mt-4 grid gap-2">
-          {team.players?.length ? (
-            team.players.map((player) => (
+          {canManage && rosterQuery.isLoading ? (
+            <div className="vintage-empty">Loading active roster…</div>
+          ) : rosterPlayers.length ? (
+            rosterPlayers.map((player) => (
               <article className="team-roster-row" key={player.id}>
                 <span>
                   {player.photoUrl ? (
@@ -233,11 +344,31 @@ export function TeamProfilePage() {
                   {player.position ?? 'ANY'}
                   {player.shirtNumber != null ? ` #${player.shirtNumber}` : ''}
                 </small>
+                {canManage ? (
+                  <button
+                    type="button"
+                    className="ghost-button ml-auto px-3 py-2"
+                    disabled={removePlayerMutation.isPending}
+                    onClick={() => {
+                      removePlayerMutation.reset();
+                      if (
+                        window.confirm(
+                          `Remove ${player.displayName} from the active Team roster? Current lineup slots and Assistant authority will be cleaned safely.`,
+                        )
+                      ) {
+                        removePlayerMutation.mutate(player.id);
+                      }
+                    }}
+                    aria-label={`Remove ${player.displayName}`}
+                  >
+                    <Trash2 size={16} /> Remove
+                  </button>
+                ) : null}
               </article>
             ))
           ) : (
             <div className="vintage-empty">
-              <strong>No roster published.</strong>
+              <strong>No active players.</strong>
             </div>
           )}
         </div>

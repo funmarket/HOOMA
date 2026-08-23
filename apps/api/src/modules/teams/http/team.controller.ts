@@ -167,6 +167,13 @@ export function teamRouter(service: TeamService) {
     ),
   );
 
+  router.get(
+    '/:teamId/players',
+    asyncHandler(async (req, res) =>
+      res.json(await service.roster(getAuth(req).user.id, String(req.params.teamId))),
+    ),
+  );
+
   router.post(
     '/:teamId/players',
     asyncHandler(async (req, res) =>
@@ -177,8 +184,23 @@ export function teamRouter(service: TeamService) {
             getAuth(req).user.id,
             String(req.params.teamId),
             parseBody(teamPlayerCreateSchema, req),
+            String(res.locals.requestId),
           ),
         ),
+    ),
+  );
+
+  router.delete(
+    '/:teamId/players/:teamPlayerId',
+    asyncHandler(async (req, res) =>
+      res.json(
+        await service.removePlayer(
+          getAuth(req).user.id,
+          String(req.params.teamId),
+          String(req.params.teamPlayerId),
+          String(res.locals.requestId),
+        ),
+      ),
     ),
   );
 

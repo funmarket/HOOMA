@@ -1,5 +1,9 @@
-import type { TeamChallengeCreateInput, TeamUpdateInput } from '@hooma/contracts';
-import { get, patch, post } from '../../shared/api/http-client';
+import type {
+  TeamChallengeCreateInput,
+  TeamPlayerCreateInput,
+  TeamUpdateInput,
+} from '@hooma/contracts';
+import { del, get, patch, post } from '../../shared/api/http-client';
 import type {
   TeamChallengeDetailItem,
   TeamChallengeItem,
@@ -11,12 +15,25 @@ import type {
   TeamPage,
 } from '../../types/domain';
 
+export type TeamRosterPlayer = {
+  id: string;
+  userId?: string | null;
+  displayName: string;
+  shirtNumber?: number | null;
+  position?: string | null;
+  photoUrl?: string | null;
+  isActive: boolean;
+};
+
+export type TeamRosterPage = { items: TeamRosterPlayer[] };
+
 export const teamQueryKeys = {
   all: ['teams'] as const,
   list: (filters: { search: string; city: string; houma: string }) =>
     [...teamQueryKeys.all, 'list', filters] as const,
   detail: (teamId: string) => [...teamQueryKeys.all, 'detail', teamId] as const,
   managed: () => [...teamQueryKeys.all, 'managed'] as const,
+  roster: (teamId: string) => [...teamQueryKeys.all, 'roster', teamId] as const,
   challenges: () => [...teamQueryKeys.all, 'challenges'] as const,
   incomingChallenges: () => [...teamQueryKeys.challenges(), 'incoming'] as const,
   outgoingChallenges: () => [...teamQueryKeys.challenges(), 'outgoing'] as const,
@@ -49,6 +66,18 @@ export function listManagedTeams() {
 
 export function updateTeam(teamId: string, input: TeamUpdateInput) {
   return patch<TeamDetailItem>(`/api/v1/teams/${teamId}`, input);
+}
+
+export function listTeamRoster(teamId: string) {
+  return get<TeamRosterPage>(`/api/v1/teams/${teamId}/players`);
+}
+
+export function addTeamPlayer(teamId: string, input: TeamPlayerCreateInput) {
+  return post<TeamRosterPlayer>(`/api/v1/teams/${teamId}/players`, input);
+}
+
+export function removeTeamPlayer(teamId: string, teamPlayerId: string) {
+  return del<TeamRosterPlayer>(`/api/v1/teams/${teamId}/players/${teamPlayerId}`);
 }
 
 export function listIncomingChallenges() {
