@@ -161,7 +161,9 @@ export function GamersPage() {
                         </div>
                       ) : null}
                       <h3 className="mt-1 text-xl font-black tracking-[-0.035em]">{game.name}</h3>
-                      {game.publisher ? <p className="mt-1 text-xs muted">{game.publisher}</p> : null}
+                      {game.publisher ? (
+                        <p className="mt-1 text-xs muted">{game.publisher}</p>
+                      ) : null}
                     </div>
                     <span
                       className="shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.08em]"
@@ -185,7 +187,10 @@ export function GamersPage() {
                     ))}
                   </div>
 
-                  <div className="border-t pt-3 text-xs muted" style={{ borderColor: 'var(--border)' }}>
+                  <div
+                    className="border-t pt-3 text-xs muted"
+                    style={{ borderColor: 'var(--border)' }}
+                  >
                     Challenger discovery unlocks after Gamer Cards are live.
                   </div>
                 </div>
