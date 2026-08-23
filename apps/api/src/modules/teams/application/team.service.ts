@@ -62,6 +62,11 @@ export class TeamService {
     return this.authority.get(userId, teamId);
   }
 
+  async currentLineup(userId: string, teamId: string) {
+    await this.requireTeamCapability(userId, teamId, 'MANAGE_LINEUP');
+    return this.repo.getCurrentLineup(teamId);
+  }
+
   async getPublic(teamId: string) {
     const team = await this.repo.getPublic(teamId);
     if (!team) throw new AppError(404, 'TEAM_NOT_FOUND', 'Team not found.');
