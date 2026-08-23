@@ -3,19 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { MatchDayHero } from '../components/hero/MatchDayHero';
 import { HomeEventTicketCard } from '../components/home/HomeEventTicketCard';
 import { QuickActionCard } from '../components/home/QuickActionCard';
+import hoomaActionArtwork from '../assets/quick-actions/hooma.png';
 import teamsActionArtwork from '../assets/quick-actions/teams.png';
+import ultrasActionArtwork from '../assets/quick-actions/ultras.png';
+import gamersActionArtwork from '../assets/quick-actions/gamers.png';
+import placesActionArtwork from '../assets/quick-actions/places.png';
 import requestsActionArtwork from '../assets/quick-actions/requests.png';
 import rideActionArtwork from '../assets/quick-actions/ride.png';
 import fundmeActionArtwork from '../assets/quick-actions/fundme.png';
 import { get } from '../shared/api/http-client';
 import { useCommunity } from '../providers/CommunityProvider';
-import type {
-  CursorPage,
-  EventItem,
-  FundPage,
-  RequestPage,
-  RideListResponse,
-} from '../types/domain';
+import type { CursorPage, EventItem } from '../types/domain';
 
 function dateParts(value: string) {
   const date = new Date(value);
@@ -54,22 +52,6 @@ export function HomePage() {
     queryFn: () => get<CursorPage<EventItem>>(`/api/v1/events?communityId=${id}`),
     enabled: !!id,
   });
-  const requests = useQuery({
-    queryKey: ['requests', id],
-    queryFn: () => get<RequestPage>(`/api/v1/requests?communityId=${id}`),
-    enabled: !!id,
-  });
-  const rides = useQuery({
-    queryKey: ['rides', id],
-    queryFn: () => get<RideListResponse>(`/api/v1/rides?communityId=${id}`),
-    enabled: !!id,
-  });
-  const funds = useQuery({
-    queryKey: ['funds', id],
-    queryFn: () => get<FundPage>(`/api/v1/fundraisers?communityId=${id}`),
-    enabled: !!id,
-  });
-  const rideCount = (rides.data?.offers.length || 0) + (rides.data?.requests.length || 0);
   const nextEvent = events.data?.items[0];
 
   return (
@@ -129,29 +111,34 @@ export function HomePage() {
         </div>
         <div className="vintage-home-grid">
           <QuickActionCard
+            title="HOOMA"
+            artworkSrc={hoomaActionArtwork}
+            onClick={() => navigate('/community')}
+          />
+          <QuickActionCard
             title="Teams"
-            subtitle="Manage squads"
             artworkSrc={teamsActionArtwork}
             onClick={() => navigate('/teams')}
           />
+          <QuickActionCard title="Ultras" artworkSrc={ultrasActionArtwork} disabled />
+          <QuickActionCard title="Gamers" artworkSrc={gamersActionArtwork} disabled />
+          <QuickActionCard
+            title="Places"
+            artworkSrc={placesActionArtwork}
+            onClick={() => navigate('/places')}
+          />
           <QuickActionCard
             title="Requests"
-            subtitle={`${requests.data?.items.length ?? 0} open`}
-            accentValue={String(requests.data?.items.length ?? 0)}
             artworkSrc={requestsActionArtwork}
             onClick={() => navigate('/requests')}
           />
           <QuickActionCard
             title="Ride"
-            subtitle={`${rideCount} active`}
-            accentValue={String(rideCount)}
             artworkSrc={rideActionArtwork}
             onClick={() => navigate('/rides')}
           />
           <QuickActionCard
             title="FundMe"
-            subtitle={`${funds.data?.items.length ?? 0} active`}
-            accentValue={String(funds.data?.items.length ?? 0)}
             artworkSrc={fundmeActionArtwork}
             onClick={() => navigate('/fundme')}
           />
