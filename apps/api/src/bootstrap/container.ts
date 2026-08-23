@@ -1,6 +1,8 @@
+import { env } from '../config/env.js';
 import { buildDatabase } from '../infrastructure/database/prisma.js';
 import { PrismaUnitOfWork } from '../infrastructure/database/unit-of-work.js';
 import { InMemoryRateLimitStore } from '../infrastructure/rate-limit/rate-limit-store.js';
+import { RedisRuntime } from '../infrastructure/redis/client.js';
 import { HttpTelegramBotApi } from '../infrastructure/telegram/bot-api.js';
 
 import { PrismaIdentityRepository } from '../modules/identity/infrastructure/prisma-identity.repository.js';
@@ -50,6 +52,7 @@ export function buildContainer() {
   const db = buildDatabase();
   const uow = new PrismaUnitOfWork(db);
   const rateLimitStore = new InMemoryRateLimitStore();
+  const redis = new RedisRuntime(env.REDIS_URL);
   const telegram = new HttpTelegramBotApi();
 
   const identityRepository = new PrismaIdentityRepository(db);
@@ -128,6 +131,7 @@ export function buildContainer() {
     db,
     uow,
     rateLimitStore,
+    redis,
     telegram,
     repositories: {
       identity: identityRepository,
