@@ -261,7 +261,9 @@ export function TeamsPage() {
             ) : (
               <div className="vintage-empty">
                 <strong>No active Team roster yet.</strong>
-                <small>Once a Coach adds your HOOMA account as a Team player, it appears here.</small>
+                <small>
+                  Once a Coach adds your HOOMA account as a Team player, it appears here.
+                </small>
               </div>
             )}
           </div>
