@@ -54,7 +54,7 @@ export function v1Router(container: AppContainer) {
     rateLimit(container.rateLimitStore, { scope: 'chat', windowMs: 60_000, max: 60 }),
     chatRouter(container.services.chat),
   );
-  router.use('/community-management', adminRouter(container.services.admin));
+  router.use('/admin', adminRouter(container.services.admin));
   router.use('/app-admin', platformAdminRouter(container.services.platformAdmin));
   router.use(
     '/teams',
