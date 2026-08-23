@@ -1,4 +1,5 @@
 import type { UnitOfWork } from '../../../application/unit-of-work.js';
+import { AppError } from '../../../http/errors/app-error.js';
 import type { CommunityService } from '../../communities/application/community.service.js';
 import type { PaymentRepository } from '../../payments/application/payment-repository.js';
 import type {
@@ -26,6 +27,16 @@ export class RideService {
       ...(input.requestCursor !== undefined ? { requestCursor: input.requestCursor } : {}),
       limit: Math.min(input.limit ?? 30, 100),
     });
+  }
+
+  discover(userId: string, limit?: number) {
+    return this.repo.discover(userId, Math.min(limit ?? 100, 100));
+  }
+
+  async getOffer(userId: string, offerId: string) {
+    const offer = await this.repo.getVisibleOffer(userId, offerId);
+    if (!offer) throw new AppError(404, 'RIDE_NOT_FOUND', 'Ride offer not found.');
+    return offer;
   }
 
   async createOffer(userId: string, input: RideOfferCreateInput) {
