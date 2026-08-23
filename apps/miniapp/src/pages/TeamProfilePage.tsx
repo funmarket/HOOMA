@@ -295,7 +295,9 @@ export function TeamProfilePage() {
         ) : null}
       </section>
 
-      {editing && canManage ? <TeamEditForm team={managedTeam} onDone={() => setEditing(false)} /> : null}
+      {editing && managedTeam ? (
+        <TeamEditForm team={managedTeam} onDone={() => setEditing(false)} />
+      ) : null}
 
       <section className="teams-section">
         <div className="vintage-section-heading">
