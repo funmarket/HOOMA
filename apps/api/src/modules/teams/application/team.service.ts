@@ -78,7 +78,12 @@ export class TeamService {
     return this.rosterRepo.addPlayer(userId, teamId, input, requestId);
   }
 
-  async removePlayer(userId: string, teamId: string, teamPlayerId: string, requestId: string) {
+  async removePlayer(
+    userId: string,
+    teamId: string,
+    teamPlayerId: string,
+    requestId: string,
+  ) {
     await this.requireTeamCapability(userId, teamId, 'MANAGE_ROSTER');
     return this.rosterRepo.removePlayer(userId, teamId, teamPlayerId, requestId);
   }
