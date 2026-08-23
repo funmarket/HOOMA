@@ -2,6 +2,7 @@ import { Prisma } from '@hooma/database';
 import type { DatabaseClient } from '../../../infrastructure/database/prisma.js';
 import { AppError } from '../../../http/errors/app-error.js';
 import type { CommunityRepository } from '../application/community-repository.js';
+import { loadHoomaNow } from './hooma-now-read-model.js';
 
 export class PrismaCommunityRepository implements CommunityRepository {
   constructor(private readonly db: DatabaseClient) {}
@@ -22,6 +23,10 @@ export class PrismaCommunityRepository implements CommunityRepository {
         role: membership.role,
       })),
     };
+  }
+
+  hoomaNow(userId: string) {
+    return loadHoomaNow(this.db, userId);
   }
 
   async createWithOwner(
