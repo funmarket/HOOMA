@@ -18,7 +18,31 @@ export const teamMatchFormatSchema = z.enum([
   'NINE_V_NINE',
   'ELEVEN_V_ELEVEN',
 ]);
-export const teamFormationSchema = z.enum(['4-3-3', '4-4-2', '4-2-3-1', '3-5-2', '5-3-2']);
+export const teamFormationSchema = z.enum([
+  '1-2-1',
+  '2-1-1',
+  '2-2',
+  '2-2-1',
+  '1-3-1',
+  '2-1-2',
+  '2-3-1',
+  '3-2-1',
+  '2-2-2',
+  '3-3-1',
+  '2-3-2',
+  '3-2-2',
+  '3-3-2',
+  '4-3-1',
+  '3-4-1',
+  '4-3-2',
+  '4-4-1',
+  '4-3-3',
+  '4-4-2',
+  '4-2-3-1',
+  '3-5-2',
+  '5-3-2',
+  'CUSTOM',
+]);
 export const teamPlayerPositionSchema = z.enum([
   'GK',
   'CB',
@@ -106,6 +130,8 @@ export const teamLineupCreateSchema = z.object({
   slots: z.array(teamLineupSlotSchema).max(30).default([]),
 });
 
+export const teamLineupUpdateSchema = teamLineupCreateSchema;
+
 export const teamChallengeCreateSchema = z.object({
   challengerTeamId: idSchema,
   challengedTeamId: idSchema,
@@ -124,5 +150,6 @@ export type TeamUpdateInput = z.infer<typeof teamUpdateSchema>;
 export type TeamPlayerCreateInput = z.infer<typeof teamPlayerCreateSchema>;
 export type TeamAssistantDelegationInput = z.infer<typeof teamAssistantDelegationSchema>;
 export type TeamLineupCreateInput = z.infer<typeof teamLineupCreateSchema>;
+export type TeamLineupUpdateInput = z.infer<typeof teamLineupUpdateSchema>;
 export type TeamChallengeCreateInput = z.infer<typeof teamChallengeCreateSchema>;
 export type TeamChallengeMessageCreateInput = z.infer<typeof teamChallengeMessageCreateSchema>;
