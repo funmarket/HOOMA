@@ -4,6 +4,7 @@ Last updated: 2026-08-23
 Repository: `funmarket/HOOMA`
 Working branch: `feat/whistle-foundation-v1`
 Baseline main SHA: `07b6130173259718473f41d087739b154efcd503`
+Draft PR: `#61`
 
 ## Purpose
 
@@ -100,22 +101,54 @@ V1 presentation is an inline Play Whistle Board under the Play hero. It must use
 
 ### F1 — Canonical contract + UTC calendar boundary
 
-Status: **IN PROGRESS**
+Status: **VERIFIED COMPLETE**
 
-Deliverables:
+Deliverables completed:
 
-- canonical constants `11` and `33`
-- grapheme-aware validation
-- canonical UTC window helper
-- permanent tests for Unicode grapheme counting and midnight boundaries
+- canonical constants `WHISTLE_DAILY_LIMIT = 11` and `WHISTLE_MAX_GRAPHEMES = 33`
+- grapheme-aware validation using `Intl.Segmenter`
+- canonical UTC day/start/reset helper
+- permanent tests for Unicode grapheme clusters, exact 33/34 boundaries, whitespace rejection, midnight reset, and year rollover
 
-Proof: pending.
+Proof:
 
-Created files: pending.
-Modified files: pending.
-Intentionally untouched: Redis, Railway, Prisma, Team, Gamers, Play UI, API router/container.
-Conflict status: branch created from `07b6130...`; open Gamers work is not being edited in this slice.
-Score: pending.
+- Draft PR `#61` exact tested head: `e7b1131ac2e5aa8ddbb25bb8f03ab53f57a35598`
+- GitHub Actions CI run `#481`, run ID `32666033801`: **SUCCESS**
+- Branch comparison against baseline main before CI: ahead 6 commits, behind 0, exactly 6 touched files
+- Current main remained `07b6130173259718473f41d087739b154efcd503` at the verification gate
+
+Created files:
+
+- `docs/WHISTLE_LIVING_PLAN.md`
+- `packages/contracts/src/whistle.ts`
+- `apps/api/src/modules/whistle/domain/utc-day.ts`
+- `tests/whistle-contract.test.ts`
+- `tests/whistle-utc-day.test.ts`
+
+Modified files:
+
+- `packages/contracts/src/index.ts`
+- this living plan was then updated with verification evidence
+
+Intentionally untouched:
+
+- Redis/runtime infrastructure
+- Railway
+- Prisma schema and migrations
+- Team domain
+- Gamers domain
+- Play UI
+- API router/container
+- Chat and Notifications
+
+Conflict status:
+
+- F1 did not touch the shared files changed by concurrent Gamers PR `#60`.
+- No Team/Gamers business source was edited.
+
+Implementation score: **10/10**
+
+Gate decision: **PASSED — F2 may begin.**
 
 ### F2 — Redis runtime foundation
 
