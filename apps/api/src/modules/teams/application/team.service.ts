@@ -4,6 +4,7 @@ import type {
   TeamChallengeMessageCreateInput,
   TeamCreateInput,
   TeamLineupCreateInput,
+  TeamLineupUpdateInput,
   TeamPlayerCreateInput,
   TeamUpdateInput,
 } from '@hooma/contracts';
@@ -134,6 +135,16 @@ export class TeamService {
   async createLineup(userId: string, teamId: string, input: TeamLineupCreateInput) {
     await this.requireTeamCapability(userId, teamId, 'MANAGE_LINEUP');
     return this.repo.createLineup(userId, teamId, input);
+  }
+
+  async updateLineup(
+    userId: string,
+    teamId: string,
+    lineupId: string,
+    input: TeamLineupUpdateInput,
+  ) {
+    await this.requireTeamCapability(userId, teamId, 'MANAGE_LINEUP');
+    return this.repo.updateLineup(userId, teamId, lineupId, input);
   }
 
   async createChallenge(userId: string, input: TeamChallengeCreateInput) {
