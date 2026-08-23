@@ -1,4 +1,5 @@
 import type {
+  TeamAssistantDelegationInput,
   TeamChallengeCreateInput,
   TeamChallengeMessageCreateInput,
   TeamCreateInput,
@@ -7,11 +8,19 @@ import type {
   TeamUpdateInput,
 } from '@hooma/contracts';
 import { AppError } from '../../../http/errors/app-error.js';
-import { legacyTeamRoleHasCapability, type TeamCapability } from '../domain/team-access.js';
+import {
+  legacyTeamRoleHasCapability,
+  teamAuthorityHasCapability,
+  type TeamCapability,
+} from '../domain/team-access.js';
+import type { TeamAuthorityRepository } from './team-authority.repository.js';
 import type { TeamListInput, TeamRepository } from './team-repository.js';
 
 export class TeamService {
-  constructor(private readonly repo: TeamRepository) {}
+  constructor(
+    private readonly repo: TeamRepository,
+    private readonly authority: TeamAuthorityRepository,
+  ) {}
 
   listPublic(input: TeamListInput) {
     return this.repo.listPublic(input);
@@ -28,7 +37,7 @@ export class TeamService {
   }
 
   async getChallenge(userId: string, challengeId: string) {
-    const teamIds = await this.repo.getManagedTeamIds(userId);
+    const teamIds = await this.authorizedTeamIds(userId);
     return this.repo.getChallenge(challengeId, teamIds);
   }
 
@@ -51,6 +60,31 @@ export class TeamService {
     return this.repo.addPlayer(teamId, input);
   }
 
+  async listAssistants(userId: string, teamId: string) {
+    await this.requireCoach(userId, teamId);
+    return this.authority.listAssistants(teamId);
+  }
+
+  async appointAssistant(
+    userId: string,
+    teamId: string,
+    input: TeamAssistantDelegationInput,
+    requestId: string,
+  ) {
+    await this.requireCoach(userId, teamId);
+    return this.authority.appointAssistant(userId, teamId, input, requestId);
+  }
+
+  async revokeAssistant(
+    userId: string,
+    teamId: string,
+    responsibilityId: string,
+    requestId: string,
+  ) {
+    await this.requireCoach(userId, teamId);
+    return this.authority.revokeAssistant(userId, teamId, responsibilityId, requestId);
+  }
+
   async createLineup(userId: string, teamId: string, input: TeamLineupCreateInput) {
     await this.requireTeamCapability(userId, teamId, 'MANAGE_LINEUP');
     return this.repo.createLineup(userId, teamId, input);
@@ -65,42 +99,42 @@ export class TeamService {
   }
 
   async incomingChallenges(userId: string, limit = 30) {
-    const teamIds = await this.repo.getManagedTeamIds(userId);
+    const teamIds = await this.authorizedTeamIds(userId, 'RESPOND_CHALLENGE');
     return this.repo.listIncomingChallenges(teamIds, Math.min(limit, 100));
   }
 
   async outgoingChallenges(userId: string, limit = 30) {
-    const teamIds = await this.repo.getManagedTeamIds(userId);
+    const teamIds = await this.authorizedTeamIds(userId, 'CREATE_CHALLENGE');
     return this.repo.listOutgoingChallenges(teamIds, Math.min(limit, 100));
   }
 
   async acceptChallenge(userId: string, challengeId: string) {
-    const teamIds = await this.repo.getManagedTeamIds(userId);
+    const teamIds = await this.authorizedTeamIds(userId, 'RESPOND_CHALLENGE');
     return this.repo.acceptChallenge(userId, challengeId, teamIds);
   }
 
   async declineChallenge(userId: string, challengeId: string) {
-    const teamIds = await this.repo.getManagedTeamIds(userId);
+    const teamIds = await this.authorizedTeamIds(userId, 'RESPOND_CHALLENGE');
     return this.repo.declineChallenge(userId, challengeId, teamIds);
   }
 
   async cancelChallenge(userId: string, challengeId: string) {
-    const teamIds = await this.repo.getManagedTeamIds(userId);
+    const teamIds = await this.authorizedTeamIds(userId, 'CREATE_CHALLENGE');
     return this.repo.cancelChallenge(userId, challengeId, teamIds);
   }
 
   async games(userId: string, limit = 30) {
-    const teamIds = await this.repo.getManagedTeamIds(userId);
+    const teamIds = await this.authorizedTeamIds(userId);
     return this.repo.listGames(teamIds, Math.min(limit, 100));
   }
 
   async messages(userId: string, challengeId: string) {
-    const teamIds = await this.repo.getManagedTeamIds(userId);
+    const teamIds = await this.authorizedTeamIds(userId);
     return this.repo.listMessages(challengeId, teamIds);
   }
 
   async createMessage(userId: string, challengeId: string, input: TeamChallengeMessageCreateInput) {
-    const teamIds = await this.repo.getManagedTeamIds(userId);
+    const teamIds = await this.authorizedTeamIds(userId, 'MESSAGE_CHALLENGE');
     return this.repo.createMessage(userId, challengeId, teamIds, input);
   }
 
@@ -117,10 +151,25 @@ export class TeamService {
   }
 
   private async requireTeamCapability(userId: string, teamId: string, capability: TeamCapability) {
-    const access = await this.repo.getTeamManagerAccess(userId, teamId);
-    if (!access || !legacyTeamRoleHasCapability(access.role, capability)) {
+    const access = await this.authority.get(userId, teamId);
+    if (!access || !teamAuthorityHasCapability(access, capability)) {
       throw new AppError(404, 'TEAM_NOT_FOUND', 'Team not found.');
     }
     return access;
+  }
+
+  private async requireCoach(userId: string, teamId: string) {
+    const access = await this.authority.get(userId, teamId);
+    if (!access || access.role !== 'COACH') {
+      throw new AppError(403, 'TEAM_COACH_REQUIRED', 'Coach access required for this Team.');
+    }
+    return access;
+  }
+
+  private async authorizedTeamIds(userId: string, capability?: TeamCapability) {
+    const access = await this.authority.list(userId);
+    return access
+      .filter((item) => !capability || teamAuthorityHasCapability(item, capability))
+      .map((item) => item.teamId);
   }
 }
