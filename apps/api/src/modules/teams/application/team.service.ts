@@ -68,12 +68,7 @@ export class TeamService {
     return this.rosterRepo.listActive(teamId);
   }
 
-  async addPlayer(
-    userId: string,
-    teamId: string,
-    input: TeamPlayerCreateInput,
-    requestId: string,
-  ) {
+  async addPlayer(userId: string, teamId: string, input: TeamPlayerCreateInput, requestId: string) {
     await this.requireTeamCapability(userId, teamId, 'MANAGE_ROSTER');
     return this.rosterRepo.addPlayer(userId, teamId, input, requestId);
   }
