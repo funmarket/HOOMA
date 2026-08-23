@@ -11,7 +11,11 @@ import {
 import { notify } from '../../lib/telegram';
 import { TeamLineupPitch } from './TeamLineupPitch';
 
-const MATCH_FORMATS: Array<{ value: TeamLineupCreateInput['matchFormat']; label: string; size: number }> = [
+const MATCH_FORMATS: Array<{
+  value: TeamLineupCreateInput['matchFormat'];
+  label: string;
+  size: number;
+}> = [
   { value: 'FIVE_V_FIVE', label: '5v5', size: 5 },
   { value: 'SIX_V_SIX', label: '6v6', size: 6 },
   { value: 'SEVEN_V_SEVEN', label: '7v7', size: 7 },
@@ -20,7 +24,10 @@ const MATCH_FORMATS: Array<{ value: TeamLineupCreateInput['matchFormat']; label:
   { value: 'ELEVEN_V_ELEVEN', label: '11v11', size: 11 },
 ];
 
-const FORMATIONS: Record<TeamLineupCreateInput['matchFormat'], TeamLineupCreateInput['formation'][]> = {
+const FORMATIONS: Record<
+  TeamLineupCreateInput['matchFormat'],
+  TeamLineupCreateInput['formation'][]
+> = {
   FIVE_V_FIVE: ['1-2-1', '2-1-1', '2-2', 'CUSTOM'],
   SIX_V_SIX: ['2-2-1', '1-3-1', '2-1-2', 'CUSTOM'],
   SEVEN_V_SEVEN: ['2-3-1', '3-2-1', '2-2-2', 'CUSTOM'],
@@ -220,13 +227,19 @@ export function TeamLineupManager({
           <div className="vintage-kicker">Team HQ · Lineup control</div>
           <h2 className="section-title">Build the shape</h2>
         </div>
-        <span className="chip">{assignedCount}/{requiredCount}</span>
+        <span className="chip">
+          {assignedCount}/{requiredCount}
+        </span>
       </div>
 
       <div className="mt-4 grid gap-4">
         <label className="grid gap-2 text-[15px] font-semibold">
           Lineup name
-          <input className="hooma-input" value={name} onChange={(event) => setName(event.target.value)} />
+          <input
+            className="hooma-input"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
         </label>
 
         <div className="grid gap-2">
