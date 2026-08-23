@@ -5,7 +5,10 @@ import {
   decodeTimeIdCursor,
   encodeTimeIdCursor,
 } from '../../../infrastructure/database/cursor.js';
-import type { GamerGameRecord, GamerGameRepository } from '../application/gamer-game.repository.js';
+import type {
+  GamerGameRecord,
+  GamerGameRepository,
+} from '../application/gamer-game.repository.js';
 
 const publicSelect = {
   id: true,
