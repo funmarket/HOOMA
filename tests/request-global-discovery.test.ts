@@ -25,7 +25,10 @@ test('Request repository keeps private claims member-only but permits public non
     'apps/api/src/modules/requests/infrastructure/prisma-request.repository.ts',
   );
 
-  assert.match(repository, /include: \{ community: \{ select: \{ visibility: true, deletedAt: true \} \} \}/);
+  assert.match(
+    repository,
+    /include: \{ community: \{ select: \{ visibility: true, deletedAt: true \} \} \}/,
+  );
   assert.match(repository, /membership\?\.status === 'BANNED'/);
   assert.match(repository, /request\.community\.visibility === 'PRIVATE'/);
   assert.match(repository, /membership\?\.status !== 'ACTIVE'/);
