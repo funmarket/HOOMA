@@ -32,6 +32,8 @@ export interface RideRepository {
       limit: number;
     },
   ): Promise<unknown>;
+  discover(userId: string, limit: number): Promise<unknown>;
+  getVisibleOffer(userId: string, offerId: string): Promise<unknown | null>;
   createOffer(userId: string, input: RideOfferCreateInput): Promise<unknown>;
   createRequest(userId: string, input: RideRequestCreateInput): Promise<unknown>;
   requestSeats(
