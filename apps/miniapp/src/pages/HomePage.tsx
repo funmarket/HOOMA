@@ -3,10 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { MatchDayHero } from '../components/hero/MatchDayHero';
 import { HomeEventTicketCard } from '../components/home/HomeEventTicketCard';
 import { QuickActionCard } from '../components/home/QuickActionCard';
-import teamsActionArtwork from '../assets/quick-actions/teams.png';
-import requestsActionArtwork from '../assets/quick-actions/requests.png';
-import rideActionArtwork from '../assets/quick-actions/ride.png';
-import fundmeActionArtwork from '../assets/quick-actions/fundme.png';
 import { get } from '../shared/api/http-client';
 import { useCommunity } from '../providers/CommunityProvider';
 import type {
@@ -16,6 +12,20 @@ import type {
   RequestPage,
   RideListResponse,
 } from '../types/domain';
+
+const quickActionArtworkBase =
+  'https://raw.githubusercontent.com/funmarket/HoomaUltimate/659440ea34835025ffc8b9cf08f02e2c37bd5289/apps/web/public/home-gateways';
+
+const quickActionArtwork = {
+  hooma: `${quickActionArtworkBase}/hooma.png`,
+  teams: `${quickActionArtworkBase}/teams.png`,
+  ultras: `${quickActionArtworkBase}/ultras.png`,
+  gamers: `${quickActionArtworkBase}/gamers.png`,
+  places: `${quickActionArtworkBase}/places.png`,
+  requests: `${quickActionArtworkBase}/requests.png`,
+  ride: `${quickActionArtworkBase}/ride.png`,
+  fundme: `${quickActionArtworkBase}/fundme.png`,
+} as const;
 
 function dateParts(value: string) {
   const date = new Date(value);
@@ -129,30 +139,56 @@ export function HomePage() {
         </div>
         <div className="vintage-home-grid">
           <QuickActionCard
+            title="HOOMA"
+            subtitle="Community"
+            artworkSrc={quickActionArtwork.hooma}
+            onClick={() => navigate('/community')}
+          />
+          <QuickActionCard
             title="Teams"
             subtitle="Manage squads"
-            artworkSrc={teamsActionArtwork}
+            artworkSrc={quickActionArtwork.teams}
             onClick={() => navigate('/teams')}
+          />
+          <QuickActionCard
+            title="Ultras"
+            subtitle="Coming soon"
+            artworkSrc={quickActionArtwork.ultras}
+            disabled
+            onClick={() => undefined}
+          />
+          <QuickActionCard
+            title="Gamers"
+            subtitle="Coming soon"
+            artworkSrc={quickActionArtwork.gamers}
+            disabled
+            onClick={() => undefined}
+          />
+          <QuickActionCard
+            title="Places"
+            subtitle="Watch + Pitch"
+            artworkSrc={quickActionArtwork.places}
+            onClick={() => navigate('/places')}
           />
           <QuickActionCard
             title="Requests"
             subtitle={`${requests.data?.items.length ?? 0} open`}
             accentValue={String(requests.data?.items.length ?? 0)}
-            artworkSrc={requestsActionArtwork}
+            artworkSrc={quickActionArtwork.requests}
             onClick={() => navigate('/requests')}
           />
           <QuickActionCard
             title="Ride"
             subtitle={`${rideCount} active`}
             accentValue={String(rideCount)}
-            artworkSrc={rideActionArtwork}
+            artworkSrc={quickActionArtwork.ride}
             onClick={() => navigate('/rides')}
           />
           <QuickActionCard
             title="FundMe"
             subtitle={`${funds.data?.items.length ?? 0} active`}
             accentValue={String(funds.data?.items.length ?? 0)}
-            artworkSrc={fundmeActionArtwork}
+            artworkSrc={quickActionArtwork.fundme}
             onClick={() => navigate('/fundme')}
           />
         </div>
