@@ -50,6 +50,15 @@ function eventTeams(event: EventItem, fallbackName?: string) {
   };
 }
 
+function nextUpcomingEvent(items: EventItem[]) {
+  const now = Date.now();
+  return [...items]
+    .filter((event) => new Date(event.startsAt).getTime() >= now)
+    .sort(
+      (left, right) => new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
+    )[0];
+}
+
 export function HomePage() {
   const navigate = useNavigate();
   const { active } = useCommunity();
@@ -75,9 +84,16 @@ export function HomePage() {
     enabled: !!id,
   });
   const rideCount = (rides.data?.offers.length || 0) + (rides.data?.requests.length || 0);
-  const nextEvent = events.data?.items[0];
+  const nextEvent = nextUpcomingEvent(events.data?.items ?? []);
+  const hoomaNowHasData =
+    (events.data?.items.length ?? 0) > 0 ||
+    (requests.data?.items.length ?? 0) > 0 ||
+    (rides.data?.offers.length ?? 0) > 0 ||
+    (rides.data?.requests.length ?? 0) > 0 ||
+    (funds.data?.items.length ?? 0) > 0;
   const hoomaNowLoading =
-    events.isLoading || requests.isLoading || rides.isLoading || funds.isLoading;
+    !hoomaNowHasData &&
+    (events.isLoading || requests.isLoading || rides.isLoading || funds.isLoading);
   const hoomaNowHasError = events.isError || requests.isError || rides.isError || funds.isError;
 
   return (

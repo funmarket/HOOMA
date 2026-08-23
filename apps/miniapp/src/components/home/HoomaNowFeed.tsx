@@ -66,9 +66,18 @@ function futureEvents(events: EventItem[], now: number) {
     .sort((left, right) => timestamp(left.startsAt) - timestamp(right.startsAt));
 }
 
+function claimedQuantity(request: RequestItem) {
+  return (request.claims ?? [])
+    .filter((claim) => claim.status !== 'WITHDRAWN')
+    .reduce((sum, claim) => sum + claim.quantity, 0);
+}
+
 function activeRequests(requests: RequestItem[], now: number) {
   return requests
-    .filter((request) => timestamp(request.expiresAt) >= now)
+    .filter(
+      (request) =>
+        timestamp(request.expiresAt) >= now && claimedQuantity(request) < request.quantity,
+    )
     .sort((left, right) => timestamp(left.expiresAt) - timestamp(right.expiresAt));
 }
 
@@ -109,7 +118,12 @@ function buildCards({
       (left, right) => timestamp(left.desiredDepartureAt) - timestamp(right.desiredDepartureAt),
     )[0];
   const fund = [...funds]
-    .filter((item) => item.status !== 'COMPLETED' && item.status !== 'CANCELLED')
+    .filter(
+      (item) =>
+        item.status !== 'COMPLETED' &&
+        item.status !== 'CANCELLED' &&
+        (!item.deadline || timestamp(item.deadline) >= now),
+    )
     .sort((left, right) => fundProgress(right) - fundProgress(left))[0];
 
   const cards: FeedCard[] = [];
@@ -153,9 +167,7 @@ function buildCards({
   }
 
   if (request) {
-    const claimed = (request.claims ?? [])
-      .filter((claim) => claim.status !== 'WITHDRAWN')
-      .reduce((sum, claim) => sum + claim.quantity, 0);
+    const claimed = claimedQuantity(request);
     cards.push({
       id: `request-${request.id}`,
       priority: 5,
