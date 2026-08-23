@@ -135,9 +135,8 @@ export function TeamProfilePage() {
     queryFn: listManagedTeams,
     retry: false,
   });
-  const managedTeam = managedTeamsQuery.data?.items.find(
-    (item) => item.id === teamId,
-  ) as TeamDetailItem | undefined;
+  const managedTeam = managedTeamsQuery.data?.items.find((item) => item.id === teamId) as
+    TeamDetailItem | undefined;
   const teamQuery = useQuery({
     queryKey: teamQueryKeys.detail(teamId),
     queryFn: () => getTeam(teamId),
