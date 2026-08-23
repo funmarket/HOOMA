@@ -100,7 +100,10 @@ test('Coach Assistant UI uses linked roster players and canonical Team authority
   assert.match(teamApi, /del<TeamAssistantAssignment>/);
   assert.match(teamProfilePage, /TeamAssistantManager/);
   assert.match(teamProfilePage, /rosterPlayers=\{managedRosterPlayers\}/);
-  assert.match(teamAssistantManager, /rosterPlayers\.filter\(\(player\) => Boolean\(player\.userId\)\)/);
+  assert.match(
+    teamAssistantManager,
+    /rosterPlayers\.filter\(\(player\) => Boolean\(player\.userId\)\)/,
+  );
   assert.match(teamAssistantManager, /Guest roster entries cannot receive Assistant authority/);
   assert.match(teamAssistantManager, /window\.confirm/);
   assert.match(teamAssistantManager, /EDIT_TEAM/);
