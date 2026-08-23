@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { teamUpdateSchema } from '@hooma/contracts';
+import { teamLineupCreateSchema, teamUpdateSchema } from '@hooma/contracts';
 import type { DatabaseClient } from '../apps/api/src/infrastructure/database/prisma.js';
 import type { TeamAuthorityRepository } from '../apps/api/src/modules/teams/application/team-authority.repository.js';
 import type { TeamRepository } from '../apps/api/src/modules/teams/application/team-repository.js';
@@ -10,13 +10,21 @@ import { TeamService } from '../apps/api/src/modules/teams/application/team.serv
 import { PrismaTeamRepository } from '../apps/api/src/modules/teams/infrastructure/prisma-team.repository.js';
 
 const teamProfilePage = readFileSync('apps/miniapp/src/pages/TeamProfilePage.tsx', 'utf8');
+const teamLineupBuilderPage = readFileSync(
+  'apps/miniapp/src/pages/TeamLineupBuilderPage.tsx',
+  'utf8',
+);
+const teamLineupManager = readFileSync(
+  'apps/miniapp/src/components/teams/TeamLineupManager.tsx',
+  'utf8',
+);
 const teamAssistantManager = readFileSync(
   'apps/miniapp/src/components/teams/TeamAssistantManager.tsx',
   'utf8',
 );
 const teamApi = readFileSync('apps/miniapp/src/features/teams/api.ts', 'utf8');
 
-test('public Team detail only selects published lineups', async () => {
+test('public Team detail only selects current published lineups', async () => {
   let findFirstArgs: unknown;
   const db = {
     team: {
@@ -32,7 +40,9 @@ test('public Team detail only selects published lineups', async () => {
 
   const args = findFirstArgs as {
     where: { id: string; status: string; isPublic: boolean; deletedAt: null };
-    select: { lineups: { where: { isPublished: boolean; deletedAt: null } } };
+    select: {
+      lineups: { where: { isCurrent: boolean; isPublished: boolean; deletedAt: null } };
+    };
   };
 
   assert.deepEqual(args.where, {
@@ -41,6 +51,7 @@ test('public Team detail only selects published lineups', async () => {
     isPublic: true,
     deletedAt: null,
   });
+  assert.equal(args.select.lineups.where.isCurrent, true);
   assert.equal(args.select.lineups.where.isPublished, true);
   assert.equal(args.select.lineups.where.deletedAt, null);
 });
@@ -102,25 +113,80 @@ test('managed Team detail read is scoped to canonical Team IDs, not community Ad
   assert.equal(args.where.community, undefined);
 });
 
-test('Team edit UI prefers authenticated managed Team state and writes through protected PATCH', () => {
-  assert.match(teamProfilePage, /queryFn: listManagedTeams/);
-  assert.match(teamProfilePage, /const managedTeam = managedTeamsQuery\.data\?\.items\.find/);
-  assert.match(teamProfilePage, /const team = managedTeam \?\? memberTeam \?\? teamQuery\.data/);
-  assert.match(teamProfilePage, /const canManage = Boolean\(managedTeam\)/);
-  assert.match(teamProfilePage, /Edit Team/);
-  assert.match(teamProfilePage, /editing && managedTeam/);
-  assert.match(teamProfilePage, /mutation\.error instanceof Error/);
+test('lineup-only Assistant can read roster and current lineup without roster mutation authority', async () => {
+  const assistantAuthority = {
+    teamId: 'team-1',
+    communityId: 'community-1',
+    role: 'ASSISTANT' as const,
+    permissions: ['MANAGE_LINEUP'] as const,
+    source: 'RESPONSIBILITY' as const,
+  };
+  const authority = {
+    get: async () => assistantAuthority,
+  } as unknown as TeamAuthorityRepository;
+  const repo = {
+    getCurrentLineup: async () => ({ id: 'lineup-1' }),
+  } as unknown as TeamRepository;
+  const roster = {
+    listActive: async () => ({ items: [{ id: 'player-1' }] }),
+  } as unknown as TeamRosterRepository;
+  const service = new TeamService(repo, authority, roster);
+
+  assert.deepEqual(await service.roster('assistant-user', 'team-1'), {
+    items: [{ id: 'player-1' }],
+  });
+  assert.deepEqual(await service.currentLineup('assistant-user', 'team-1'), { id: 'lineup-1' });
+});
+
+test('Team lineup contract supports all match sizes and Custom shape', () => {
+  const parsed = teamLineupCreateSchema.parse({
+    name: 'Matchday',
+    formation: 'CUSTOM',
+    matchFormat: 'FIVE_V_FIVE',
+    slots: [],
+  });
+  assert.equal(parsed.formation, 'CUSTOM');
+  assert.equal(parsed.matchFormat, 'FIVE_V_FIVE');
+});
+
+test('Team edit UI uses exact server authority instead of one broad management flag', () => {
+  assert.match(teamProfilePage, /getTeamAuthority/);
+  assert.match(teamProfilePage, /hasCapability\(authority, 'EDIT_TEAM'\)/);
+  assert.match(teamProfilePage, /hasCapability\(authority, 'MANAGE_ROSTER'\)/);
+  assert.match(teamProfilePage, /hasCapability\(authority, 'MANAGE_LINEUP'\)/);
+  assert.doesNotMatch(teamProfilePage, /const canManage = Boolean\(managedTeam\)/);
+  assert.match(teamProfilePage, /canEditTeam \?/);
+  assert.match(teamProfilePage, /canManageRoster \?/);
+  assert.match(teamProfilePage, /Build lineup/);
   assert.match(teamApi, /patch<TeamDetailItem>\(`\/api\/v1\/teams\/\$\{teamId\}`/);
 });
 
-test('Team roster management uses protected API, confirmation, and real API errors', () => {
+test('Team roster management stays mutation-gated while lineup managers can read the roster', () => {
   assert.match(teamApi, /get<TeamRosterPage>\(`\/api\/v1\/teams\/\$\{teamId\}\/players`/);
   assert.match(teamApi, /del<TeamRosterPlayer>/);
-  assert.match(teamProfilePage, /queryFn: \(\) => listTeamRoster\(teamId\)/);
-  assert.match(teamProfilePage, /enabled: Boolean\(teamId\) && canManage/);
+  assert.match(teamProfilePage, /enabled: Boolean\(teamId\) && canReadManagedRoster/);
+  assert.match(teamProfilePage, /enabled: Boolean\(teamId\) && canManageRoster && addingPlayer/);
   assert.match(teamProfilePage, /window\.confirm/);
-  assert.match(teamProfilePage, /removePlayerMutation\.error instanceof Error/);
   assert.match(teamProfilePage, /Assistant authority will be cleaned safely/);
+});
+
+test('Team lineup builder uses canonical Team endpoints and supports publish lifecycle', () => {
+  assert.match(teamApi, /get<TeamEditableLineup \| null>\(`\/api\/v1\/teams\/\$\{teamId\}\/lineups\/current`/);
+  assert.match(teamApi, /post<TeamEditableLineup>\(`\/api\/v1\/teams\/\$\{teamId\}\/lineups`/);
+  assert.match(teamApi, /put<TeamEditableLineup>\(`\/api\/v1\/teams\/\$\{teamId\}\/lineups\/\$\{lineupId\}`/);
+  assert.match(teamLineupBuilderPage, /hasLineupAuthority/);
+  assert.match(teamLineupBuilderPage, /getCurrentTeamLineup/);
+  assert.match(teamLineupBuilderPage, /listTeamRoster/);
+  assert.match(teamLineupManager, /FIVE_V_FIVE/);
+  assert.match(teamLineupManager, /SIX_V_SIX/);
+  assert.match(teamLineupManager, /SEVEN_V_SEVEN/);
+  assert.match(teamLineupManager, /EIGHT_V_EIGHT/);
+  assert.match(teamLineupManager, /NINE_V_NINE/);
+  assert.match(teamLineupManager, /ELEVEN_V_ELEVEN/);
+  assert.match(teamLineupManager, /CUSTOM/);
+  assert.match(teamLineupManager, /Save draft/);
+  assert.match(teamLineupManager, /Publish lineup/);
+  assert.match(teamLineupManager, /Unpublish/);
 });
 
 test('Coach Assistant UI uses canonical role metadata and linked Team players only', () => {
@@ -131,7 +197,7 @@ test('Coach Assistant UI uses canonical role metadata and linked Team players on
     /post<TeamAssistantAssignment>\(`\/api\/v1\/teams\/\$\{teamId\}\/assistants`/,
   );
   assert.match(teamApi, /del<TeamAssistantAssignment>/);
-  assert.match(teamProfilePage, /const isCoach = managedTeam\?\.authority\.role === 'COACH'/);
+  assert.match(teamProfilePage, /const isCoach = authority\?\.role === 'COACH'/);
   assert.match(teamProfilePage, /TeamAssistantManager/);
   assert.match(teamProfilePage, /rosterPlayers=\{managedRosterPlayers\}/);
   assert.match(teamProfilePage, /enabled=\{isCoach\}/);
