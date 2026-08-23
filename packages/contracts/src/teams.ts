@@ -31,6 +31,15 @@ export const teamPlayerPositionSchema = z.enum([
   'ST',
   'ANY',
 ]);
+export const teamResponsibilityRoleSchema = z.enum(['COACH', 'MANAGER', 'ASSISTANT']);
+export const teamDelegatedPermissionSchema = z.enum([
+  'EDIT_TEAM',
+  'MANAGE_ROSTER',
+  'MANAGE_LINEUP',
+  'CREATE_CHALLENGE',
+  'RESPOND_CHALLENGE',
+  'MESSAGE_CHALLENGE',
+]);
 
 export const teamListQuerySchema = cursorSchema.extend({
   search: z.string().trim().min(1).max(80).optional(),
@@ -60,6 +69,21 @@ export const teamPlayerCreateSchema = z.object({
   position: teamPlayerPositionSchema.optional(),
   photoUrl: z.string().trim().url().max(1000).optional(),
 });
+
+export const teamAssistantDelegationSchema = z
+  .object({
+    teamPlayerId: idSchema,
+    permissions: z.array(teamDelegatedPermissionSchema).min(1).max(6),
+  })
+  .superRefine((value, ctx) => {
+    if (new Set(value.permissions).size !== value.permissions.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['permissions'],
+        message: 'Assistant permissions must be unique.',
+      });
+    }
+  });
 
 export const teamLineupSlotSchema = z.object({
   playerId: idSchema.nullable().optional(),
@@ -95,6 +119,7 @@ export const teamChallengeMessageCreateSchema = z.object({
 export type TeamCreateInput = z.infer<typeof teamCreateSchema>;
 export type TeamUpdateInput = z.infer<typeof teamUpdateSchema>;
 export type TeamPlayerCreateInput = z.infer<typeof teamPlayerCreateSchema>;
+export type TeamAssistantDelegationInput = z.infer<typeof teamAssistantDelegationSchema>;
 export type TeamLineupCreateInput = z.infer<typeof teamLineupCreateSchema>;
 export type TeamChallengeCreateInput = z.infer<typeof teamChallengeCreateSchema>;
 export type TeamChallengeMessageCreateInput = z.infer<typeof teamChallengeMessageCreateSchema>;

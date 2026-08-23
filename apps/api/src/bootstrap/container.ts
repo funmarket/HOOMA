@@ -39,6 +39,7 @@ import { AdminService } from '../modules/admin/application/admin.service.js';
 import { PrismaPlatformAdminRepository } from '../modules/platform-admin/infrastructure/prisma-platform-admin.repository.js';
 import { PlatformAdminService } from '../modules/platform-admin/application/platform-admin.service.js';
 import { PrismaTeamRepository } from '../modules/teams/infrastructure/prisma-team.repository.js';
+import { PrismaTeamAuthorityRepository } from '../modules/teams/infrastructure/prisma-team-authority.repository.js';
 import { TeamService } from '../modules/teams/application/team.service.js';
 
 export function buildContainer() {
@@ -107,7 +108,8 @@ export function buildContainer() {
   const platformAdmin = new PlatformAdminService(platformAdminRepository);
 
   const teamRepository = new PrismaTeamRepository(db);
-  const teams = new TeamService(teamRepository);
+  const teamAuthorityRepository = new PrismaTeamAuthorityRepository(db);
+  const teams = new TeamService(teamRepository, teamAuthorityRepository);
 
   return {
     db,
@@ -133,6 +135,7 @@ export function buildContainer() {
       adminRead: adminReadRepository,
       platformAdmin: platformAdminRepository,
       teams: teamRepository,
+      teamAuthority: teamAuthorityRepository,
     },
     services: {
       identity,

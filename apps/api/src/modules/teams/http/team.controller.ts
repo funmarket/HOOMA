@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  teamAssistantDelegationSchema,
   teamChallengeCreateSchema,
   teamChallengeMessageCreateSchema,
   teamCreateSchema,
@@ -178,6 +179,41 @@ export function teamRouter(service: TeamService) {
             parseBody(teamPlayerCreateSchema, req),
           ),
         ),
+    ),
+  );
+
+  router.get(
+    '/:teamId/assistants',
+    asyncHandler(async (req, res) =>
+      res.json(await service.listAssistants(getAuth(req).user.id, String(req.params.teamId))),
+    ),
+  );
+
+  router.post(
+    '/:teamId/assistants',
+    asyncHandler(async (req, res) =>
+      res.json(
+        await service.appointAssistant(
+          getAuth(req).user.id,
+          String(req.params.teamId),
+          parseBody(teamAssistantDelegationSchema, req),
+          String(res.locals.requestId),
+        ),
+      ),
+    ),
+  );
+
+  router.delete(
+    '/:teamId/assistants/:responsibilityId',
+    asyncHandler(async (req, res) =>
+      res.json(
+        await service.revokeAssistant(
+          getAuth(req).user.id,
+          String(req.params.teamId),
+          String(req.params.responsibilityId),
+          String(res.locals.requestId),
+        ),
+      ),
     ),
   );
 

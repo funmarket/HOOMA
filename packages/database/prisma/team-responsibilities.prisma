@@ -1,0 +1,31 @@
+enum TeamResponsibilityRole {
+  COACH
+  MANAGER
+  ASSISTANT
+}
+
+enum TeamDelegatedPermission {
+  EDIT_TEAM
+  MANAGE_ROSTER
+  MANAGE_LINEUP
+  CREATE_CHALLENGE
+  RESPOND_CHALLENGE
+  MESSAGE_CHALLENGE
+}
+
+model TeamResponsibility {
+  id                String                    @id @default(cuid())
+  teamId            String
+  userId            String
+  role              TeamResponsibilityRole
+  permissions       TeamDelegatedPermission[] @default([])
+  appointedByUserId String?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  revokedAt         DateTime?
+
+  @@unique([teamId, userId])
+  @@index([teamId, role, revokedAt])
+  @@index([userId, revokedAt])
+  @@index([appointedByUserId])
+}
