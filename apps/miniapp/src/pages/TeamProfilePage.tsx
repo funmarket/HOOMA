@@ -175,8 +175,7 @@ export function TeamProfilePage() {
     retry: false,
   });
   const managedTeam = managedTeamsQuery.data?.items.find((item) => item.id === teamId) as
-    | TeamManagedItem
-    | undefined;
+    TeamManagedItem | undefined;
   const memberTeam = myTeamsQuery.data?.items.find((item) => item.id === teamId);
   const authorityQuery = useQuery({
     queryKey: teamQueryKeys.authority(teamId),
