@@ -63,12 +63,18 @@ export function PlacesPage() {
   });
 
   const feed: PlaceFeedItem[] = [
-    ...(watchPlaces.data ?? []).map(
-      (place): PlaceFeedItem => ({ kind: 'WATCH', id: place.id, name: place.name, place }),
-    ),
-    ...(pitchPlaces.data?.items ?? []).map(
-      (pitch): PlaceFeedItem => ({ kind: 'PITCH', id: pitch.id, name: pitch.name, pitch }),
-    ),
+    ...(watchPlaces.data ?? []).map((place): PlaceFeedItem => ({
+      kind: 'WATCH',
+      id: place.id,
+      name: place.name,
+      place,
+    })),
+    ...(pitchPlaces.data?.items ?? []).map((pitch): PlaceFeedItem => ({
+      kind: 'PITCH',
+      id: pitch.id,
+      name: pitch.name,
+      pitch,
+    })),
   ].sort((left, right) => left.name.localeCompare(right.name));
 
   const isLoading = watchPlaces.isLoading || pitchPlaces.isLoading;
