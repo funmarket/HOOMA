@@ -21,6 +21,14 @@ const schema = z.object({
   DIRECT_DATABASE_URL: z.string().min(1),
   TELEGRAM_BOT_TOKEN: z.string().min(1),
   TELEGRAM_WEBHOOK_SECRET: z.string().min(8),
+  PLATFORM_ADMIN_BOOTSTRAP_AUTH_USERNAME: z
+    .string()
+    .trim()
+    .min(3)
+    .max(30)
+    .regex(/^[A-Za-z0-9_.]+$/)
+    .transform((value) => value.toLowerCase())
+    .optional(),
   INIT_DATA_MAX_AGE_SECONDS: z.coerce.number().int().positive().default(86_400),
   DEV_AUTH_BYPASS: z
     .string()
