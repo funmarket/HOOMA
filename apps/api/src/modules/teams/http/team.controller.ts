@@ -52,6 +52,11 @@ export function teamRouter(service: TeamService) {
   );
 
   router.get(
+    '/mine',
+    asyncHandler(async (req, res) => res.json(await service.myTeams(getAuth(req).user.id))),
+  );
+
+  router.get(
     '/games',
     asyncHandler(async (req, res) =>
       res.json(await service.games(getAuth(req).user.id, limitFromQuery(req.query.limit))),

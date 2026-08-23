@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search, Shield, SlidersHorizontal } from 'lucide-react';
 import { TeamsHero } from '../components/teams/TeamsHero';
 import { TeamDiscoveryCard } from '../components/teams/TeamDiscoveryCard';
 import { UpcomingGameCard } from '../components/teams/UpcomingGameCard';
@@ -9,6 +9,7 @@ import {
   acceptTeamChallenge,
   declineTeamChallenge,
   listIncomingChallenges,
+  listMyTeams,
   listOutgoingChallenges,
   listTeamGames,
   listTeams,
@@ -23,11 +24,12 @@ import { RequestFlagIcon } from '../icons/RequestFlagIcon';
 import { eventDate } from '../lib/format';
 import type { TeamChallengeItem } from '../types/domain';
 
-type TeamsTab = 'discover' | 'requests' | 'games';
+type TeamsTab = 'discover' | 'mine' | 'requests' | 'games';
 type RequestMode = 'incoming' | 'outgoing';
 
 const tabs = [
   { id: 'discover' as const, label: 'Discover', icon: UsersIcon },
+  { id: 'mine' as const, label: 'My Team', icon: Shield },
   { id: 'requests' as const, label: 'Requests', icon: BellIcon },
   { id: 'games' as const, label: 'Games', icon: CalendarIcon },
 ];
@@ -96,6 +98,11 @@ export function TeamsPage() {
   const teams = useQuery({
     queryKey: teamQueryKeys.list(filters),
     queryFn: () => listTeams(filters),
+  });
+  const myTeams = useQuery({
+    queryKey: teamQueryKeys.mine(),
+    queryFn: listMyTeams,
+    retry: false,
   });
   const incoming = useQuery({
     queryKey: teamQueryKeys.incomingChallenges(),
@@ -220,6 +227,46 @@ export function TeamsPage() {
               <small>Try a different search, city, or houma.</small>
             </div>
           )}
+        </section>
+      )}
+
+      {activeTab === 'mine' && (
+        <section className="teams-section">
+          <div className="vintage-kicker">Player access</div>
+          <h2 className="section-title">My Team / Team HQ</h2>
+          <p className="mt-1 text-sm muted">
+            Teams where your HOOMA account is on the active football roster.
+          </p>
+          <div className="mt-4 grid gap-3">
+            {myTeams.isLoading ? (
+              <div className="vintage-empty">Loading your Teams…</div>
+            ) : myTeams.isError ? (
+              <div className="vintage-empty">Your Team access could not be loaded.</div>
+            ) : myTeams.data?.items.length ? (
+              myTeams.data.items.map((team) => (
+                <TeamDiscoveryCard
+                  key={team.id}
+                  name={team.name}
+                  badgeUrl={team.badgeUrl}
+                  city={team.city}
+                  houma={team.houma}
+                  playerCount={team._count?.players ?? team.players?.length ?? 0}
+                  formation={team.lineups?.[0]?.formation}
+                  players={team.players ?? []}
+                  isPublic={team.isPublic}
+                  acceptingChallenges={team.acceptingChallenges}
+                  onViewLineup={() => navigate(`/teams/${team.id}`)}
+                />
+              ))
+            ) : (
+              <div className="vintage-empty">
+                <strong>No active Team roster yet.</strong>
+                <small>
+                  Once a Coach adds your HOOMA account as a Team player, it appears here.
+                </small>
+              </div>
+            )}
+          </div>
         </section>
       )}
 
