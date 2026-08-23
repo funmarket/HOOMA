@@ -1,4 +1,6 @@
-import { createClient, type RedisClientType } from 'redis';
+import { createClient } from 'redis';
+
+type HoomaRedisClient = ReturnType<typeof createClient>;
 
 export class RedisUnavailableError extends Error {
   constructor(message: string, options?: ErrorOptions) {
@@ -8,8 +10,8 @@ export class RedisUnavailableError extends Error {
 }
 
 export class RedisRuntime {
-  private readonly client: RedisClientType | null;
-  private connectPromise: Promise<RedisClientType> | null = null;
+  private readonly client: HoomaRedisClient | null;
+  private connectPromise: Promise<HoomaRedisClient> | null = null;
 
   constructor(url: string | undefined) {
     if (!url) {
@@ -24,16 +26,17 @@ export class RedisRuntime {
     this.client = client;
   }
 
-  async getClient(): Promise<RedisClientType> {
-    if (!this.client) {
+  async getClient(): Promise<HoomaRedisClient> {
+    const client = this.client;
+    if (!client) {
       throw new RedisUnavailableError('Redis is not configured for this HOOMA API instance.');
     }
-    if (this.client.isReady) return this.client;
+    if (client.isReady) return client;
 
     if (!this.connectPromise) {
-      this.connectPromise = this.client
+      this.connectPromise = client
         .connect()
-        .then(() => this.client as RedisClientType)
+        .then(() => client)
         .catch((error: unknown) => {
           throw new RedisUnavailableError('Redis is unavailable.', { cause: error });
         })
