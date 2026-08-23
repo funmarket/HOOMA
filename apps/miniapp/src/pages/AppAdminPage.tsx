@@ -1,17 +1,35 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ShieldCheck } from 'lucide-react';
-import { get } from '../shared/api/http-client';
+import { FormEvent, useState } from 'react';
+import { get, post } from '../shared/api/http-client';
 
 type PlatformAdminAccess = {
   isPlatformAdmin: boolean;
   roles: string[];
+  bootstrapAvailable: boolean;
 };
 
 export function AppAdminPage() {
+  const queryClient = useQueryClient();
+  const [bootstrapToken, setBootstrapToken] = useState('');
   const access = useQuery({
     queryKey: ['app-admin', 'me'],
     queryFn: () => get<PlatformAdminAccess>('/api/v1/app-admin/me'),
   });
+  const bootstrap = useMutation({
+    mutationFn: () =>
+      post<PlatformAdminAccess>('/api/v1/app-admin/bootstrap', { token: bootstrapToken.trim() }),
+    onSuccess: async () => {
+      setBootstrapToken('');
+      await queryClient.invalidateQueries({ queryKey: ['app-admin', 'me'] });
+    },
+  });
+
+  function submitBootstrap(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (bootstrapToken.trim().length < 32 || bootstrap.isPending) return;
+    bootstrap.mutate();
+  }
 
   if (access.isLoading) {
     return (
@@ -37,6 +55,47 @@ export function AppAdminPage() {
             </div>
           </div>
         </div>
+
+        {access.data?.bootstrapAvailable ? (
+          <section className="surface-card mt-4 p-5">
+            <div className="section-kicker">Creator setup</div>
+            <h2 className="mt-1 font-black">Claim the first HOOMA Admin role</h2>
+            <p className="mt-2 text-sm muted">
+              Use the private one-time setup key while signed in to the HOOMA account that should
+              own platform administration. Your canonical user ID becomes the database authority;
+              Telegram usernames and Team roles are not used for future access.
+            </p>
+            <form className="mt-4 grid gap-3" onSubmit={submitBootstrap}>
+              <label className="grid gap-1 text-sm font-bold">
+                One-time setup key
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={bootstrapToken}
+                  onChange={(event) => {
+                    bootstrap.reset();
+                    setBootstrapToken(event.target.value);
+                  }}
+                  className="input"
+                />
+              </label>
+              <button
+                type="submit"
+                className="accent-button"
+                disabled={bootstrapToken.trim().length < 32 || bootstrap.isPending}
+              >
+                {bootstrap.isPending ? 'Claiming…' : 'Claim HOOMA Admin'}
+              </button>
+              {bootstrap.isError ? (
+                <div role="alert" className="text-sm text-red-500">
+                  {bootstrap.error instanceof Error
+                    ? bootstrap.error.message
+                    : 'Unable to claim HOOMA Admin.'}
+                </div>
+              ) : null}
+            </form>
+          </section>
+        ) : null}
       </div>
     );
   }
