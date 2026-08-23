@@ -180,7 +180,13 @@ export function TeamProfilePage() {
         </div>
 
         <div className="mt-4 grid gap-2">
-          {(canReadManagedRoster ? rosterQuery.isLoading : isTeamPlayer ? false : publicRosterQuery.isLoading) ? (
+          {(
+            canReadManagedRoster
+              ? rosterQuery.isLoading
+              : isTeamPlayer
+                ? false
+                : publicRosterQuery.isLoading
+          ) ? (
             <div className="vintage-empty">Loading active roster…</div>
           ) : rosterPlayers.length ? (
             rosterPlayers.map((player) => (
