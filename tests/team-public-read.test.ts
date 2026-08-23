@@ -46,10 +46,14 @@ test('public Team detail only selects published lineups', async () => {
 });
 
 test('managed Team discovery cannot grant edit UI without canonical EDIT_TEAM authority', async () => {
+  let requestedTeamIds: string[] = [];
   const repo = {
-    listManagedTeams: async () => ({
-      items: [{ id: 'coach-team' }, { id: 'legacy-only-team' }],
-    }),
+    listManagedTeams: async (teamIds: string[]) => {
+      requestedTeamIds = teamIds;
+      return {
+        items: [{ id: 'coach-team' }, { id: 'legacy-only-team' }],
+      };
+    },
   } as unknown as TeamRepository;
   const coachAuthority = {
     teamId: 'coach-team',
@@ -66,7 +70,36 @@ test('managed Team discovery cannot grant edit UI without canonical EDIT_TEAM au
   const service = new TeamService(repo, authority, roster);
   const result = await service.managedTeams('coach-user');
 
+  assert.deepEqual(requestedTeamIds, ['coach-team']);
   assert.deepEqual(result, { items: [{ id: 'coach-team', authority: coachAuthority }] });
+});
+
+test('managed Team detail read is scoped to canonical Team IDs, not community Admin membership', async () => {
+  let findManyArgs: unknown;
+  const db = {
+    team: {
+      findMany(args: unknown) {
+        findManyArgs = args;
+        return Promise.resolve([]);
+      },
+    },
+  } as unknown as DatabaseClient;
+
+  const repo = new PrismaTeamRepository(db);
+  await repo.listManagedTeams(['delegated-team']);
+
+  const args = findManyArgs as {
+    where: {
+      id: { in: string[] };
+      status: string;
+      deletedAt: null;
+      community?: unknown;
+    };
+  };
+  assert.deepEqual(args.where.id.in, ['delegated-team']);
+  assert.equal(args.where.status, 'ACTIVE');
+  assert.equal(args.where.deletedAt, null);
+  assert.equal(args.where.community, undefined);
 });
 
 test('Team edit UI prefers authenticated managed Team state and writes through protected PATCH', () => {
