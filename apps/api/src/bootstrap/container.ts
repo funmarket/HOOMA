@@ -30,6 +30,8 @@ import { PrismaPlaceRepository } from '../modules/places/infrastructure/prisma-p
 import { PlaceService } from '../modules/places/application/place.service.js';
 import { PrismaPitchRepository } from '../modules/pitch/infrastructure/prisma-pitch.repository.js';
 import { PitchService } from '../modules/pitch/application/pitch.service.js';
+import { PrismaGamerGameRepository } from '../modules/gamers/infrastructure/prisma-gamer-game.repository.js';
+import { GamerService } from '../modules/gamers/application/gamer.service.js';
 import { PrismaPlayRepository } from '../modules/play/infrastructure/prisma-play.repository.js';
 import { PlayService } from '../modules/play/application/play.service.js';
 import { PrismaChatRepository } from '../modules/chat/infrastructure/prisma-chat.repository.js';
@@ -96,6 +98,8 @@ export function buildContainer() {
   const places = new PlaceService(placeRepository, communities);
   const pitchRepository = new PrismaPitchRepository(db);
   const pitch = new PitchService(pitchRepository);
+  const gamerGameRepository = new PrismaGamerGameRepository(db);
+  const gamers = new GamerService(gamerGameRepository);
 
   const playRepository = new PrismaPlayRepository(db);
   const play = new PlayService(playRepository, communities);
@@ -139,6 +143,7 @@ export function buildContainer() {
       watch: watchRepository,
       places: placeRepository,
       pitch: pitchRepository,
+      gamerGames: gamerGameRepository,
       play: playRepository,
       chat: chatRepository,
       adminRead: adminReadRepository,
@@ -161,6 +166,7 @@ export function buildContainer() {
       watch,
       places,
       pitch,
+      gamers,
       play,
       chat,
       admin,
