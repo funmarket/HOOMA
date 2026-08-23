@@ -58,6 +58,10 @@ export class TeamService {
     return this.memberRead.listMine(userId);
   }
 
+  authorityForTeam(userId: string, teamId: string) {
+    return this.authority.get(userId, teamId);
+  }
+
   async getPublic(teamId: string) {
     const team = await this.repo.getPublic(teamId);
     if (!team) throw new AppError(404, 'TEAM_NOT_FOUND', 'Team not found.');
@@ -88,7 +92,7 @@ export class TeamService {
   }
 
   async roster(userId: string, teamId: string) {
-    await this.requireTeamCapability(userId, teamId, 'MANAGE_ROSTER');
+    await this.requireAnyTeamCapability(userId, teamId, ['MANAGE_ROSTER', 'MANAGE_LINEUP']);
     return this.rosterRepo.listActive(teamId);
   }
 
@@ -210,6 +214,18 @@ export class TeamService {
   private async requireTeamCapability(userId: string, teamId: string, capability: TeamCapability) {
     const access = await this.authority.get(userId, teamId);
     if (!access || !teamAuthorityHasCapability(access, capability)) {
+      throw new AppError(404, 'TEAM_NOT_FOUND', 'Team not found.');
+    }
+    return access;
+  }
+
+  private async requireAnyTeamCapability(
+    userId: string,
+    teamId: string,
+    capabilities: TeamCapability[],
+  ) {
+    const access = await this.authority.get(userId, teamId);
+    if (!access || !capabilities.some((capability) => teamAuthorityHasCapability(access, capability))) {
       throw new AppError(404, 'TEAM_NOT_FOUND', 'Team not found.');
     }
     return access;
