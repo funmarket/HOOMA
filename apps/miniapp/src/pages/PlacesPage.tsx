@@ -36,7 +36,9 @@ function pitchRateLabel(pitch: PitchListing) {
   if (!hasRate) return null;
 
   const amount = pitch.hourlyRateMinor! / 100;
-  return `${Number.isInteger(amount) ? amount.toFixed(0) : amount.toFixed(2)} ${pitch.currency} / hour`;
+  return `${Number.isInteger(amount) ? amount.toFixed(0) : amount.toFixed(2)} ${
+    pitch.currency
+  } / hour`;
 }
 
 export function PlacesPage() {
