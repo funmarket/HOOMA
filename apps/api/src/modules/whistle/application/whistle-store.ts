@@ -44,13 +44,10 @@ export type WhistleSendResult =
     }
   | { kind: 'stale_window' };
 
-export type WhistleListResult =
-  | { kind: 'ok'; items: WhistleMessage[] }
-  | { kind: 'stale_window' };
+export type WhistleListResult = { kind: 'ok'; items: WhistleMessage[] } | { kind: 'stale_window' };
 
 export type WhistleQuotaResult =
-  | { kind: 'ok'; quota: WhistleQuotaSnapshot }
-  | { kind: 'stale_window' };
+  { kind: 'ok'; quota: WhistleQuotaSnapshot } | { kind: 'stale_window' };
 
 export interface WhistleStore {
   send(input: WhistleSendInput): Promise<WhistleSendResult>;
@@ -59,20 +56,14 @@ export interface WhistleStore {
 }
 
 export class WhistleStoreUnavailableError extends Error {
-  constructor(
-    message = 'Whistle storage is unavailable.',
-    options?: ErrorOptions,
-  ) {
+  constructor(message = 'Whistle storage is unavailable.', options?: ErrorOptions) {
     super(message, options);
     this.name = 'WhistleStoreUnavailableError';
   }
 }
 
 export class WhistleStoreCorruptError extends Error {
-  constructor(
-    message = 'Whistle storage is inconsistent.',
-    options?: ErrorOptions,
-  ) {
+  constructor(message = 'Whistle storage is inconsistent.', options?: ErrorOptions) {
     super(message, options);
     this.name = 'WhistleStoreCorruptError';
   }

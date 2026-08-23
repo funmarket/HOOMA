@@ -91,10 +91,7 @@ function parseUsed(value: string | null) {
   return used;
 }
 
-function parseStreamMessage(
-  id: string,
-  message: Record<string, string>,
-): WhistleMessage {
+function parseStreamMessage(id: string, message: Record<string, string>): WhistleMessage {
   const body = message.body;
   const userId = message.authorUserId;
   const displayName = message.authorDisplayName;
@@ -147,10 +144,7 @@ export class RedisWhistleStore implements WhistleStore {
     try {
       const redis = await this.runtime.getClient();
       const reply = await redis.eval(SEND_SCRIPT, {
-        keys: [
-          quotaKey(input.window, input.author.userId),
-          feedKey(input.window, input.scope),
-        ],
+        keys: [quotaKey(input.window, input.author.userId), feedKey(input.window, input.scope)],
         arguments: [
           String(input.window.startsAt.getTime()),
           String(input.window.resetsAt.getTime()),
@@ -166,9 +160,7 @@ export class RedisWhistleStore implements WhistleStore {
       }
       if (reply[0] === 'STALE') return { kind: 'stale_window' };
       if (reply[0] === 'CORRUPT') {
-        throw new WhistleStoreCorruptError(
-          `Whistle Redis key is invalid: ${String(reply[1])}`,
-        );
+        throw new WhistleStoreCorruptError(`Whistle Redis key is invalid: ${String(reply[1])}`);
       }
       if (reply[0] === 'LIMIT') {
         const used = parseUsed(String(reply[1]));
@@ -196,10 +188,7 @@ export class RedisWhistleStore implements WhistleStore {
     }
   }
 
-  async list(
-    scope: WhistleScope,
-    window: WhistleUtcDayWindow,
-  ): Promise<WhistleListResult> {
+  async list(scope: WhistleScope, window: WhistleUtcDayWindow): Promise<WhistleListResult> {
     try {
       const redis = await this.runtime.getClient();
       if (!(await ensureCurrentWindow(redis, window))) return { kind: 'stale_window' };
@@ -222,10 +211,7 @@ export class RedisWhistleStore implements WhistleStore {
     }
   }
 
-  async quota(
-    userId: string,
-    window: WhistleUtcDayWindow,
-  ): Promise<WhistleQuotaResult> {
+  async quota(userId: string, window: WhistleUtcDayWindow): Promise<WhistleQuotaResult> {
     try {
       const redis = await this.runtime.getClient();
       if (!(await ensureCurrentWindow(redis, window))) return { kind: 'stale_window' };
