@@ -8,6 +8,10 @@ export class PlatformAdminService {
     return this.repo.getActiveRoles(userId);
   }
 
+  async bootstrapConfiguredCreator(userId: string, normalizedAuthUsername: string): Promise<void> {
+    await this.repo.bootstrapPlatformAdmin(userId, normalizedAuthUsername);
+  }
+
   async isPlatformAdmin(userId: string): Promise<boolean> {
     const roles = await this.getActiveRoles(userId);
     return roles.includes('PLATFORM_ADMIN');
