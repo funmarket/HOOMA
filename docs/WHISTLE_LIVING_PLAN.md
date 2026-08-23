@@ -58,11 +58,9 @@ Owns canonical UTC day identity, start/reset timestamps, and current-window vali
 
 ### Redis infrastructure
 
-Planned source:
-
 - `apps/api/src/infrastructure/redis/client.ts`
-- `apps/api/src/modules/whistle/application/whistle-store.ts`
-- `apps/api/src/modules/whistle/infrastructure/redis-whistle.store.ts`
+- `apps/api/src/modules/whistle/application/whistle-store.ts` (F3)
+- `apps/api/src/modules/whistle/infrastructure/redis-whistle.store.ts` (F3)
 
 Planned key families:
 
@@ -128,7 +126,7 @@ Created files:
 Modified files:
 
 - `packages/contracts/src/index.ts`
-- this living plan was then updated with verification evidence
+- this living plan
 
 Intentionally untouched:
 
@@ -143,7 +141,7 @@ Intentionally untouched:
 
 Conflict status:
 
-- F1 did not touch the shared files changed by concurrent Gamers PR `#60`.
+- F1 did not touch the shared files changed by concurrent Gamers work.
 - No Team/Gamers business source was edited.
 
 Implementation score: **10/10**
@@ -152,16 +150,69 @@ Gate decision: **PASSED — F2 may begin.**
 
 ### F2 — Redis runtime foundation
 
-Status: **PENDING**
+Status: **VERIFIED COMPLETE**
 
-Deliverables:
+Deliverables completed:
 
-- pinned Redis client dependency
-- Redis connection lifecycle/config
-- local Docker Redis
-- CI Redis service
-- production preflight requirement for `REDIS_URL`
-- isolated Redis availability/error behavior
+- pinned API dependency `redis = 5.8.2` with npm-generated root lockfile
+- lazy, isolated `RedisRuntime` connection lifecycle and stable `RedisUnavailableError`
+- exact inferred node-redis client type; no unsafe generic cast workaround
+- production `REDIS_URL` validation
+- graceful Redis shutdown alongside PostgreSQL
+- local `redis:7.4-alpine` Docker service
+- CI Redis service with health check and `REDIS_URL`
+- production deploy-preflight requirement for `REDIS_URL`
+- permanent runtime tests proving no-config fail-closed behavior, single shared connection, and real Redis `PING/PONG`
+
+Proof:
+
+- First F2 CI run `#507`, run ID `32667038001`, correctly FAILED at typecheck because an explicit generic `RedisClientType` was too narrow under the repository's `exactOptionalPropertyTypes` rules. F2 was not advanced.
+- The source type was corrected using `ReturnType<typeof createClient>` and a captured non-null client rather than a cast.
+- Corrected implementation exact tested head: `38734ddceddf7b43286a3dadb757334765104196`.
+- GitHub Actions CI run `#508`, run ID `32667143503`: quality job **SUCCESS** through install, preflight, database validation/generation, architecture check, lint, typecheck, migrations, tests, format, build, security, and migration checks.
+- CI Redis service `redis:7.4-alpine` became healthy; runtime integration test ran with `REDIS_URL=redis://localhost:6379`.
+- `npm ci` reported 0 vulnerabilities.
+- Root `package-lock.json` was produced by npm on a temporary branch-only lockfile-sync workflow; that temporary workflow was deleted and leaves no final repository file.
+
+Created files:
+
+- `apps/api/src/infrastructure/redis/client.ts`
+- `tests/redis-runtime.test.ts`
+
+Modified files:
+
+- `apps/api/package.json`
+- `package-lock.json`
+- `apps/api/src/config/env.ts`
+- `apps/api/src/bootstrap/container.ts`
+- `apps/api/src/bootstrap/server.ts`
+- `.env.example`
+- `docker-compose.yml`
+- `.github/workflows/ci.yml`
+- `scripts/deploy-preflight.mjs`
+- this living plan
+
+Intentionally untouched:
+
+- Prisma schema and migrations
+- Whistle API router/controller/service
+- Play UI
+- Team domain
+- Gamers domain
+- Chat and Notifications
+- Railway production services and variables
+- generic `RATE_LIMIT_STORE=memory` architecture
+
+Conflict status:
+
+- Current main was re-read before F2 and remained based on the merged Gamers public catalog work.
+- Concurrent PR `#62` was Team frontend/control-room work and did not overlap F2 sources.
+- Concurrent PR `#60` remained Gamers/admin catalog work; F2 did not touch its Gamer domain or platform-admin source.
+- No Team/Gamers business logic was duplicated or modified.
+
+Implementation score: **10/10**
+
+Gate decision: **PASSED — F3 may begin after this verification-ledger commit itself is green on exact head.**
 
 ### F3 — Atomic Redis Whistle store
 
