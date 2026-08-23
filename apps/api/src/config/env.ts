@@ -19,6 +19,7 @@ const schema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32).optional(),
   DATABASE_URL: z.string().min(1),
   DIRECT_DATABASE_URL: z.string().min(1),
+  REDIS_URL: z.string().url().optional(),
   TELEGRAM_BOT_TOKEN: z.string().min(1),
   TELEGRAM_WEBHOOK_SECRET: z.string().min(8),
   PLATFORM_ADMIN_BOOTSTRAP_TOKEN: z.string().min(32).max(256).optional(),
@@ -35,6 +36,10 @@ export const env = schema.parse(process.env);
 
 if (env.NODE_ENV === 'production' && env.DEV_AUTH_BYPASS) {
   throw new Error('DEV_AUTH_BYPASS must be disabled in production');
+}
+
+if (env.NODE_ENV === 'production' && !process.env.REDIS_URL) {
+  throw new Error('REDIS_URL must be set explicitly in production');
 }
 
 if (env.NODE_ENV === 'production' && !process.env.RATE_LIMIT_STORE) {
