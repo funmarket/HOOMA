@@ -154,6 +154,11 @@ export function teamRouter(service: TeamService) {
     asyncHandler(async (req, res) => res.json(await service.getPublic(String(req.params.teamId)))),
   );
 
+  router.get(
+    '/:teamId/public-players',
+    asyncHandler(async (req, res) => res.json(await service.publicRoster(String(req.params.teamId)))),
+  );
+
   router.patch(
     '/:teamId',
     asyncHandler(async (req, res) =>
