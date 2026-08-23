@@ -45,6 +45,12 @@ function matchSize(format: TeamLineupCreateInput['matchFormat']) {
   return MATCH_FORMATS.find((item) => item.value === format)?.size ?? 11;
 }
 
+function defaultFormation(
+  format: TeamLineupCreateInput['matchFormat'],
+): TeamLineupCreateInput['formation'] {
+  return FORMATIONS[format][0] ?? 'CUSTOM';
+}
+
 function lineRole(index: number, totalLines: number): Position {
   if (index === 0) return 'CB';
   if (index === totalLines - 1) return 'ST';
@@ -125,7 +131,7 @@ export function TeamLineupManager({
     (lineup?.matchFormat as TeamLineupCreateInput['matchFormat'] | undefined) ?? 'ELEVEN_V_ELEVEN';
   const initialFormation =
     (lineup?.formation as TeamLineupCreateInput['formation'] | undefined) ??
-    FORMATIONS[initialFormat][0];
+    defaultFormation(initialFormat);
   const [name, setName] = useState(lineup?.name ?? `${teamName} Matchday`);
   const [format, setFormat] = useState<TeamLineupCreateInput['matchFormat']>(initialFormat);
   const [formation, setFormation] = useState<TeamLineupCreateInput['formation']>(initialFormation);
@@ -160,9 +166,9 @@ export function TeamLineupManager({
               ? {
                   id: player.id,
                   displayName: player.displayName,
-                  shirtNumber: player.shirtNumber,
-                  position: player.position,
-                  photoUrl: player.photoUrl,
+                  ...(player.shirtNumber !== undefined ? { shirtNumber: player.shirtNumber } : {}),
+                  ...(player.position !== undefined ? { position: player.position } : {}),
+                  ...(player.photoUrl !== undefined ? { photoUrl: player.photoUrl } : {}),
                 }
               : null;
           })()
@@ -192,7 +198,7 @@ export function TeamLineupManager({
   });
 
   const chooseFormat = (nextFormat: TeamLineupCreateInput['matchFormat']) => {
-    const nextFormation = FORMATIONS[nextFormat][0];
+    const nextFormation = defaultFormation(nextFormat);
     setFormat(nextFormat);
     setFormation(nextFormation);
     setSlots(presetSlots(nextFormation, nextFormat));
