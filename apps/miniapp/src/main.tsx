@@ -10,6 +10,27 @@ import { bootTelegram, hasTelegramLaunchData } from './lib/telegram';
 import { ThemeProvider } from './providers/ThemeProvider';
 import { CommunityProvider } from './providers/CommunityProvider';
 
+const PRELOAD_RECOVERY_KEY = 'hooma:preload-recovery';
+const PRELOAD_RECOVERY_WINDOW_MS = 30_000;
+
+window.addEventListener('vite:preloadError', (event) => {
+  const now = Date.now();
+  const previous = Number(window.sessionStorage.getItem(PRELOAD_RECOVERY_KEY) || '0');
+
+  if (Number.isFinite(previous) && now - previous < PRELOAD_RECOVERY_WINDOW_MS) {
+    window.sessionStorage.removeItem(PRELOAD_RECOVERY_KEY);
+    return;
+  }
+
+  event.preventDefault();
+  window.sessionStorage.setItem(PRELOAD_RECOVERY_KEY, String(now));
+  window.location.reload();
+});
+
+window.setTimeout(() => {
+  window.sessionStorage.removeItem(PRELOAD_RECOVERY_KEY);
+}, PRELOAD_RECOVERY_WINDOW_MS);
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 15_000, retry: 1, refetchOnWindowFocus: false },
