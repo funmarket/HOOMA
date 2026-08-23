@@ -185,11 +185,7 @@ export function createTeamLineup(teamId: string, input: TeamLineupCreateInput) {
   return post<TeamEditableLineup>(`/api/v1/teams/${teamId}/lineups`, input);
 }
 
-export function updateTeamLineup(
-  teamId: string,
-  lineupId: string,
-  input: TeamLineupUpdateInput,
-) {
+export function updateTeamLineup(teamId: string, lineupId: string, input: TeamLineupUpdateInput) {
   return put<TeamEditableLineup>(`/api/v1/teams/${teamId}/lineups/${lineupId}`, input);
 }
 
