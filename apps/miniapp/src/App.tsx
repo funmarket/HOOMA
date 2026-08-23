@@ -83,6 +83,11 @@ const PitchPage = lazy(() =>
 const ProfilePage = lazy(() =>
   import('./pages/ProfilePage').then((module) => ({ default: module.ProfilePage })),
 );
+const PublicPlayerProfilePage = lazy(() =>
+  import('./pages/PublicPlayerProfilePage').then((module) => ({
+    default: module.PublicPlayerProfilePage,
+  })),
+);
 const RegisterPage = lazy(() =>
   import('./pages/RegisterPage').then((module) => ({ default: module.RegisterPage })),
 );
@@ -189,6 +194,7 @@ export default function App() {
           <Route path="/community/members" element={routeElement(<MembersPage />)} />
           <Route path="/admin" element={routeElement(<AdminPage />)} />
           <Route path="/app-admin" element={routeElement(<AppAdminPage />)} />
+          <Route path="/profile/:userId" element={routeElement(<PublicPlayerProfilePage />)} />
           <Route path="/profile" element={routeElement(<ProfilePage />)} />
           <Route path="/settings" element={routeElement(<SettingsPage />)} />
           <Route path="*" element={routeElement(<NotFoundPage />)} />
