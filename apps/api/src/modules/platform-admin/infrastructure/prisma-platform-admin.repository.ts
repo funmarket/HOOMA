@@ -19,33 +19,20 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
     return assignments.map((assignment) => assignment.role);
   }
 
-  async bootstrapPlatformAdmin(
-    userId: string,
-    normalizedAuthUsername: string,
-  ): Promise<PlatformAdminBootstrapResult> {
+  async bootstrapFirstPlatformAdmin(userId: string): Promise<PlatformAdminBootstrapResult> {
     try {
       return await this.db.$transaction(
         async (tx) => {
           const user = await tx.user.findFirst({
-            where: {
-              id: userId,
-              authUsername: normalizedAuthUsername,
-              deletedAt: null,
-            },
+            where: { id: userId, deletedAt: null },
             select: { id: true },
           });
-          if (!user) return 'identity-mismatch';
+          if (!user) return 'already-initialized';
 
-          const existing = await tx.platformRoleAssignment.findUnique({
-            where: {
-              userId_role: {
-                userId,
-                role: 'PLATFORM_ADMIN',
-              },
-            },
+          const existingAssignment = await tx.platformRoleAssignment.findFirst({
             select: { id: true },
           });
-          if (existing) return 'already-assigned';
+          if (existingAssignment) return 'already-initialized';
 
           await tx.platformRoleAssignment.create({
             data: {
@@ -59,8 +46,14 @@ export class PrismaPlatformAdminRepository implements PlatformAdminRepository {
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       );
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return 'already-assigned';
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        (error.code === 'P2002' || error.code === 'P2034')
+      ) {
+        const existingAssignment = await this.db.platformRoleAssignment.findFirst({
+          select: { id: true },
+        });
+        if (existingAssignment) return 'already-initialized';
       }
       throw error;
     }
