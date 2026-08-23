@@ -4,6 +4,7 @@ import type {
   TeamChallengeMessageCreateInput,
   TeamCreateInput,
   TeamLineupCreateInput,
+  TeamLineupUpdateInput,
   TeamPlayerCreateInput,
   TeamUpdateInput,
 } from '@hooma/contracts';
@@ -11,6 +12,38 @@ import type { DatabaseClient } from '../../../infrastructure/database/prisma.js'
 import { AppError } from '../../../http/errors/app-error.js';
 import { decodeTimeIdCursor, encodeTimeIdCursor } from '../../../infrastructure/database/cursor.js';
 import type { TeamListInput, TeamRepository } from '../application/team-repository.js';
+
+const lineupSlotSelect = {
+  id: true,
+  role: true,
+  x: true,
+  y: true,
+  isStarter: true,
+  sortOrder: true,
+  player: {
+    select: {
+      id: true,
+      userId: true,
+      displayName: true,
+      shirtNumber: true,
+      position: true,
+      photoUrl: true,
+    },
+  },
+} satisfies Prisma.TeamLineupSlotSelect;
+
+const lineupSelect = {
+  id: true,
+  name: true,
+  formation: true,
+  matchFormat: true,
+  isCurrent: true,
+  isPublished: true,
+  slots: {
+    select: lineupSlotSelect,
+    orderBy: [{ sortOrder: 'asc' as const }, { id: 'asc' as const }],
+  },
+} satisfies Prisma.TeamLineupSelect;
 
 const publicTeamSelect = {
   id: true,
@@ -39,7 +72,14 @@ const publicTeamSelect = {
   lineups: {
     where: { isCurrent: true, isPublished: true, deletedAt: null },
     take: 1,
-    select: { id: true, name: true, formation: true, matchFormat: true },
+    select: {
+      id: true,
+      name: true,
+      formation: true,
+      matchFormat: true,
+      isCurrent: true,
+      isPublished: true,
+    },
     orderBy: [{ updatedAt: 'desc' as const }],
   },
   _count: { select: { players: { where: { isActive: true } } } },
@@ -50,32 +90,7 @@ const teamDetailSelect = {
   lineups: {
     where: { deletedAt: null },
     take: 1,
-    select: {
-      id: true,
-      name: true,
-      formation: true,
-      matchFormat: true,
-      slots: {
-        select: {
-          id: true,
-          role: true,
-          x: true,
-          y: true,
-          isStarter: true,
-          sortOrder: true,
-          player: {
-            select: {
-              id: true,
-              displayName: true,
-              shirtNumber: true,
-              position: true,
-              photoUrl: true,
-            },
-          },
-        },
-        orderBy: [{ sortOrder: 'asc' as const }, { id: 'asc' as const }],
-      },
-    },
+    select: lineupSelect,
     orderBy: [{ isCurrent: 'desc' as const }, { updatedAt: 'desc' as const }],
   },
 } satisfies Prisma.TeamSelect;
@@ -84,7 +99,7 @@ const publicTeamDetailSelect = {
   ...teamDetailSelect,
   lineups: {
     ...teamDetailSelect.lineups,
-    where: { isPublished: true, deletedAt: null },
+    where: { isCurrent: true, isPublished: true, deletedAt: null },
   },
 } satisfies Prisma.TeamSelect;
 
@@ -99,12 +114,8 @@ const challengeInclude = {
 } satisfies Prisma.TeamChallengeInclude;
 
 const challengeDetailInclude = {
-  challengerTeam: {
-    select: teamDetailSelect,
-  },
-  challengedTeam: {
-    select: teamDetailSelect,
-  },
+  challengerTeam: { select: teamDetailSelect },
+  challengedTeam: { select: teamDetailSelect },
   game: {
     include: {
       homeTeam: { select: teamDetailSelect },
@@ -125,6 +136,48 @@ const gameDetailInclude = {
     },
   },
 } satisfies Prisma.TeamGameInclude;
+
+const matchSize: Record<TeamLineupCreateInput['matchFormat'], number> = {
+  FIVE_V_FIVE: 5,
+  SIX_V_SIX: 6,
+  SEVEN_V_SEVEN: 7,
+  EIGHT_V_EIGHT: 8,
+  NINE_V_NINE: 9,
+  ELEVEN_V_ELEVEN: 11,
+};
+
+async function validateLineupInput(
+  tx: Prisma.TransactionClient,
+  teamId: string,
+  input: TeamLineupCreateInput | TeamLineupUpdateInput,
+) {
+  const starters = input.slots.filter((slot) => slot.isStarter);
+  if (starters.length > matchSize[input.matchFormat]) {
+    throw new AppError(
+      409,
+      'TEAM_LINEUP_TOO_MANY_STARTERS',
+      `This match format allows ${matchSize[input.matchFormat]} starters.`,
+    );
+  }
+
+  const playerIds = input.slots.flatMap((slot) => (slot.playerId ? [slot.playerId] : []));
+  if (new Set(playerIds).size !== playerIds.length) {
+    throw new AppError(409, 'TEAM_LINEUP_DUPLICATE_PLAYER', 'A Team player can appear only once.');
+  }
+  if (!playerIds.length) return;
+
+  const activePlayers = await tx.teamPlayer.findMany({
+    where: { id: { in: playerIds }, teamId, isActive: true },
+    select: { id: true },
+  });
+  if (activePlayers.length !== playerIds.length) {
+    throw new AppError(
+      409,
+      'TEAM_LINEUP_PLAYER_INVALID',
+      'Lineup players must be active players on this Team.',
+    );
+  }
+}
 
 export class PrismaTeamRepository implements TeamRepository {
   constructor(private readonly db: DatabaseClient) {}
@@ -179,11 +232,7 @@ export class PrismaTeamRepository implements TeamRepository {
   async listManagedTeams(teamIds: string[]) {
     if (!teamIds.length) return { items: [] };
     const items = await this.db.team.findMany({
-      where: {
-        id: { in: teamIds },
-        status: 'ACTIVE',
-        deletedAt: null,
-      },
+      where: { id: { in: teamIds }, status: 'ACTIVE', deletedAt: null },
       select: teamDetailSelect,
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
     });
@@ -328,8 +377,12 @@ export class PrismaTeamRepository implements TeamRepository {
 
   createLineup(userId: string, teamId: string, input: TeamLineupCreateInput) {
     return this.db.$transaction(async (tx) => {
+      await validateLineupInput(tx, teamId, input);
       if (input.isCurrent) {
-        await tx.teamLineup.updateMany({ where: { teamId }, data: { isCurrent: false } });
+        await tx.teamLineup.updateMany({
+          where: { teamId, deletedAt: null },
+          data: { isCurrent: false },
+        });
       }
       return tx.teamLineup.create({
         data: {
@@ -351,7 +404,52 @@ export class PrismaTeamRepository implements TeamRepository {
             })),
           },
         },
-        include: { slots: true },
+        select: lineupSelect,
+      });
+    });
+  }
+
+  updateLineup(
+    userId: string,
+    teamId: string,
+    lineupId: string,
+    input: TeamLineupUpdateInput,
+  ) {
+    return this.db.$transaction(async (tx) => {
+      const existing = await tx.teamLineup.findFirst({
+        where: { id: lineupId, teamId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!existing) throw new AppError(404, 'TEAM_LINEUP_NOT_FOUND', 'Team lineup not found.');
+
+      await validateLineupInput(tx, teamId, input);
+      if (input.isCurrent) {
+        await tx.teamLineup.updateMany({
+          where: { teamId, id: { not: lineupId }, deletedAt: null },
+          data: { isCurrent: false },
+        });
+      }
+      await tx.teamLineupSlot.deleteMany({ where: { lineupId } });
+      return tx.teamLineup.update({
+        where: { id: lineupId },
+        data: {
+          name: input.name,
+          formation: input.formation,
+          matchFormat: input.matchFormat,
+          isCurrent: input.isCurrent,
+          isPublished: input.isPublished,
+          slots: {
+            create: input.slots.map((slot) => ({
+              playerId: slot.playerId || null,
+              role: slot.role,
+              x: slot.x,
+              y: slot.y,
+              isStarter: slot.isStarter,
+              sortOrder: slot.sortOrder,
+            })),
+          },
+        },
+        select: lineupSelect,
       });
     });
   }
@@ -381,14 +479,8 @@ export class PrismaTeamRepository implements TeamRepository {
           where: {
             status: 'PENDING',
             OR: [
-              {
-                challengerTeamId: challenger.id,
-                challengedTeamId: challenged.id,
-              },
-              {
-                challengerTeamId: challenged.id,
-                challengedTeamId: challenger.id,
-              },
+              { challengerTeamId: challenger.id, challengedTeamId: challenged.id },
+              { challengerTeamId: challenged.id, challengedTeamId: challenger.id },
             ],
           },
           select: { id: true },
