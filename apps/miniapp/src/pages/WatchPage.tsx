@@ -96,10 +96,7 @@ export function WatchPage() {
               const away = event.watchDetails?.awayClub;
               const parts = dateParts(event.startsAt);
               const source = communityById.get(event.communityId);
-              const sourceLabel = hoomaSourceLabel(
-                source,
-                events.data?.activeCommunityId ?? null,
-              );
+              const sourceLabel = hoomaSourceLabel(source, events.data?.activeCommunityId ?? null);
               return (
                 <VintageCollectorTicket
                   key={event.id}
