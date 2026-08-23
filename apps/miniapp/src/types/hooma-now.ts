@@ -1,10 +1,4 @@
-import type {
-  EventItem,
-  FundItem,
-  RequestItem,
-  RideOfferItem,
-  RideRequestItem,
-} from './domain';
+import type { EventItem, FundItem, RequestItem, RideOfferItem, RideRequestItem } from './domain';
 
 export type HoomaNowCommunity = {
   id: string;
