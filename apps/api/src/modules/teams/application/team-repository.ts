@@ -15,9 +15,13 @@ export type TeamListInput = {
   houma?: string;
 };
 
+export type ManagedTeamResult = {
+  items: Array<{ id: string }>;
+};
+
 export interface TeamRepository {
   listPublic(input: TeamListInput): Promise<unknown>;
-  listManagedTeams(teamIds: string[]): Promise<unknown>;
+  listManagedTeams(userId: string): Promise<ManagedTeamResult>;
   getPublic(teamId: string): Promise<unknown>;
   getChallenge(challengeId: string, managedTeamIds: string[]): Promise<unknown>;
   getGame(gameId: string): Promise<unknown>;
