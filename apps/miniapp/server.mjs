@@ -6,9 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const HOST = '0.0.0.0';
 const PORT = Number(process.env.PORT || 4173);
-const ROOT = resolve(fileURLToPath(new URL('./dist', import.meta.url)));
-const ASSETS_ROOT = resolve(ROOT, 'assets');
-const INDEX_FILE = resolve(ROOT, 'index.html');
+const DEFAULT_ROOT = resolve(fileURLToPath(new URL('./dist', import.meta.url)));
 
 const MIME_TYPES = new Map([
   ['.css', 'text/css; charset=utf-8'],
@@ -64,64 +62,73 @@ async function sendFile(req, res, filePath, cacheControl) {
   return true;
 }
 
-async function serveRequest(req, res) {
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    sendText(res, 405, 'Method Not Allowed');
-    return;
-  }
+export function createMiniAppServer({ root = DEFAULT_ROOT } = {}) {
+  const resolvedRoot = resolve(root);
+  const assetsRoot = resolve(resolvedRoot, 'assets');
+  const indexFile = resolve(resolvedRoot, 'index.html');
 
-  let pathname;
-  try {
-    pathname = decodeURIComponent(new URL(req.url || '/', 'http://localhost').pathname);
-  } catch {
-    sendText(res, 400, 'Bad Request');
-    return;
-  }
+  async function serveRequest(req, res) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      sendText(res, 405, 'Method Not Allowed');
+      return;
+    }
 
-  if (pathname.startsWith('/assets/')) {
-    const assetPath = resolve(ROOT, `.${pathname}`);
-    if (!isInside(ASSETS_ROOT, assetPath)) {
+    let pathname;
+    try {
+      pathname = decodeURIComponent(new URL(req.url || '/', 'http://localhost').pathname);
+    } catch {
+      sendText(res, 400, 'Bad Request');
+      return;
+    }
+
+    if (pathname.startsWith('/assets/')) {
+      const assetPath = resolve(resolvedRoot, `.${pathname}`);
+      if (!isInside(assetsRoot, assetPath)) {
+        sendText(res, 404, 'Asset Not Found');
+        return;
+      }
+
+      try {
+        if (await sendFile(req, res, assetPath, 'public, max-age=31536000, immutable')) return;
+      } catch (error) {
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+          sendText(res, 404, 'Asset Not Found');
+          return;
+        }
+        throw error;
+      }
+
       sendText(res, 404, 'Asset Not Found');
       return;
     }
 
-    try {
-      if (await sendFile(req, res, assetPath, 'public, max-age=31536000, immutable')) return;
-    } catch (error) {
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-        sendText(res, 404, 'Asset Not Found');
-        return;
-      }
-      throw error;
-    }
-
-    sendText(res, 404, 'Asset Not Found');
-    return;
-  }
-
-  const publicPath = resolve(ROOT, `.${pathname}`);
-  if (pathname !== '/' && isInside(ROOT, publicPath)) {
-    try {
-      if (await sendFile(req, res, publicPath, 'no-cache')) return;
-    } catch (error) {
-      if (!(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT')) {
-        throw error;
+    const publicPath = resolve(resolvedRoot, `.${pathname}`);
+    if (pathname !== '/' && isInside(resolvedRoot, publicPath)) {
+      try {
+        if (await sendFile(req, res, publicPath, 'no-cache')) return;
+      } catch (error) {
+        if (!(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT')) {
+          throw error;
+        }
       }
     }
+
+    await access(indexFile);
+    await sendFile(req, res, indexFile, 'no-store, max-age=0, must-revalidate');
   }
 
-  await access(INDEX_FILE);
-  await sendFile(req, res, INDEX_FILE, 'no-store, max-age=0, must-revalidate');
+  return createServer((req, res) => {
+    void serveRequest(req, res).catch((error) => {
+      console.error('Mini App static server error', error);
+      if (!res.headersSent) sendText(res, 500, 'Internal Server Error');
+      else res.destroy();
+    });
+  });
 }
 
-const server = createServer((req, res) => {
-  void serveRequest(req, res).catch((error) => {
-    console.error('Mini App static server error', error);
-    if (!res.headersSent) sendText(res, 500, 'Internal Server Error');
-    else res.destroy();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const server = createMiniAppServer();
+  server.listen(PORT, HOST, () => {
+    console.log(`HOOMA Mini App listening on ${HOST}:${PORT}`);
   });
-});
-
-server.listen(PORT, HOST, () => {
-  console.log(`HOOMA Mini App listening on ${HOST}:${PORT}`);
-});
+}
