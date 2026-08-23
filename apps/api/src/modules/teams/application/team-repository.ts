@@ -1,4 +1,5 @@
 import type {
+  TeamAssistantDelegationInput,
   TeamChallengeCreateInput,
   TeamChallengeMessageCreateInput,
   TeamCreateInput,
@@ -6,6 +7,7 @@ import type {
   TeamPlayerCreateInput,
   TeamUpdateInput,
 } from '@hooma/contracts';
+import type { TeamAuthority } from '../domain/team-access.js';
 
 export type TeamListInput = {
   cursor?: string;
@@ -25,17 +27,27 @@ export interface TeamRepository {
     userId: string,
     communityId: string,
   ): Promise<{ communityId: string; role: 'OWNER' | 'ADMIN' } | null>;
-  getTeamManagerAccess(
-    userId: string,
-    teamId: string,
-  ): Promise<{ id: string; communityId: string; role: 'OWNER' | 'ADMIN' } | null>;
+  getTeamAuthority(userId: string, teamId: string): Promise<TeamAuthority | null>;
+  listTeamAuthorities(userId: string): Promise<TeamAuthority[]>;
   getTeamAccess(
     teamId: string,
   ): Promise<{ id: string; communityId: string; status: string } | null>;
-  getManagedTeamIds(userId: string): Promise<string[]>;
   create(userId: string, input: TeamCreateInput): Promise<unknown>;
   update(teamId: string, input: TeamUpdateInput): Promise<unknown>;
   addPlayer(teamId: string, input: TeamPlayerCreateInput): Promise<unknown>;
+  listAssistants(teamId: string): Promise<unknown>;
+  appointAssistant(
+    actorUserId: string,
+    teamId: string,
+    input: TeamAssistantDelegationInput,
+    requestId: string,
+  ): Promise<unknown>;
+  revokeAssistant(
+    actorUserId: string,
+    teamId: string,
+    responsibilityId: string,
+    requestId: string,
+  ): Promise<unknown>;
   createLineup(userId: string, teamId: string, input: TeamLineupCreateInput): Promise<unknown>;
   createChallenge(userId: string, input: TeamChallengeCreateInput): Promise<unknown>;
   listIncomingChallenges(teamIds: string[], limit: number): Promise<unknown>;
