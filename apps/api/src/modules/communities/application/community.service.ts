@@ -35,6 +35,10 @@ export class CommunityService {
     return this.repo.listForUser(userId);
   }
 
+  now(userId: string) {
+    return this.repo.hoomaNow(userId);
+  }
+
   create(userId: string, input: CommunityCreateInput) {
     return this.repo.createWithOwner(userId, {
       name: input.name,
