@@ -42,7 +42,11 @@ export class TeamService {
 
   myTeams(userId: string) {
     if (!this.memberRead) {
-      throw new AppError(500, 'TEAM_MEMBER_READ_UNAVAILABLE', 'Team member read model unavailable.');
+      throw new AppError(
+        500,
+        'TEAM_MEMBER_READ_UNAVAILABLE',
+        'Team member read model unavailable.',
+      );
     }
     return this.memberRead.listMine(userId);
   }
