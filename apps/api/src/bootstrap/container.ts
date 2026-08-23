@@ -5,6 +5,8 @@ import { HttpTelegramBotApi } from '../infrastructure/telegram/bot-api.js';
 
 import { PrismaIdentityRepository } from '../modules/identity/infrastructure/prisma-identity.repository.js';
 import { IdentityService } from '../modules/identity/application/identity.service.js';
+import { PrismaAuthRepository } from '../modules/auth/infrastructure/prisma-auth.repository.js';
+import { AuthService } from '../modules/auth/application/auth.service.js';
 import { PrismaCommunityRepository } from '../modules/communities/infrastructure/prisma-community.repository.js';
 import { PrismaMembershipAccessRepository } from '../modules/communities/infrastructure/prisma-membership-access.repository.js';
 import { CommunityService } from '../modules/communities/application/community.service.js';
@@ -47,6 +49,8 @@ export function buildContainer() {
 
   const identityRepository = new PrismaIdentityRepository(db);
   const identity = new IdentityService(identityRepository);
+  const authRepository = new PrismaAuthRepository(db);
+  const auth = new AuthService(authRepository);
 
   const communityRepository = new PrismaCommunityRepository(db);
   const membershipAccessRepository = new PrismaMembershipAccessRepository(db);
@@ -112,6 +116,7 @@ export function buildContainer() {
     telegram,
     repositories: {
       identity: identityRepository,
+      auth: authRepository,
       communities: communityRepository,
       membershipAccess: membershipAccessRepository,
       events: eventRepository,
@@ -131,6 +136,7 @@ export function buildContainer() {
     },
     services: {
       identity,
+      auth,
       communities,
       events,
       rsvps,

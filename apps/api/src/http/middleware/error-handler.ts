@@ -1,4 +1,3 @@
-import { Prisma } from '@prisma/client';
 import type { ErrorRequestHandler } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../errors/app-error.js';
@@ -26,20 +25,6 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
         message: 'Request validation failed',
         requestId,
         details: error.flatten(),
-      },
-    });
-  }
-
-  if (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === 'P2002' &&
-    error.meta?.modelName === 'UserProfilePresentation'
-  ) {
-    return res.status(409).json({
-      error: {
-        code: 'PROFILE_USERNAME_TAKEN',
-        message: 'That HOOMA username is already in use.',
-        requestId,
       },
     });
   }

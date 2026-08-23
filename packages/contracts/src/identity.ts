@@ -16,14 +16,6 @@ export const selectedProfileIdentitiesSchema = z
 
 export const profileUpdateSchema = z.object({
   displayName: z.string().trim().min(2).max(120).nullable().optional(),
-  username: z
-    .string()
-    .trim()
-    .min(3)
-    .max(64)
-    .regex(/^[A-Za-z0-9_.]+$/, 'Username may only contain letters, numbers, underscores, and dots.')
-    .nullable()
-    .optional(),
   photoUrl: z.string().trim().url().max(1000).nullable().optional(),
   skillLevel: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'MIXED']).optional(),
   skillRating: z.number().int().min(1).max(100).optional(),
@@ -38,6 +30,33 @@ export const profileUpdateSchema = z.object({
   themeOverride: z.enum(['TELEGRAM', 'LIGHT', 'DARK']).optional(),
 });
 
+const classicUsernameSchema = z
+  .string()
+  .trim()
+  .min(3)
+  .max(30)
+  .regex(/^[A-Za-z0-9_.]+$/, 'Username may only contain letters, numbers, underscores, and dots.');
+
+const classicPasswordSchema = z.string().min(8).max(128);
+
+export const webRegisterSchema = z.object({
+  username: classicUsernameSchema,
+  password: classicPasswordSchema,
+  displayName: z.string().trim().min(2).max(120).optional(),
+  email: z
+    .string()
+    .trim()
+    .email()
+    .max(320)
+    .transform((value) => value.toLowerCase())
+    .optional(),
+});
+
+export const webLoginSchema = z.object({
+  username: classicUsernameSchema,
+  password: classicPasswordSchema,
+});
+
 export const telegramLinkSchema = z.object({
   initData: z.string().trim().min(1).max(8192),
 });
@@ -49,20 +68,14 @@ export const webCredentialsLinkSchema = z.object({
     .email()
     .max(320)
     .transform((value) => value.toLowerCase()),
-  username: z
-    .string()
-    .trim()
-    .min(3)
-    .max(30)
-    .regex(
-      /^[A-Za-z0-9_.]+$/,
-      'Username may only contain letters, numbers, underscores, and dots.',
-    ),
-  password: z.string().min(8).max(128),
+  username: classicUsernameSchema,
+  password: classicPasswordSchema,
 });
 
 export type ProfileIdentityType = z.infer<typeof profileIdentityTypeSchema>;
 export type EffectiveProfileIdentityType = z.infer<typeof effectiveProfileIdentityTypeSchema>;
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
+export type WebRegisterInput = z.infer<typeof webRegisterSchema>;
+export type WebLoginInput = z.infer<typeof webLoginSchema>;
 export type TelegramLinkInput = z.infer<typeof telegramLinkSchema>;
 export type WebCredentialsLinkInput = z.infer<typeof webCredentialsLinkSchema>;

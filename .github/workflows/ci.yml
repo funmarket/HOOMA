@@ -38,6 +38,7 @@ jobs:
       - run: npm run architecture:check
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run db:migrate:deploy
       - run: npm test
         env:
           NODE_ENV: test
@@ -46,5 +47,4 @@ jobs:
         env:
           NODE_ENV: production
       - run: npm run security:check
-      - run: npm run db:migrate:deploy
       - run: npm run db:migration:check

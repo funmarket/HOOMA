@@ -48,3 +48,38 @@ test('me read and profile update responses use the same identity and presentatio
     /async updateProfile\(userId: string,[\s\S]*?select: meSelect,[\s\S]*?select: presentationSelect,[\s\S]*?return toMeView\(user, presentation\);/,
   );
 });
+
+test('me read model exposes one effective username while preserving Telegram metadata', () => {
+  const repository = readFileSync(
+    'apps/api/src/modules/identity/infrastructure/prisma-identity.repository.ts',
+    'utf8',
+  );
+
+  assert.match(repository, /authUsername: true/);
+  assert.match(repository, /displayAuthUsername: true/);
+  assert.match(repository, /username: telegramUsername/);
+  assert.match(
+    repository,
+    /const effectiveUsername =[\s\S]*?nonBlank\(displayAuthUsername\) \?\? nonBlank\(authUsername\) \?\? nonBlank\(telegramUsername\)/,
+  );
+  assert.match(repository, /effectiveUsername,/);
+  assert.match(repository, /telegramUsername,/);
+  assert.doesNotMatch(repository, /const username = displayAuthUsername/);
+});
+
+test('me read model centralizes effective display name and photo fallbacks', () => {
+  const repository = readFileSync(
+    'apps/api/src/modules/identity/infrastructure/prisma-identity.repository.ts',
+    'utf8',
+  );
+
+  assert.match(repository, /authName: true/);
+  assert.match(repository, /nonBlank\(presentation\?\.displayName\)/);
+  assert.match(repository, /nonBlank\(authName\)/);
+  assert.match(repository, /telegramDisplayName/);
+  assert.match(repository, /effectiveUsername/);
+  assert.match(repository, /'HOOMA member'/);
+  assert.match(repository, /nonBlank\(presentation\?\.photoUrl\) \?\? nonBlank\(base\.photoUrl\)/);
+  assert.match(repository, /effectiveDisplayName,/);
+  assert.match(repository, /effectivePhotoUrl,/);
+});

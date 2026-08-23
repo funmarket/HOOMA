@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { webRegisterSchema } from '../packages/contracts/src/identity.js';
 
 const schema = readFileSync('packages/database/prisma/schema.prisma', 'utf8');
 const migration = readFileSync(
@@ -20,4 +21,17 @@ test('Telegram authentication still requires a real Telegram identifier', () => 
     identityTypes,
     /export interface TelegramIdentityInput \{[\s\S]*?telegramUserId: string;/,
   );
+});
+
+test('classic web registration requires username/password but not Telegram or email', () => {
+  const result = webRegisterSchema.parse({
+    username: 'Hannibal10',
+    password: 'a-secure-password',
+    displayName: 'Hannibal',
+  });
+
+  assert.equal(result.username, 'Hannibal10');
+  assert.equal(result.displayName, 'Hannibal');
+  assert.equal(result.email, undefined);
+  assert.equal('telegramUserId' in result, false);
 });

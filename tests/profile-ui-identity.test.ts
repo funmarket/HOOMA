@@ -10,7 +10,6 @@ const identityRepository = readFileSync(
   'apps/api/src/modules/identity/infrastructure/prisma-identity.repository.ts',
   'utf8',
 );
-const errorHandler = readFileSync('apps/api/src/http/middleware/error-handler.ts', 'utf8');
 const presentationSchema = readFileSync(
   'packages/database/prisma/profile-presentation.prisma',
   'utf8',
@@ -53,29 +52,51 @@ test('More exposes the multi-identity HOOMA profile instead of a player-only pro
   assert.match(morePage, /navigate\('\/profile'\)/);
 });
 
-test('HOOMA presentation is editable and stored separately from Telegram identity metadata', () => {
+test('Display Name and profile photo remain editable presentation fields', () => {
   assert.match(profilePage, /HOOMA display name/);
-  assert.match(profilePage, /HOOMA username/);
   assert.match(profilePage, /HOOMA profile photo URL/);
   assert.match(profilePage, /me\.presentation\?\.displayName/);
-  assert.match(profilePage, /me\.presentation\?\.username/);
   assert.match(profilePage, /me\.presentation\?\.photoUrl/);
   assert.match(presentationSchema, /model UserProfilePresentation/);
   assert.match(identityRepository, /tx\.userProfilePresentation\.upsert/);
   assert.doesNotMatch(identityRepository, /data: \{ photoUrl \}/);
 });
 
-test('Telegram presentation remains fallback and is not silently captured as a HOOMA override', () => {
-  assert.match(profilePage, /useState\(me\.presentation\?\.displayName \|\| ''\)/);
-  assert.match(profilePage, /useState\(me\.presentation\?\.username \|\| ''\)/);
-  assert.match(profilePage, /useState\(me\.presentation\?\.photoUrl \|\| ''\)/);
-  assert.match(profilePage, /displayName\.trim\(\) \|\| telegramFallbackName\(me\)/);
-  assert.match(profilePage, /username\.trim\(\) \|\| me\.username \|\| ''/);
-  assert.match(profilePage, /photoUrl\.trim\(\) \|\| me\.photoUrl \|\| ''/);
+test('username is canonical account identity, never a Profile override', () => {
+  assert.match(profilePage, /Username/);
+  assert.match(profilePage, /me\.effectiveUsername \? `@\$\{me\.effectiveUsername\}` : 'Not set'/);
+  assert.match(profilePage, /const visibleUsername = me\.effectiveUsername \?\? ''/);
+  assert.doesNotMatch(profilePage, /HOOMA username/);
+  assert.doesNotMatch(profilePage, /setUsername/);
+  assert.doesNotMatch(profilePage, /username: username\.trim/);
+  assert.match(
+    identityRepository,
+    /const effectiveUsername =[\s\S]*?nonBlank\(displayAuthUsername\) \?\? nonBlank\(authUsername\) \?\? nonBlank\(telegramUsername\)/,
+  );
 });
 
-test('duplicate HOOMA username is a controlled conflict instead of an internal error', () => {
-  assert.match(errorHandler, /UserProfilePresentation/);
-  assert.match(errorHandler, /PROFILE_USERNAME_TAKEN/);
-  assert.match(errorHandler, /status\(409\)/);
+test('explicit presentation overrides stay separate from effective fallback values', () => {
+  assert.match(profileTypes, /effectiveDisplayName: string/);
+  assert.match(profileTypes, /effectiveUsername\?: string \| null/);
+  assert.match(profileTypes, /effectivePhotoUrl\?: string \| null/);
+  assert.match(profilePage, /useState\(me\.presentation\?\.displayName \|\| ''\)/);
+  assert.match(profilePage, /useState\(me\.presentation\?\.photoUrl \|\| ''\)/);
+  assert.match(profilePage, /displayName\.trim\(\) \|\| me\.effectiveDisplayName/);
+  assert.match(profilePage, /photoUrl\.trim\(\) \|\| me\.effectivePhotoUrl \|\| ''/);
+  assert.match(profilePage, /placeholder=\{me\.effectiveDisplayName\}/);
+  assert.match(profilePage, /placeholder=\{me\.effectivePhotoUrl \|\|/);
+});
+
+test('Telegram username remains metadata without overwriting web credentials', () => {
+  assert.match(profileTypes, /telegramUsername\?: string \| null/);
+  assert.match(identityRepository, /telegramUsername,/);
+  assert.match(profilePage, /Connected Telegram:/);
+  assert.match(profilePage, /Telegram stays connected without overwriting web credentials/);
+});
+
+test('presentation username columns remain dormant rather than destructively removed', () => {
+  assert.match(presentationSchema, /username\s+String\?/);
+  assert.match(presentationSchema, /displayUsername\s+String\?/);
+  assert.doesNotMatch(identityRepository, /displayUsername: presentation\.displayUsername/);
+  assert.doesNotMatch(identityRepository, /username: username === null/);
 });

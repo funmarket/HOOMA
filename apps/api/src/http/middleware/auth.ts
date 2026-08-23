@@ -2,13 +2,15 @@ import { deepSnakeToCamelObjKeys, parse, validate } from '@tma.js/init-data-node
 import type { NextFunction, Request, Response } from 'express';
 import { env } from '../../config/env.js';
 import { AppError } from '../errors/app-error.js';
+import type { AuthService } from '../../modules/auth/application/auth.service.js';
 import type { IdentityService } from '../../modules/identity/application/identity.service.js';
 import type { IdentityUser, TelegramIdentityInput } from '../../modules/identity/domain/types.js';
 
 export interface AuthContext {
   user: IdentityUser;
+  sessionToken?: string;
   rawInitData?: string;
-  telegramUser: {
+  telegramUser?: {
     id: string;
     username?: string;
     firstName?: string;
@@ -59,7 +61,7 @@ function telegramIdentityInput(
 function telegramUserContext(
   telegramUserId: string,
   user: Pick<TelegramIdentityFields, 'username' | 'firstName' | 'lastName'>,
-): AuthContext['telegramUser'] {
+): NonNullable<AuthContext['telegramUser']> {
   return {
     id: telegramUserId,
     ...(user.username !== undefined ? { username: user.username } : {}),
@@ -76,6 +78,28 @@ function authError(res: Response, code: 'AUTH_REQUIRED' | 'AUTH_INVALID', messag
       requestId: String(res.locals.requestId || 'unknown'),
     },
   });
+}
+
+export function sessionAuth(auth: AuthService) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const existing = (req as Request & { auth?: AuthContext }).auth;
+    if (existing) return next();
+
+    const authorization = req.header('authorization') || '';
+    if (!authorization) return next();
+    const [scheme = '', token = ''] = authorization.split(' ', 2);
+    if (scheme.toLowerCase() !== 'bearer') return next();
+    if (!token) return authError(res, 'AUTH_INVALID', 'Invalid authentication credentials');
+
+    try {
+      const user = await auth.resolveSession(token);
+      if (!user) return authError(res, 'AUTH_INVALID', 'Invalid or expired session');
+      (req as AuthenticatedRequest).auth = { user, sessionToken: token };
+      return next();
+    } catch {
+      return authError(res, 'AUTH_INVALID', 'Invalid or expired session');
+    }
+  };
 }
 
 export function telegramAuth(identity: IdentityService, options: TelegramAuthOptions = {}) {

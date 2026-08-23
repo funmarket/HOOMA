@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { AppContainer } from '../../bootstrap/container.js';
+import { authRouter } from '../../modules/auth/http/auth.controller.js';
 import { identityRouter } from '../../modules/identity/http/identity.controller.js';
 import { communityRouter } from '../../modules/communities/http/community.controller.js';
 import { eventRouter } from '../../modules/events/http/event.controller.js';
@@ -18,6 +19,11 @@ import { rateLimit } from '../middleware/rate-limit.js';
 
 export function v1Router(container: AppContainer) {
   const router = Router();
+  router.use(
+    '/auth',
+    rateLimit(container.rateLimitStore, { scope: 'auth', windowMs: 60_000, max: 30 }),
+    authRouter(container.services.auth),
+  );
   router.use(identityRouter(container.services.identity));
   router.use('/communities', communityRouter(container.services.communities));
   router.use('/events', eventRouter(container.services.events));

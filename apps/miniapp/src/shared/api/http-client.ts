@@ -1,4 +1,5 @@
 import { retrieveRawInitData } from '@tma.js/sdk-react';
+import { getWebSession } from '../../features/auth/session';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 const DEFAULT_TIMEOUT_MS = 12_000;
@@ -11,10 +12,16 @@ function authHeaders() {
   }
   try {
     const raw = retrieveRawInitData();
-    if (raw) headers.authorization = `tma ${raw}`;
+    if (raw) {
+      headers.authorization = `tma ${raw}`;
+      return headers;
+    }
   } catch {
-    // Outside Telegram, the API rejects auth unless development bypass is explicitly enabled.
+    // Normal web entry has no Telegram launch data and falls through to web session auth.
   }
+
+  const session = getWebSession();
+  if (session) headers.authorization = `Bearer ${session.token}`;
   return headers;
 }
 
@@ -54,6 +61,8 @@ export async function http<T>(path: string, options: HttpOptions = {}): Promise<
           ...(requestOptions.headers || {}),
         },
       });
+      if (response.ok && response.status === 204) return undefined as T;
+
       const contentType = response.headers.get('content-type') || '';
       const expectsJson = path.startsWith('/api/');
       if (response.ok && expectsJson && !contentType.includes('application/json')) {

@@ -5,7 +5,7 @@ import type { AppContainer } from './container.js';
 import { env } from '../config/env.js';
 import { requestId } from '../http/middleware/request-id.js';
 import { errorHandler } from '../http/middleware/error-handler.js';
-import { telegramAuth } from '../http/middleware/auth.js';
+import { sessionAuth, telegramAuth } from '../http/middleware/auth.js';
 import { rateLimit } from '../http/middleware/rate-limit.js';
 import { v1Router } from '../http/v1/router.js';
 import { telegramWebhookRouter } from '../modules/payments/http/telegram-webhook.controller.js';
@@ -47,6 +47,7 @@ export function buildApp(container: AppContainer) {
   app.use(
     '/api/v1',
     rateLimit(container.rateLimitStore, { scope: 'api', windowMs: 60_000, max: 180 }),
+    sessionAuth(container.services.auth),
     telegramAuth(container.services.identity, { optional: true }),
     v1Router(container),
   );

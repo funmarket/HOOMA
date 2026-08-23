@@ -50,6 +50,9 @@ const HomePage = lazy(() =>
 const EventsPage = lazy(() =>
   import('./pages/EventsPage').then((module) => ({ default: module.EventsPage })),
 );
+const LoginPage = lazy(() =>
+  import('./pages/LoginPage').then((module) => ({ default: module.LoginPage })),
+);
 const MembersPage = lazy(() =>
   import('./pages/MembersPage').then((module) => ({ default: module.MembersPage })),
 );
@@ -76,6 +79,9 @@ const PitchPage = lazy(() =>
 );
 const ProfilePage = lazy(() =>
   import('./pages/ProfilePage').then((module) => ({ default: module.ProfilePage })),
+);
+const RegisterPage = lazy(() =>
+  import('./pages/RegisterPage').then((module) => ({ default: module.RegisterPage })),
 );
 const RequestsPage = lazy(() =>
   import('./pages/RequestsPage').then((module) => ({ default: module.RequestsPage })),
@@ -132,6 +138,8 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Routes>
+        <Route path="/login" element={routeElement(<LoginPage />)} />
+        <Route path="/register" element={routeElement(<RegisterPage />)} />
         <Route element={<Layout />}>
           <Route path="/" element={routeElement(<HomePage />)} />
           <Route path="/telegram" element={routeElement(<HomePage />)} />
