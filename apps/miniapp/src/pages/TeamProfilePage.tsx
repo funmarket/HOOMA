@@ -7,6 +7,7 @@ import {
   addTeamPlayer,
   getTeam,
   listManagedTeams,
+  listMyTeams,
   listPublicTeamRoster,
   listTeamPlayerCandidates,
   listTeamRoster,
@@ -40,6 +41,7 @@ function TeamEditForm({ team, onDone }: { team: TeamDetailItem; onDone: () => vo
       queryClient.setQueryData(teamQueryKeys.detail(team.id), updated);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: teamQueryKeys.managed() }),
+        queryClient.invalidateQueries({ queryKey: teamQueryKeys.mine() }),
         queryClient.invalidateQueries({ queryKey: teamQueryKeys.all }),
       ]);
       notify('success');
@@ -151,15 +153,28 @@ export function TeamProfilePage() {
     queryFn: listManagedTeams,
     retry: false,
   });
+  const myTeamsQuery = useQuery({
+    queryKey: teamQueryKeys.mine(),
+    queryFn: listMyTeams,
+    retry: false,
+  });
   const managedTeam = managedTeamsQuery.data?.items.find((item) => item.id === teamId) as
-    TeamDetailItem | undefined;
+    | TeamDetailItem
+    | undefined;
+  const memberTeam = myTeamsQuery.data?.items.find((item) => item.id === teamId);
   const teamQuery = useQuery({
     queryKey: teamQueryKeys.detail(teamId),
     queryFn: () => getTeam(teamId),
-    enabled: Boolean(teamId) && !managedTeamsQuery.isLoading && !managedTeam,
+    enabled:
+      Boolean(teamId) &&
+      !managedTeamsQuery.isLoading &&
+      !myTeamsQuery.isLoading &&
+      !managedTeam &&
+      !memberTeam,
   });
-  const team = managedTeam ?? teamQuery.data;
+  const team = managedTeam ?? memberTeam ?? teamQuery.data;
   const canManage = Boolean(managedTeam);
+  const isTeamPlayer = Boolean(memberTeam);
   const rosterQuery = useQuery({
     queryKey: teamQueryKeys.roster(teamId),
     queryFn: () => listTeamRoster(teamId),
@@ -169,7 +184,12 @@ export function TeamProfilePage() {
   const publicRosterQuery = useQuery({
     queryKey: teamQueryKeys.publicRoster(teamId),
     queryFn: () => listPublicTeamRoster(teamId),
-    enabled: Boolean(teamId) && !managedTeamsQuery.isLoading && !canManage,
+    enabled:
+      Boolean(teamId) &&
+      !managedTeamsQuery.isLoading &&
+      !myTeamsQuery.isLoading &&
+      !canManage &&
+      !isTeamPlayer,
     retry: false,
   });
   const candidatesQuery = useQuery({
@@ -181,7 +201,9 @@ export function TeamProfilePage() {
   const lineup = team?.lineups?.[0] ?? null;
   const rosterPlayers = canManage
     ? (rosterQuery.data?.items ?? [])
-    : (publicRosterQuery.data?.items ?? []);
+    : memberTeam
+      ? (memberTeam.players ?? [])
+      : (publicRosterQuery.data?.items ?? []);
   const selectedCandidate = candidatesQuery.data?.items.find(
     (candidate) => candidate.userId === selectedCandidateId,
   );
@@ -192,6 +214,7 @@ export function TeamProfilePage() {
       queryClient.invalidateQueries({ queryKey: teamQueryKeys.publicRoster(teamId) }),
       queryClient.invalidateQueries({ queryKey: teamQueryKeys.rosterCandidates(teamId) }),
       queryClient.invalidateQueries({ queryKey: teamQueryKeys.managed() }),
+      queryClient.invalidateQueries({ queryKey: teamQueryKeys.mine() }),
       queryClient.invalidateQueries({ queryKey: teamQueryKeys.detail(teamId) }),
       queryClient.invalidateQueries({ queryKey: teamQueryKeys.all }),
     ]);
@@ -218,7 +241,11 @@ export function TeamProfilePage() {
     onError: () => notify('error'),
   });
 
-  if (managedTeamsQuery.isLoading || (!managedTeam && teamQuery.isLoading)) {
+  if (
+    managedTeamsQuery.isLoading ||
+    myTeamsQuery.isLoading ||
+    (!managedTeam && !memberTeam && teamQuery.isLoading)
+  ) {
     return (
       <div className="page-shell vintage-page">
         <div className="vintage-empty h-72 animate-pulse" />
@@ -245,7 +272,9 @@ export function TeamProfilePage() {
           )}
         </span>
         <div className="min-w-0 flex-1">
-          <div className="vintage-kicker">{canManage ? 'Your Team' : 'Public team'}</div>
+          <div className="vintage-kicker">
+            {canManage ? 'Your Team' : isTeamPlayer ? 'My Team' : 'Public team'}
+          </div>
           <h1 className="team-profile-title">{team.name}</h1>
           <p className="team-profile-meta">
             <MapPin size={16} />{' '}
@@ -266,7 +295,7 @@ export function TeamProfilePage() {
         ) : null}
       </section>
 
-      {editing && canManage ? <TeamEditForm team={team} onDone={() => setEditing(false)} /> : null}
+      {editing && canManage ? <TeamEditForm team={managedTeam} onDone={() => setEditing(false)} /> : null}
 
       <section className="teams-section">
         <div className="vintage-section-heading">
@@ -274,7 +303,7 @@ export function TeamProfilePage() {
             <div className="vintage-kicker">Lineup</div>
             <h2 className="section-title">Published shape</h2>
           </div>
-          {team.acceptingChallenges && !canManage ? (
+          {team.acceptingChallenges && !canManage && !isTeamPlayer ? (
             <button
               className="accent-button shrink-0 px-4"
               onClick={() => navigate(`/teams/${team.id}/challenge`)}
@@ -463,7 +492,7 @@ export function TeamProfilePage() {
         ) : null}
 
         <div className="mt-4 grid gap-2">
-          {(canManage ? rosterQuery.isLoading : publicRosterQuery.isLoading) ? (
+          {(canManage ? rosterQuery.isLoading : isTeamPlayer ? false : publicRosterQuery.isLoading) ? (
             <div className="vintage-empty">Loading active roster…</div>
           ) : rosterPlayers.length ? (
             rosterPlayers.map((player) => (
