@@ -44,8 +44,7 @@ export const teamQueryKeys = {
   detail: (teamId: string) => [...teamQueryKeys.all, 'detail', teamId] as const,
   managed: () => [...teamQueryKeys.all, 'managed'] as const,
   roster: (teamId: string) => [...teamQueryKeys.all, 'roster', teamId] as const,
-  rosterCandidates: (teamId: string) =>
-    [...teamQueryKeys.roster(teamId), 'candidates'] as const,
+  rosterCandidates: (teamId: string) => [...teamQueryKeys.roster(teamId), 'candidates'] as const,
   challenges: () => [...teamQueryKeys.all, 'challenges'] as const,
   incomingChallenges: () => [...teamQueryKeys.challenges(), 'incoming'] as const,
   outgoingChallenges: () => [...teamQueryKeys.challenges(), 'outgoing'] as const,
