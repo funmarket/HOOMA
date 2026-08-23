@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import './index.css';
 import './styles/vintage.css';
+import './styles/team-community.css';
 import { bootTelegram, hasTelegramLaunchData } from './lib/telegram';
 import { ThemeProvider } from './providers/ThemeProvider';
 import { CommunityProvider } from './providers/CommunityProvider';
