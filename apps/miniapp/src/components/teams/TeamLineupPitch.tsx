@@ -93,7 +93,7 @@ export function TeamLineupPitch({
           <div className="team-lineup-empty">
             <span className="team-lineup-empty-mark">XI</span>
             <strong>Lineup not published.</strong>
-            <small>The Coach can publish starters from the Coach Control Room.</small>
+            <small>Authorized Team staff can publish starters from the Team Control Room.</small>
           </div>
         )}
       </div>

@@ -9,7 +9,9 @@ import type { TeamRosterRepository } from '../apps/api/src/modules/teams/applica
 import { TeamService } from '../apps/api/src/modules/teams/application/team.service.js';
 import { PrismaTeamRepository } from '../apps/api/src/modules/teams/infrastructure/prisma-team.repository.js';
 
+const app = readFileSync('apps/miniapp/src/App.tsx', 'utf8');
 const teamProfilePage = readFileSync('apps/miniapp/src/pages/TeamProfilePage.tsx', 'utf8');
+const teamControlRoomPage = readFileSync('apps/miniapp/src/pages/TeamControlRoomPage.tsx', 'utf8');
 const teamLineupBuilderPage = readFileSync(
   'apps/miniapp/src/pages/TeamLineupBuilderPage.tsx',
   'utf8',
@@ -149,25 +151,46 @@ test('Team lineup contract supports all match sizes and Custom shape', () => {
   assert.equal(parsed.matchFormat, 'FIVE_V_FIVE');
 });
 
-test('Team edit UI uses exact server authority instead of one broad management flag', () => {
+test('Team profile is read-oriented and routes authority to one Control Room', () => {
+  assert.match(app, /TeamControlRoomPage/);
+  assert.match(app, /path="\/teams\/:teamId\/control"/);
   assert.match(teamProfilePage, /getTeamAuthority/);
-  assert.match(teamProfilePage, /hasCapability\(authority, 'EDIT_TEAM'\)/);
-  assert.match(teamProfilePage, /hasCapability\(authority, 'MANAGE_ROSTER'\)/);
-  assert.match(teamProfilePage, /hasCapability\(authority, 'MANAGE_LINEUP'\)/);
-  assert.doesNotMatch(teamProfilePage, /const canManage = Boolean\(managedTeam\)/);
-  assert.match(teamProfilePage, /canEditTeam \?/);
-  assert.match(teamProfilePage, /canManageRoster \?/);
-  assert.match(teamProfilePage, /Build lineup/);
+  assert.match(teamProfilePage, /Control Room/);
+  assert.match(teamProfilePage, /navigate\(`\/teams\/\$\{team\.id\}\/control`\)/);
+  assert.doesNotMatch(teamProfilePage, /updateTeam/);
+  assert.doesNotMatch(teamProfilePage, /addTeamPlayer/);
+  assert.doesNotMatch(teamProfilePage, /removeTeamPlayer/);
+  assert.doesNotMatch(teamProfilePage, /TeamAssistantManager/);
+  assert.doesNotMatch(teamProfilePage, /Build lineup/);
+  assert.doesNotMatch(teamProfilePage, /Edit Team/);
+});
+
+test('Team Control Room uses exact canonical capabilities instead of one broad management flag', () => {
+  assert.match(teamControlRoomPage, /getTeamAuthority/);
+  assert.match(teamControlRoomPage, /hasCapability\(authority, 'EDIT_TEAM'\)/);
+  assert.match(teamControlRoomPage, /hasCapability\(authority, 'MANAGE_ROSTER'\)/);
+  assert.match(teamControlRoomPage, /hasCapability\(authority, 'MANAGE_LINEUP'\)/);
+  assert.match(teamControlRoomPage, /hasCapability\(authority, 'CREATE_CHALLENGE'\)/);
+  assert.match(teamControlRoomPage, /hasCapability\(authority, 'RESPOND_CHALLENGE'\)/);
+  assert.match(teamControlRoomPage, /hasCapability\(authority, 'MESSAGE_CHALLENGE'\)/);
+  assert.doesNotMatch(teamControlRoomPage, /const canManage = Boolean/);
+  assert.match(teamControlRoomPage, /Team membership alone never grants management authority/);
   assert.match(teamApi, /patch<TeamDetailItem>\(`\/api\/v1\/teams\/\$\{teamId\}`/);
 });
 
-test('Team roster management stays mutation-gated while lineup managers can read the roster', () => {
+test('Team roster management stays in Control Room while lineup managers can read the roster', () => {
   assert.match(teamApi, /get<TeamRosterPage>\(`\/api\/v1\/teams\/\$\{teamId\}\/players`/);
   assert.match(teamApi, /del<TeamRosterPlayer>/);
   assert.match(teamProfilePage, /enabled: Boolean\(teamId\) && canReadManagedRoster/);
-  assert.match(teamProfilePage, /enabled: Boolean\(teamId\) && canManageRoster && addingPlayer/);
-  assert.match(teamProfilePage, /window\.confirm/);
-  assert.match(teamProfilePage, /Assistant authority will be cleaned safely/);
+  assert.doesNotMatch(teamProfilePage, /listTeamPlayerCandidates/);
+  assert.doesNotMatch(teamProfilePage, /window\.confirm/);
+  assert.match(teamControlRoomPage, /enabled: Boolean\(teamId\) && canReadRoster/);
+  assert.match(
+    teamControlRoomPage,
+    /enabled: Boolean\(teamId\) && canManageRoster && addingPlayer && addMode === 'member'/,
+  );
+  assert.match(teamControlRoomPage, /window\.confirm/);
+  assert.match(teamControlRoomPage, /Assistant authority will be cleaned safely/);
 });
 
 test('Team lineup builder uses canonical Team endpoints and supports publish lifecycle', () => {
@@ -183,6 +206,7 @@ test('Team lineup builder uses canonical Team endpoints and supports publish lif
   assert.match(teamLineupBuilderPage, /hasLineupAuthority/);
   assert.match(teamLineupBuilderPage, /getCurrentTeamLineup/);
   assert.match(teamLineupBuilderPage, /listTeamRoster/);
+  assert.match(teamControlRoomPage, /navigate\(`\/teams\/\$\{teamId\}\/lineup`\)/);
   assert.match(teamLineupManager, /FIVE_V_FIVE/);
   assert.match(teamLineupManager, /SIX_V_SIX/);
   assert.match(teamLineupManager, /SEVEN_V_SEVEN/);
@@ -195,7 +219,7 @@ test('Team lineup builder uses canonical Team endpoints and supports publish lif
   assert.match(teamLineupManager, /Unpublish/);
 });
 
-test('Coach Assistant UI uses canonical role metadata and linked Team players only', () => {
+test('Coach Assistant UI stays Coach-only inside the canonical Team Control Room', () => {
   assert.match(teamApi, /authority: TeamManagedAuthority/);
   assert.match(teamApi, /get<TeamAssistantPage>\(`\/api\/v1\/teams\/\$\{teamId\}\/assistants`/);
   assert.match(
@@ -203,10 +227,11 @@ test('Coach Assistant UI uses canonical role metadata and linked Team players on
     /post<TeamAssistantAssignment>\(`\/api\/v1\/teams\/\$\{teamId\}\/assistants`/,
   );
   assert.match(teamApi, /del<TeamAssistantAssignment>/);
-  assert.match(teamProfilePage, /const isCoach = authority\?\.role === 'COACH'/);
-  assert.match(teamProfilePage, /TeamAssistantManager/);
-  assert.match(teamProfilePage, /rosterPlayers=\{managedRosterPlayers\}/);
-  assert.match(teamProfilePage, /enabled=\{isCoach\}/);
+  assert.match(teamControlRoomPage, /const isCoach = authority\?\.role === 'COACH'/);
+  assert.match(teamControlRoomPage, /TeamAssistantManager/);
+  assert.match(teamControlRoomPage, /rosterPlayers=\{rosterPlayers\}/);
+  assert.match(teamControlRoomPage, /enabled=\{isCoach\}/);
+  assert.doesNotMatch(teamProfilePage, /TeamAssistantManager/);
   assert.match(
     teamAssistantManager,
     /rosterPlayers\.filter\(\(player\) => Boolean\(player\.userId\)\)/,
@@ -222,10 +247,10 @@ test('Coach Assistant UI uses canonical role metadata and linked Team players on
   assert.doesNotMatch(teamAssistantManager, /User ID/);
 });
 
-test('Team edit contract permits explicit clearing of optional fields', () => {
+test('Team edit contract permits explicit clearing of optional fields from Control Room', () => {
   const parsed = teamUpdateSchema.parse({ city: '', houma: '', badgeUrl: '' });
   assert.deepEqual(parsed, { city: '', houma: '', badgeUrl: '' });
-  assert.match(teamProfilePage, /city: city\.trim\(\)/);
-  assert.match(teamProfilePage, /houma: houma\.trim\(\)/);
-  assert.match(teamProfilePage, /badgeUrl: badgeUrl\.trim\(\)/);
+  assert.match(teamControlRoomPage, /city: city\.trim\(\)/);
+  assert.match(teamControlRoomPage, /houma: houma\.trim\(\)/);
+  assert.match(teamControlRoomPage, /badgeUrl: badgeUrl\.trim\(\)/);
 });
