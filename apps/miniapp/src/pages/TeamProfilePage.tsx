@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronRight, MapPin, Pencil, Plus, Shield, Trash2, Users } from 'lucide-react';
+import { TeamAssistantManager } from '../components/teams/TeamAssistantManager';
 import { TeamLineupPitch } from '../components/teams/TeamLineupPitch';
 import {
   addTeamPlayer,
@@ -14,6 +15,7 @@ import {
   removeTeamPlayer,
   teamQueryKeys,
   updateTeam,
+  type TeamManagedItem,
 } from '../features/teams/api';
 import { notify } from '../lib/telegram';
 import type { TeamDetailItem } from '../types/domain';
@@ -159,7 +161,8 @@ export function TeamProfilePage() {
     retry: false,
   });
   const managedTeam = managedTeamsQuery.data?.items.find((item) => item.id === teamId) as
-    TeamDetailItem | undefined;
+    | TeamManagedItem
+    | undefined;
   const memberTeam = myTeamsQuery.data?.items.find((item) => item.id === teamId);
   const teamQuery = useQuery({
     queryKey: teamQueryKeys.detail(teamId),
@@ -173,6 +176,7 @@ export function TeamProfilePage() {
   });
   const team = managedTeam ?? memberTeam ?? teamQuery.data;
   const canManage = Boolean(managedTeam);
+  const isCoach = managedTeam?.authority.role === 'COACH';
   const isTeamPlayer = Boolean(memberTeam);
   const rosterQuery = useQuery({
     queryKey: teamQueryKeys.roster(teamId),
@@ -198,8 +202,9 @@ export function TeamProfilePage() {
     retry: false,
   });
   const lineup = team?.lineups?.[0] ?? null;
+  const managedRosterPlayers = rosterQuery.data?.items ?? [];
   const rosterPlayers = canManage
-    ? (rosterQuery.data?.items ?? [])
+    ? managedRosterPlayers
     : memberTeam
       ? (memberTeam.players ?? [])
       : (publicRosterQuery.data?.items ?? []);
@@ -561,6 +566,12 @@ export function TeamProfilePage() {
           )}
         </div>
       </section>
+
+      <TeamAssistantManager
+        teamId={teamId}
+        rosterPlayers={managedRosterPlayers}
+        enabled={isCoach}
+      />
 
       <button className="vintage-outline-cta mt-5 w-full" onClick={() => navigate('/teams')}>
         Back to Teams <ChevronRight size={18} />
