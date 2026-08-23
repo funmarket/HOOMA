@@ -106,8 +106,7 @@ function buildCards({
   const rideRequest = [...rideRequests]
     .filter((ride) => timestamp(ride.desiredDepartureAt) >= now)
     .sort(
-      (left, right) =>
-        timestamp(left.desiredDepartureAt) - timestamp(right.desiredDepartureAt),
+      (left, right) => timestamp(left.desiredDepartureAt) - timestamp(right.desiredDepartureAt),
     )[0];
   const fund = [...funds]
     .filter((item) => item.status !== 'COMPLETED' && item.status !== 'CANCELLED')
