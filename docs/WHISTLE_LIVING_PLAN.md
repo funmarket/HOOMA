@@ -59,16 +59,16 @@ Owns canonical UTC day identity, start/reset timestamps, and current-window vali
 ### Redis infrastructure
 
 - `apps/api/src/infrastructure/redis/client.ts`
-- `apps/api/src/modules/whistle/application/whistle-store.ts` (F3)
-- `apps/api/src/modules/whistle/infrastructure/redis-whistle.store.ts` (F3)
+- `apps/api/src/modules/whistle/application/whistle-store.ts`
+- `apps/api/src/modules/whistle/infrastructure/redis-whistle.store.ts`
 
-Planned key families:
+Canonical key families:
 
 - `whistle:v1:quota:<YYYY-MM-DD>:<userId>`
 - `whistle:v1:feed:<YYYY-MM-DD>:community:<communityId>`
-- future: Team and ULTRAS feed keys under the same UTC day namespace
+- future Team and ULTRAS feed keys use the same day namespace and global quota key
 
-All keys use an absolute expiry at the next 00:00 UTC. API reads only the current UTC-day namespace.
+All keys use absolute `PEXPIREAT` at the next 00:00 UTC. API reads only the current UTC-day namespace.
 
 ### Service / HTTP
 
@@ -170,6 +170,7 @@ Proof:
 - The source type was corrected using `ReturnType<typeof createClient>` and a captured non-null client rather than a cast.
 - Corrected implementation exact tested head: `38734ddceddf7b43286a3dadb757334765104196`.
 - GitHub Actions CI run `#508`, run ID `32667143503`: quality job **SUCCESS** through install, preflight, database validation/generation, architecture check, lint, typecheck, migrations, tests, format, build, security, and migration checks.
+- Exact F2 verification-ledger head `43eb3b1a64a03c771f4af793dd5e76180eb24204` passed CI `#510`, run ID `32667288962`: **SUCCESS**.
 - CI Redis service `redis:7.4-alpine` became healthy; runtime integration test ran with `REDIS_URL=redis://localhost:6379`.
 - `npm ci` reported 0 vulnerabilities.
 - Root `package-lock.json` was produced by npm on a temporary branch-only lockfile-sync workflow; that temporary workflow was deleted and leaves no final repository file.
@@ -205,26 +206,74 @@ Intentionally untouched:
 
 Conflict status:
 
-- Current main was re-read before F2 and remained based on the merged Gamers public catalog work.
-- Concurrent PR `#62` was Team frontend/control-room work and did not overlap F2 sources.
-- Concurrent PR `#60` remained Gamers/admin catalog work; F2 did not touch its Gamer domain or platform-admin source.
+- Concurrent Team and Gamers lanes were inspected before implementation.
 - No Team/Gamers business logic was duplicated or modified.
 
 Implementation score: **10/10**
 
-Gate decision: **PASSED — F3 may begin after this verification-ledger commit itself is green on exact head.**
+Gate decision: **PASSED — F3 may begin.**
 
 ### F3 — Atomic Redis Whistle store
 
-Status: **PENDING**
+Status: **VERIFIED COMPLETE**
 
-Deliverables:
+Deliverables completed:
 
-- daily quota + feed storage
-- one atomic send operation
-- exact midnight expiration
-- stale-window race protection
-- real Redis integration tests including concurrent sends
+- one global user/day quota key shared across every Whistle scope
+- Redis Stream feed keys scoped by UTC day and context
+- atomic Lua send operation using Redis server `TIME`
+- exact 11/day enforcement under concurrency
+- absolute `PEXPIREAT` expiry for quota and feed at next 00:00 UTC
+- stale-window rejection before mutation and before stale reads are surfaced
+- fail-closed behavior for unavailable Redis and malformed Redis key types/values
+- minimal transient author snapshot only; no PostgreSQL persistence
+- permanent real-Redis integration tests
+
+Proof:
+
+- Initial F3 implementation CI `#514`, run ID `32667947432`, correctly stopped on a TypeScript boundary around the node-redis `TIME` return type. The implementation did not advance.
+- The TIME result boundary was corrected by accepting the library's array type and explicitly validating both required elements and finite numeric conversion.
+- Corrected behavior CI `#515`, run ID `32668044838`, passed typecheck and all **108/108 tests**, including the F3 Redis tests; it stopped only on repository formatting.
+- Repository-pinned Prettier was then applied to the two new Whistle store source files. The temporary formatting workflow was deleted and leaves no final repository file.
+- Exact final F3 implementation head: `c97632c9ffc9275f164cd2238cf32c5c9722864b`.
+- GitHub Actions CI run `#520`, run ID `32668386562`: **SUCCESS** through install, preflight, DB validation/generation, architecture, lint, typecheck, migrations, all tests, format, build, security, and migration checks.
+- Concurrency proof: 20 simultaneous sends by one fresh user split across two community scopes produced exactly **11 accepted and 9 limit-reached** results; total feed entries across both contexts remained exactly 11 and quota became `{ used: 11, remaining: 0 }`.
+- Expiry proof: Redis `PEXPIRETIME` for both quota and feed exactly equaled the canonical next UTC midnight timestamp, not creation time + 24 hours.
+- Stale-day proof: yesterday-window send/list/quota returned `stale_window` and created no quota key.
+- Corruption proof: invalid Redis quota key type fails closed with `WhistleStoreCorruptError`.
+- PR CI checked a synthetic merge of the Whistle head against current main `84007ba2353f7a65acae0424b242772e9205ed8e`, proving the slice remains compatible with the merged Team Control Room work.
+
+Created files:
+
+- `apps/api/src/modules/whistle/application/whistle-store.ts`
+- `apps/api/src/modules/whistle/infrastructure/redis-whistle.store.ts`
+- `tests/redis-whistle-store.test.ts`
+
+Modified files:
+
+- this living plan
+
+Intentionally untouched:
+
+- Prisma schema and migrations
+- API Whistle controller/service/routes
+- Play UI
+- Team domain
+- Gamers domain
+- Chat and Notifications
+- Railway production infrastructure
+- generic HTTP rate-limit storage
+
+Conflict status:
+
+- Current main and active PRs were re-read before F3.
+- Team Control Room PR `#62` had merged into main before F3 verification.
+- Concurrent Gamers PR `#64` explicitly excluded Whistle; F3 touched only Whistle/Redis test sources.
+- Synthetic-merge CI against current main passed all repository gates.
+
+Implementation score: **10/10**
+
+Gate decision: **PASSED — F4 may begin after this verification-ledger commit itself passes exact-head CI.**
 
 ### F4 — Whistle application service + community API
 
@@ -236,7 +285,8 @@ Deliverables:
 - GET/POST community endpoints
 - stable daily-limit and unavailable errors
 - current-day-only reads
-- API docs
+- one retry on a midnight stale-window transition using a fresh UTC window
+- API docs and permanent service/controller tests
 
 ### F5 — Play Whistle Board
 
