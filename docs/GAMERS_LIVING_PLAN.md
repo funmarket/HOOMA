@@ -2,8 +2,8 @@
 
 Last updated: 2026-08-23
 Repository: `funmarket/HOOMA`
-Working branch: `feat/gamers-catalog-admin`
-Current baseline main SHA: `07b6130173259718473f41d087739b154efcd503`
+Working branch: `feat/gamers-landing`
+Current baseline main SHA: `84007ba2353f7a65acae0424b242772e9205ed8e`
 
 ## Purpose
 
@@ -53,7 +53,8 @@ Core loop: Discover -> Gamer Card -> Challenge -> Play externally -> Confirm res
 - Domain schema files may live in `packages/database/prisma/models/`.
 - The committed timestamped migration chain is authoritative.
 - Home PR #53 is merged and must remain preserved.
-- No canonical shared Whistle domain currently exists for Gamers.
+- Team Control Room PR #62 is merged and its `/teams/:teamId/control` route is preserved.
+- No canonical shared Whistle domain is merged for Gamers yet.
 
 ## Architectural invariants
 
@@ -99,7 +100,7 @@ Public API behavior validated in PR #59:
 - Gamers owns its repository/service/controller boundary
 - no Team or Platform Admin authority is imported into the Gamers read domain
 
-Platform Admin catalog behavior validated in PR #60:
+Platform Admin catalog behavior merged in PR #60:
 
 - `POST /api/v1/app-admin/gamers/games`
 - `PATCH /api/v1/app-admin/gamers/games/:gameId`
@@ -191,17 +192,17 @@ Status: **COMPLETE**
 
 ### G1 - Canonical game catalog and Gamers landing
 
-Status: **IN PROGRESS**
+Status: **COMPLETE**
 
 - [x] GamerGame contracts and HTTPS media validation.
 - [x] Prisma GamerGame model and real migration.
 - [x] Repository/service normalization helpers and public catalog reads.
 - [x] Public `/api/v1/gamers/games` routes.
 - [x] Platform Admin catalog create/update/status/featured management.
-- [ ] `/gamers` route and real landing page.
-- [ ] Real game cards with loading/error/empty/image fallbacks.
-- [ ] Enable Home Gamers action after the real route exists.
-- [ ] Complete final G1 validation/evidence.
+- [x] `/gamers` route and real landing page.
+- [x] Real game cards with loading/error/empty/image fallbacks.
+- [x] Enable Home Gamers action only after the real route exists.
+- [x] Complete full G1 code validation on PR #64 head `cde8add0343066e623cf55ba8dd1e12bedf59f85` with CI #536.
 
 ### G2 - Gamer Cards and privacy
 
@@ -285,19 +286,33 @@ Status: **BLOCKED ON SHARED WHISTLE DOMAIN**
 - CI #474: final full success after living-plan checkpoint.
 - Merge SHA: `07b6130173259718473f41d087739b154efcd503`.
 
-### 2026-08-23 - Platform Admin catalog management validated
+### 2026-08-23 - Platform Admin catalog management merged
 
 - PR #60: canonical Platform Admin GamerGame create/update/status/featured management.
 - CI #486: full success on code head `c7618ad5390215d9d4c96074d20e5ff67019fbdf`.
+- Final CI #487 passed after the living-plan checkpoint.
+- Merge SHA: `6e406be7381006caa5fffdee696f02d445f228f1`.
 - All 90 tests passed; Prisma, migration deploy/status, architecture, lint, typecheck, formatting,
   build, and security passed.
-- A temporary formatter diagnostic used during development was removed before this validated head.
-- This living-plan update is the only change after that validated code head.
+- A temporary formatter diagnostic used during development was removed before the validated head.
+
+### 2026-08-23 - Gamers landing and Home wiring validated
+
+- PR #64: real `/gamers` Mini App landing and Home Quick Action wiring.
+- Built from `main` after Team Control Room PR #62 merged at
+  `84007ba2353f7a65acae0424b242772e9205ed8e`.
+- Home `Gamers` is no longer disabled and navigates to `/gamers`.
+- `/gamers` consumes `GET /api/v1/gamers/games`; there is no hardcoded production game catalog.
+- Landing includes loading, error/retry, empty, and broken-image fallback states.
+- No Team, Whistle, Prisma, or migration ownership was changed.
+- CI #536: full success on code head `cde8add0343066e623cf55ba8dd1e12bedf59f85`.
+- The temporary formatter diagnostic used to expose the exact Prettier diff was fully restored before
+  the validated head.
+- Final living-plan-only CI is the remaining merge gate.
 
 ### Current resume point
 
-Run final CI for this plan-only checkpoint, merge PR #60, then branch from the new `main` for the
-real `/gamers` landing page. Re-check open PRs before frontend work. The landing must consume the
-public GamerGame API, include honest loading/error/empty/broken-image states, and contain no
-hardcoded production game catalog. Enable the Home Gamers Quick Action only after `/gamers` is
-functional and validated.
+Run the final plan-only CI for PR #64 and merge it if green. Verify Railway production deploys the
+resulting `main` SHA for the HOOMA Mini App and confirm the Home `Gamers` Quick Action reaches the
+real `/gamers` route. After that, resume at G2: Gamer Cards and privacy. Re-check open PRs before any
+shared-source change.
