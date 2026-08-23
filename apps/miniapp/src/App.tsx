@@ -169,10 +169,7 @@ export default function App() {
           <Route path="/community" element={routeElement(<CommunityPage />)} />
           <Route path="/teams" element={routeElement(<TeamsPage />)} />
           <Route path="/teams/:teamId" element={routeElement(<TeamProfilePage />)} />
-          <Route
-            path="/teams/:teamId/lineup"
-            element={routeElement(<TeamLineupBuilderPage />)}
-          />
+          <Route path="/teams/:teamId/lineup" element={routeElement(<TeamLineupBuilderPage />)} />
           <Route
             path="/teams/:teamId/challenge"
             element={routeElement(<CreateTeamChallengePage />)}
