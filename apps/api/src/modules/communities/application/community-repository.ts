@@ -1,5 +1,6 @@
 export interface CommunityRepository {
   listForUser(userId: string): Promise<unknown>;
+  hoomaNow(userId: string): Promise<unknown>;
   createWithOwner(
     userId: string,
     input: {
