@@ -16,6 +16,10 @@ export class RequestService {
     });
   }
 
+  discover(userId: string) {
+    return this.repo.discover(userId);
+  }
+
   async create(userId: string, input: RequestCreateInput) {
     await this.communities.requireMembership(userId, input.communityId);
     return this.repo.create(userId, input);

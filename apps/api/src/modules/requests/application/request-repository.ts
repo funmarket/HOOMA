@@ -8,6 +8,7 @@ export interface RequestRepository {
     userId: string,
     input: { communityId?: string; cursor?: string; limit: number },
   ): Promise<unknown>;
+  discover(userId: string): Promise<unknown>;
   create(userId: string, input: RequestCreateInput): Promise<unknown>;
   claim(userId: string, requestId: string, quantity: number): Promise<unknown>;
   unclaim(userId: string, requestId: string): Promise<unknown>;

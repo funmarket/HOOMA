@@ -5,18 +5,30 @@ import { RequestFlagIcon } from '../icons/RequestFlagIcon';
 import { get, post } from '../shared/api/http-client';
 import { eventDate } from '../lib/format';
 import { notify } from '../lib/telegram';
-import { useCommunity } from '../providers/CommunityProvider';
-import type { RequestPage } from '../types/domain';
+import type { RankedRequestCommunity, RequestDiscoveryResponse } from '../types/request-discovery';
+
+function communityLabel(
+  community: RankedRequestCommunity | undefined,
+  activeCommunityId: string | null,
+) {
+  if (!community) return null;
+  if (community.id === activeCommunityId) return 'YOUR HOOMA';
+  if (community.distanceKm !== null) {
+    return `${community.name} · ${Math.round(community.distanceKm)} km`;
+  }
+  return community.city ? `${community.name} · ${community.city}` : community.name;
+}
 
 export function RequestsPage() {
-  const { active } = useCommunity();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const query = useQuery({
-    queryKey: ['requests', active?.id],
-    queryFn: () => get<RequestPage>(`/api/v1/requests?communityId=${active?.id}`),
-    enabled: Boolean(active),
+    queryKey: ['requests', 'discover'],
+    queryFn: () => get<RequestDiscoveryResponse>('/api/v1/requests/discover'),
   });
+  const communityById = new Map(
+    (query.data?.communities ?? []).map((community) => [community.id, community] as const),
+  );
   const claim = useMutation({
     mutationFn: (id: string) => post(`/api/v1/requests/${id}/claim`, { quantity: 1 }),
     onSuccess: () => {
@@ -33,7 +45,7 @@ export function RequestsPage() {
           <div className="section-kicker">Short-lived asks</div>
           <h1 className="section-title">Requests</h1>
           <p className="mt-1 text-sm muted">
-            Fill a position, bring gear, or help matchday happen.
+            Your HOOMA first, then nearby asks and the wider HOOMA network.
           </p>
         </div>
         <button className="accent-button p-3" onClick={() => navigate('/requests/new')}>
@@ -46,6 +58,8 @@ export function RequestsPage() {
           const claimed = (request.claims || [])
             .filter((item) => item.status !== 'WITHDRAWN')
             .reduce((sum, item) => sum + item.quantity, 0);
+          const source = communityById.get(request.communityId);
+          const sourceLabel = communityLabel(source, query.data?.activeCommunityId ?? null);
           return (
             <article className="surface-card p-4" key={request.id}>
               <div className="flex gap-3">
@@ -58,6 +72,7 @@ export function RequestsPage() {
                       {request.kind}
                       {request.position ? ` · ${request.position}` : ''}
                     </span>
+                    {sourceLabel ? <span className="chip py-1">{sourceLabel}</span> : null}
                     <span className="chip py-1">
                       {claimed}/{request.quantity} claimed
                     </span>
@@ -87,6 +102,9 @@ export function RequestsPage() {
             </article>
           );
         })}
+        {!query.isLoading && !query.isError && !query.data?.items.length ? (
+          <div className="surface-card p-5 text-sm muted">No open requests right now.</div>
+        ) : null}
       </div>
     </div>
   );

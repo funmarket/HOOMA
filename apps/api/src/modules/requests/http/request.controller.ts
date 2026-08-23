@@ -9,6 +9,11 @@ export function requestRouter(service: RequestService) {
   const router = Router();
 
   router.get(
+    '/discover',
+    asyncHandler(async (req, res) => res.json(await service.discover(getAuth(req).user.id))),
+  );
+
+  router.get(
     '/',
     asyncHandler(async (req, res) => {
       const communityId =
