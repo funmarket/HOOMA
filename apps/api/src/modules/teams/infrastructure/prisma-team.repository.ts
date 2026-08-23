@@ -176,15 +176,13 @@ export class PrismaTeamRepository implements TeamRepository {
     });
   }
 
-  async listManagedTeams(userId: string) {
+  async listManagedTeams(teamIds: string[]) {
+    if (!teamIds.length) return { items: [] };
     const items = await this.db.team.findMany({
       where: {
+        id: { in: teamIds },
+        status: 'ACTIVE',
         deletedAt: null,
-        community: {
-          memberships: {
-            some: { userId, status: 'ACTIVE', role: { in: ['OWNER', 'ADMIN'] } },
-          },
-        },
       },
       select: teamDetailSelect,
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],

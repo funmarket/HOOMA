@@ -10,6 +10,10 @@ import { TeamService } from '../apps/api/src/modules/teams/application/team.serv
 import { PrismaTeamRepository } from '../apps/api/src/modules/teams/infrastructure/prisma-team.repository.js';
 
 const teamProfilePage = readFileSync('apps/miniapp/src/pages/TeamProfilePage.tsx', 'utf8');
+const teamAssistantManager = readFileSync(
+  'apps/miniapp/src/components/teams/TeamAssistantManager.tsx',
+  'utf8',
+);
 const teamApi = readFileSync('apps/miniapp/src/features/teams/api.ts', 'utf8');
 
 test('public Team detail only selects published lineups', async () => {
@@ -42,28 +46,60 @@ test('public Team detail only selects published lineups', async () => {
 });
 
 test('managed Team discovery cannot grant edit UI without canonical EDIT_TEAM authority', async () => {
+  let requestedTeamIds: string[] = [];
   const repo = {
-    listManagedTeams: async () => ({
-      items: [{ id: 'coach-team' }, { id: 'legacy-only-team' }],
-    }),
+    listManagedTeams: async (teamIds: string[]) => {
+      requestedTeamIds = teamIds;
+      return {
+        items: [{ id: 'coach-team' }, { id: 'legacy-only-team' }],
+      };
+    },
   } as unknown as TeamRepository;
+  const coachAuthority = {
+    teamId: 'coach-team',
+    communityId: 'community-1',
+    role: 'COACH' as const,
+    permissions: [],
+    source: 'RESPONSIBILITY' as const,
+  };
   const authority = {
-    list: async () => [
-      {
-        teamId: 'coach-team',
-        communityId: 'community-1',
-        role: 'COACH' as const,
-        permissions: [],
-        source: 'RESPONSIBILITY' as const,
-      },
-    ],
+    list: async () => [coachAuthority],
   } as unknown as TeamAuthorityRepository;
   const roster = {} as TeamRosterRepository;
 
   const service = new TeamService(repo, authority, roster);
   const result = await service.managedTeams('coach-user');
 
-  assert.deepEqual(result, { items: [{ id: 'coach-team' }] });
+  assert.deepEqual(requestedTeamIds, ['coach-team']);
+  assert.deepEqual(result, { items: [{ id: 'coach-team', authority: coachAuthority }] });
+});
+
+test('managed Team detail read is scoped to canonical Team IDs, not community Admin membership', async () => {
+  let findManyArgs: unknown;
+  const db = {
+    team: {
+      findMany(args: unknown) {
+        findManyArgs = args;
+        return Promise.resolve([]);
+      },
+    },
+  } as unknown as DatabaseClient;
+
+  const repo = new PrismaTeamRepository(db);
+  await repo.listManagedTeams(['delegated-team']);
+
+  const args = findManyArgs as {
+    where: {
+      id: { in: string[] };
+      status: string;
+      deletedAt: null;
+      community?: unknown;
+    };
+  };
+  assert.deepEqual(args.where.id.in, ['delegated-team']);
+  assert.equal(args.where.status, 'ACTIVE');
+  assert.equal(args.where.deletedAt, null);
+  assert.equal(args.where.community, undefined);
 });
 
 test('Team edit UI prefers authenticated managed Team state and writes through protected PATCH', () => {
@@ -85,6 +121,33 @@ test('Team roster management uses protected API, confirmation, and real API erro
   assert.match(teamProfilePage, /window\.confirm/);
   assert.match(teamProfilePage, /removePlayerMutation\.error instanceof Error/);
   assert.match(teamProfilePage, /Assistant authority will be cleaned safely/);
+});
+
+test('Coach Assistant UI uses canonical role metadata and linked Team players only', () => {
+  assert.match(teamApi, /authority: TeamManagedAuthority/);
+  assert.match(teamApi, /get<TeamAssistantPage>\(`\/api\/v1\/teams\/\$\{teamId\}\/assistants`/);
+  assert.match(
+    teamApi,
+    /post<TeamAssistantAssignment>\(`\/api\/v1\/teams\/\$\{teamId\}\/assistants`/,
+  );
+  assert.match(teamApi, /del<TeamAssistantAssignment>/);
+  assert.match(teamProfilePage, /const isCoach = managedTeam\?\.authority\.role === 'COACH'/);
+  assert.match(teamProfilePage, /TeamAssistantManager/);
+  assert.match(teamProfilePage, /rosterPlayers=\{managedRosterPlayers\}/);
+  assert.match(teamProfilePage, /enabled=\{isCoach\}/);
+  assert.match(
+    teamAssistantManager,
+    /rosterPlayers\.filter\(\(player\) => Boolean\(player\.userId\)\)/,
+  );
+  assert.match(teamAssistantManager, /Guest roster entries cannot receive Assistant authority/);
+  assert.match(teamAssistantManager, /window\.confirm/);
+  assert.match(teamAssistantManager, /EDIT_TEAM/);
+  assert.match(teamAssistantManager, /MANAGE_ROSTER/);
+  assert.match(teamAssistantManager, /MANAGE_LINEUP/);
+  assert.match(teamAssistantManager, /CREATE_CHALLENGE/);
+  assert.match(teamAssistantManager, /RESPOND_CHALLENGE/);
+  assert.match(teamAssistantManager, /MESSAGE_CHALLENGE/);
+  assert.doesNotMatch(teamAssistantManager, /User ID/);
 });
 
 test('Team edit contract permits explicit clearing of optional fields', () => {
