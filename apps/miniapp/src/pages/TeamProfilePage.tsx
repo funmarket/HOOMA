@@ -173,6 +173,9 @@ export function TeamProfilePage() {
   });
   const lineup = team?.lineups?.[0] ?? null;
   const rosterPlayers = canManage ? (rosterQuery.data?.items ?? []) : (team?.players ?? []);
+  const selectedCandidate = candidatesQuery.data?.items.find(
+    (candidate) => candidate.userId === selectedCandidateId,
+  );
 
   const refreshTeam = async () => {
     await Promise.all([
@@ -384,8 +387,14 @@ export function TeamProfilePage() {
                 <button
                   type="button"
                   className="accent-button"
-                  disabled={addPlayerMutation.isPending || !selectedCandidateId}
-                  onClick={() => addPlayerMutation.mutate({ userId: selectedCandidateId })}
+                  disabled={addPlayerMutation.isPending || !selectedCandidate}
+                  onClick={() => {
+                    if (!selectedCandidate) return;
+                    addPlayerMutation.mutate({
+                      userId: selectedCandidate.userId,
+                      displayName: selectedCandidate.displayName,
+                    });
+                  }}
                 >
                   {addPlayerMutation.isPending ? 'Adding…' : 'Add selected player'}
                 </button>
