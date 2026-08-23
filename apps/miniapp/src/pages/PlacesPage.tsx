@@ -63,12 +63,18 @@ export function PlacesPage() {
   });
 
   const feed: PlaceFeedItem[] = [
-    ...(watchPlaces.data ?? []).map(
-      (place): PlaceFeedItem => ({ kind: 'WATCH', id: place.id, name: place.name, place }),
-    ),
-    ...(pitchPlaces.data?.items ?? []).map(
-      (pitch): PlaceFeedItem => ({ kind: 'PITCH', id: pitch.id, name: pitch.name, pitch }),
-    ),
+    ...(watchPlaces.data ?? []).map((place): PlaceFeedItem => ({
+      kind: 'WATCH',
+      id: place.id,
+      name: place.name,
+      place,
+    })),
+    ...(pitchPlaces.data?.items ?? []).map((pitch): PlaceFeedItem => ({
+      kind: 'PITCH',
+      id: pitch.id,
+      name: pitch.name,
+      pitch,
+    })),
   ].sort((left, right) => left.name.localeCompare(right.name));
 
   const isLoading = watchPlaces.isLoading || pitchPlaces.isLoading;
@@ -165,11 +171,7 @@ export function PlacesPage() {
             return (
               <article key={`pitch-${pitch.id}`} className="surface-card overflow-hidden">
                 {pitch.photoUrl ? (
-                  <img
-                    src={pitch.photoUrl}
-                    alt={pitch.name}
-                    className="h-44 w-full object-cover"
-                  />
+                  <img src={pitch.photoUrl} alt={pitch.name} className="h-44 w-full object-cover" />
                 ) : null}
                 <div className="grid gap-2 p-4">
                   <div>
@@ -184,9 +186,7 @@ export function PlacesPage() {
                       pitch.fullAddress ||
                       'Location available from Pitch'}
                   </p>
-                  {pitch.description ? (
-                    <p className="text-sm muted">{pitch.description}</p>
-                  ) : null}
+                  {pitch.description ? <p className="text-sm muted">{pitch.description}</p> : null}
                   {rateLabel ? <p className="text-sm font-black">{rateLabel}</p> : null}
                   <button
                     type="button"
