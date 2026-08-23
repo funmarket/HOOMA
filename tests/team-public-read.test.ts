@@ -5,6 +5,7 @@ import { teamUpdateSchema } from '@hooma/contracts';
 import type { DatabaseClient } from '../apps/api/src/infrastructure/database/prisma.js';
 import type { TeamAuthorityRepository } from '../apps/api/src/modules/teams/application/team-authority.repository.js';
 import type { TeamRepository } from '../apps/api/src/modules/teams/application/team-repository.js';
+import type { TeamRosterRepository } from '../apps/api/src/modules/teams/application/team-roster.repository.js';
 import { TeamService } from '../apps/api/src/modules/teams/application/team.service.js';
 import { PrismaTeamRepository } from '../apps/api/src/modules/teams/infrastructure/prisma-team.repository.js';
 
@@ -57,8 +58,9 @@ test('managed Team discovery cannot grant edit UI without canonical EDIT_TEAM au
       },
     ],
   } as unknown as TeamAuthorityRepository;
+  const roster = {} as TeamRosterRepository;
 
-  const service = new TeamService(repo, authority);
+  const service = new TeamService(repo, authority, roster);
   const result = await service.managedTeams('coach-user');
 
   assert.deepEqual(result, { items: [{ id: 'coach-team' }] });
@@ -73,6 +75,16 @@ test('Team edit UI prefers authenticated managed Team state and writes through p
   assert.match(teamProfilePage, /editing && canManage/);
   assert.match(teamProfilePage, /mutation\.error instanceof Error/);
   assert.match(teamApi, /patch<TeamDetailItem>\(`\/api\/v1\/teams\/\$\{teamId\}`/);
+});
+
+test('Team roster management uses protected API, confirmation, and real API errors', () => {
+  assert.match(teamApi, /get<TeamRosterPage>\(`\/api\/v1\/teams\/\$\{teamId\}\/players`/);
+  assert.match(teamApi, /del<TeamRosterPlayer>/);
+  assert.match(teamProfilePage, /queryFn: \(\) => listTeamRoster\(teamId\)/);
+  assert.match(teamProfilePage, /enabled: Boolean\(teamId\) && canManage/);
+  assert.match(teamProfilePage, /window\.confirm/);
+  assert.match(teamProfilePage, /removePlayerMutation\.error instanceof Error/);
+  assert.match(teamProfilePage, /Assistant authority will be cleaned safely/);
 });
 
 test('Team edit contract permits explicit clearing of optional fields', () => {
