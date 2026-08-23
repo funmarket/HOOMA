@@ -1,4 +1,8 @@
-import type { TeamChallengeCreateInput, TeamPlayerCreateInput, TeamUpdateInput } from '@hooma/contracts';
+import type {
+  TeamChallengeCreateInput,
+  TeamPlayerCreateInput,
+  TeamUpdateInput,
+} from '@hooma/contracts';
 import { del, get, patch, post } from '../../shared/api/http-client';
 import type {
   TeamChallengeDetailItem,
