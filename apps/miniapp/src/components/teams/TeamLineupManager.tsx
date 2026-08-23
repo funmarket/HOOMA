@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import type { TeamLineupCreateInput } from '@hooma/contracts';
-import { Check, Eye, EyeOff, Plus, Save, Shirt } from 'lucide-react';
+import { Check, Eye, EyeOff, Save, Shirt } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import {
   createTeamLineup,
