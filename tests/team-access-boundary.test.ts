@@ -1,9 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildDatabase } from '../apps/api/src/infrastructure/database/prisma.js';
-import type {
-  TeamRepository,
-} from '../apps/api/src/modules/teams/application/team-repository.js';
+import type { TeamRepository } from '../apps/api/src/modules/teams/application/team-repository.js';
 import { TeamService } from '../apps/api/src/modules/teams/application/team.service.js';
 import {
   legacyTeamRoleHasCapability,
@@ -270,14 +268,8 @@ test('roster removal deactivates player, clears current lineup, revokes Assistan
 
   await service.removePlayer(coachUserId, teamId, playerId, `${requestId}_remove`);
 
-  assert.equal(
-    (await db.teamPlayer.findUnique({ where: { id: playerId } }))?.isActive,
-    false,
-  );
-  assert.equal(
-    (await db.teamLineupSlot.findUnique({ where: { id: slotId } }))?.playerId,
-    null,
-  );
+  assert.equal((await db.teamPlayer.findUnique({ where: { id: playerId } }))?.isActive, false);
+  assert.equal((await db.teamLineupSlot.findUnique({ where: { id: slotId } }))?.playerId, null);
   const responsibility = await db.teamResponsibility.findUnique({
     where: { teamId_userId: { teamId, userId: playerUserId } },
   });
@@ -302,10 +294,7 @@ test('roster removal deactivates player, clears current lineup, revokes Assistan
   )) as { id: string; isActive: boolean };
   assert.equal(returned.id, playerId);
   assert.equal(returned.isActive, true);
-  assert.equal(
-    await db.teamPlayer.count({ where: { teamId, userId: playerUserId } }),
-    1,
-  );
+  assert.equal(await db.teamPlayer.count({ where: { teamId, userId: playerUserId } }), 1);
   assert.equal(
     await authority.get(playerUserId, teamId),
     null,
