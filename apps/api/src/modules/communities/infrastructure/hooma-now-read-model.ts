@@ -49,7 +49,10 @@ export async function loadHoomaNow(db: DatabaseClient, userId: string) {
   const communities = await db.community.findMany({
     where: {
       deletedAt: null,
-      OR: [{ visibility: 'PUBLIC' }, ...(membershipIds.length ? [{ id: { in: membershipIds } }] : [])],
+      OR: [
+        { visibility: 'PUBLIC' },
+        ...(membershipIds.length ? [{ id: { in: membershipIds } }] : []),
+      ],
     },
     select: { id: true, name: true, city: true, visibility: true },
   });
