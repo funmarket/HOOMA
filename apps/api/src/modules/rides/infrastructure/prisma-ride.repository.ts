@@ -11,6 +11,7 @@ import type {
   RideRequestCreateInput,
   RideStatusChangeResult,
 } from '../application/ride-repository.js';
+import { loadRideDiscovery } from './ride-discovery-read-model.js';
 
 export class PrismaRideRepository implements RideRepository {
   constructor(private readonly db: DatabaseClient) {}
@@ -117,6 +118,50 @@ export class PrismaRideRepository implements RideRepository {
     };
   }
 
+  discover(userId: string, limit: number) {
+    return loadRideDiscovery(this.db, userId, limit);
+  }
+
+  getVisibleOffer(userId: string, offerId: string) {
+    return this.db.rideOffer.findFirst({
+      where: {
+        id: offerId,
+        deletedAt: null,
+        OR: [
+          { community: { visibility: 'PUBLIC', deletedAt: null } },
+          {
+            community: {
+              deletedAt: null,
+              memberships: { some: { userId, status: 'ACTIVE' } },
+            },
+          },
+        ],
+      },
+      include: {
+        community: { select: { id: true, name: true, city: true, visibility: true } },
+        driver: {
+          select: { id: true, username: true, firstName: true, lastName: true, photoUrl: true },
+        },
+        matches: {
+          where: { status: { in: ['REQUESTED', 'ACCEPTED', 'COMPLETED'] } },
+          include: {
+            rider: { select: { id: true, username: true, firstName: true, lastName: true } },
+            paymentIntent: {
+              select: {
+                id: true,
+                status: true,
+                selectedMethod: true,
+                amountMinor: true,
+                currency: true,
+              },
+            },
+          },
+        },
+        paymentMethods: { where: { enabled: true }, orderBy: { sortOrder: 'asc' } },
+      },
+    });
+  }
+
   async createOffer(userId: string, input: RideOfferCreateInput) {
     return this.db.$transaction(async (tx) => {
       if (input.eventId) {
@@ -206,9 +251,15 @@ export class PrismaRideRepository implements RideRepository {
     return this.db.$transaction(
       async (tx) => {
         await tx.$queryRaw`SELECT id FROM "RideOffer" WHERE id = ${offerId} FOR UPDATE`;
-        const offer = await tx.rideOffer.findFirst({ where: { id: offerId, deletedAt: null } });
+        const offer = await tx.rideOffer.findFirst({
+          where: { id: offerId, deletedAt: null },
+          include: { community: { select: { visibility: true, deletedAt: true } } },
+        });
         if (!offer || !['OPEN', 'FULL'].includes(offer.status)) {
           throw new AppError(409, 'RIDE_NOT_OPEN', 'Ride offer is not open.');
+        }
+        if (offer.community.deletedAt) {
+          throw new AppError(404, 'RIDE_NOT_FOUND', 'Ride offer not found.');
         }
         if (offer.driverUserId === userId) {
           throw new AppError(
@@ -220,11 +271,14 @@ export class PrismaRideRepository implements RideRepository {
         const membership = await tx.membership.findUnique({
           where: { communityId_userId: { communityId: offer.communityId, userId } },
         });
-        if (!membership || membership.status !== 'ACTIVE') {
+        if (membership?.status === 'BANNED') {
+          throw new AppError(403, 'COMMUNITY_ACCESS_DENIED', 'Access to this community is denied.');
+        }
+        if (offer.community.visibility !== 'PUBLIC' && membership?.status !== 'ACTIVE') {
           throw new AppError(
             403,
             'COMMUNITY_ACCESS_DENIED',
-            'Not an active member of this community.',
+            'Private community rides require active membership.',
           );
         }
 
