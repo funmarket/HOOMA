@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronRight, MapPin, Pencil, Plus, Shield, Trash2, Users } from 'lucide-react';
+import { TeamAssistantManager } from '../components/teams/TeamAssistantManager';
 import { TeamLineupPitch } from '../components/teams/TeamLineupPitch';
 import {
   addTeamPlayer,
@@ -163,7 +164,8 @@ export function TeamProfilePage() {
     retry: false,
   });
   const lineup = team?.lineups?.[0] ?? null;
-  const rosterPlayers = canManage ? (rosterQuery.data?.items ?? []) : (team?.players ?? []);
+  const managedRosterPlayers = rosterQuery.data?.items ?? [];
+  const rosterPlayers = canManage ? managedRosterPlayers : (team?.players ?? []);
 
   const refreshTeam = async () => {
     await Promise.all([
@@ -373,6 +375,8 @@ export function TeamProfilePage() {
           )}
         </div>
       </section>
+
+      <TeamAssistantManager teamId={teamId} rosterPlayers={managedRosterPlayers} enabled={canManage} />
 
       <button className="vintage-outline-cta mt-5 w-full" onClick={() => navigate('/teams')}>
         Back to Teams <ChevronRight size={18} />
