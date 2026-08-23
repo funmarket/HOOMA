@@ -346,7 +346,9 @@ export function TeamProfilePage() {
                         type="button"
                         key={candidate.userId}
                         className={`reference-row flex items-center gap-3 p-3 text-left ${
-                          selectedCandidateId === candidate.userId ? 'ring-1 ring-[var(--accent)]' : ''
+                          selectedCandidateId === candidate.userId
+                            ? 'ring-1 ring-[var(--accent)]'
+                            : ''
                         }`}
                         onClick={() => {
                           addPlayerMutation.reset();
