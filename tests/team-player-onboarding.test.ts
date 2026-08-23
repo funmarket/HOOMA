@@ -74,7 +74,13 @@ test('Coach rosters a joined HOOMA user with canonical profile presentation', as
   assert.deepEqual(playerCandidate.preferredPositions, ['CM', 'AM']);
 
   await assert.rejects(
-    () => service.addPlayer(coachUserId, teamId, { userId: outsiderUserId }, `${requestId}_bad`),
+    () =>
+      service.addPlayer(
+        coachUserId,
+        teamId,
+        { userId: outsiderUserId, displayName: 'Outsider' },
+        `${requestId}_bad`,
+      ),
     /active member of this HOOMA/i,
   );
 
@@ -108,13 +114,14 @@ test('Coach rosters a joined HOOMA user with canonical profile presentation', as
   await db.user.deleteMany({ where: { id: { in: [coachUserId, playerUserId, outsiderUserId] } } });
 });
 
-test('registered player input may omit displayName while guest player cannot', async () => {
+test('roster request contract stays backward compatible for linked and guest players', async () => {
   const { teamPlayerCreateSchema } = await import('@hooma/contracts');
 
-  assert.deepEqual(teamPlayerCreateSchema.parse({ userId: 'canonical-user' }), {
-    userId: 'canonical-user',
-  });
-  assert.throws(() => teamPlayerCreateSchema.parse({}), /Guest players require a display name/);
+  assert.deepEqual(
+    teamPlayerCreateSchema.parse({ userId: 'canonical-user', displayName: 'Canonical player' }),
+    { userId: 'canonical-user', displayName: 'Canonical player' },
+  );
+  assert.throws(() => teamPlayerCreateSchema.parse({ userId: 'canonical-user' }));
   assert.deepEqual(teamPlayerCreateSchema.parse({ displayName: 'Guest striker' }), {
     displayName: 'Guest striker',
   });
