@@ -102,6 +102,7 @@ export const teamQueryKeys = {
   publicRoster: (teamId: string) => [...teamQueryKeys.all, 'public-roster', teamId] as const,
   rosterCandidates: (teamId: string) => [...teamQueryKeys.roster(teamId), 'candidates'] as const,
   assistants: (teamId: string) => [...teamQueryKeys.all, 'assistants', teamId] as const,
+  currentLineup: (teamId: string) => [...teamQueryKeys.all, 'current-lineup', teamId] as const,
   challenges: () => [...teamQueryKeys.all, 'challenges'] as const,
   incomingChallenges: () => [...teamQueryKeys.challenges(), 'incoming'] as const,
   outgoingChallenges: () => [...teamQueryKeys.challenges(), 'outgoing'] as const,
@@ -174,6 +175,10 @@ export function saveTeamAssistant(teamId: string, input: TeamAssistantDelegation
 
 export function revokeTeamAssistant(teamId: string, responsibilityId: string) {
   return del<TeamAssistantAssignment>(`/api/v1/teams/${teamId}/assistants/${responsibilityId}`);
+}
+
+export function getCurrentTeamLineup(teamId: string) {
+  return get<TeamEditableLineup | null>(`/api/v1/teams/${teamId}/lineups/current`);
 }
 
 export function createTeamLineup(teamId: string, input: TeamLineupCreateInput) {
