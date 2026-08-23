@@ -12,7 +12,7 @@ import type {
 import './HoomaNowFeed.css';
 
 type HoomaNowFeedProps = {
-  communityName?: string;
+  communityName: string | undefined;
   events: EventItem[];
   requests: RequestItem[];
   rideOffers: RideOfferItem[];
@@ -30,7 +30,7 @@ type FeedCard = {
   kicker: string;
   title: string;
   meta: string;
-  detail?: string;
+  detail: string | undefined;
   action: string;
   path: string;
   tone: 'match' | 'watch' | 'request' | 'ride' | 'fund';
