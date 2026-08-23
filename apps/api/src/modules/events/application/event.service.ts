@@ -35,6 +35,13 @@ export class EventService {
     });
   }
 
+  discover(userId: string, input: { type?: 'PLAY' | 'WATCH'; from?: Date }) {
+    return this.repo.discover(userId, {
+      ...(input.type !== undefined ? { type: input.type } : {}),
+      from: input.from ?? new Date(Date.now() - 6 * 60 * 60_000),
+    });
+  }
+
   async create(userId: string, input: EventCreateInput) {
     await this.communities.requireAdmin(userId, input.communityId);
     return this.repo.create(userId, input);
