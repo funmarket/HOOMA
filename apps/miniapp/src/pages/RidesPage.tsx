@@ -6,7 +6,10 @@ import { get } from '../shared/api/http-client';
 import { eventDate, money } from '../lib/format';
 import type { RankedRideCommunity, RideDiscoveryResponse } from '../types/ride-discovery';
 
-function communityLabel(community: RankedRideCommunity | undefined, activeCommunityId: string | null) {
+function communityLabel(
+  community: RankedRideCommunity | undefined,
+  activeCommunityId: string | null,
+) {
   if (!community) return null;
   if (community.id === activeCommunityId) return 'YOUR HOOMA';
   if (community.distanceKm !== null) {
