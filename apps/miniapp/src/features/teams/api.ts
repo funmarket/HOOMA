@@ -44,6 +44,7 @@ export const teamQueryKeys = {
   detail: (teamId: string) => [...teamQueryKeys.all, 'detail', teamId] as const,
   managed: () => [...teamQueryKeys.all, 'managed'] as const,
   roster: (teamId: string) => [...teamQueryKeys.all, 'roster', teamId] as const,
+  publicRoster: (teamId: string) => [...teamQueryKeys.all, 'public-roster', teamId] as const,
   rosterCandidates: (teamId: string) => [...teamQueryKeys.roster(teamId), 'candidates'] as const,
   challenges: () => [...teamQueryKeys.all, 'challenges'] as const,
   incomingChallenges: () => [...teamQueryKeys.challenges(), 'incoming'] as const,
@@ -81,6 +82,10 @@ export function updateTeam(teamId: string, input: TeamUpdateInput) {
 
 export function listTeamRoster(teamId: string) {
   return get<TeamRosterPage>(`/api/v1/teams/${teamId}/players`);
+}
+
+export function listPublicTeamRoster(teamId: string) {
+  return get<TeamRosterPage>(`/api/v1/teams/${teamId}/public-players`);
 }
 
 export function listTeamPlayerCandidates(teamId: string) {
