@@ -65,13 +65,23 @@ export const teamUpdateSchema = teamCreateSchema
   })
   .refine((value) => Object.keys(value).length > 0, 'At least one team field is required.');
 
-export const teamPlayerCreateSchema = z.object({
-  userId: idSchema.optional(),
-  displayName: z.string().trim().min(1).max(120),
-  shirtNumber: z.number().int().min(0).max(99).optional(),
-  position: teamPlayerPositionSchema.optional(),
-  photoUrl: z.string().trim().url().max(1000).optional(),
-});
+export const teamPlayerCreateSchema = z
+  .object({
+    userId: idSchema.optional(),
+    displayName: z.string().trim().min(1).max(120).optional(),
+    shirtNumber: z.number().int().min(0).max(99).optional(),
+    position: teamPlayerPositionSchema.optional(),
+    photoUrl: z.string().trim().url().max(1000).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.userId && !value.displayName) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['displayName'],
+        message: 'Guest players require a display name.',
+      });
+    }
+  });
 
 export const teamAssistantDelegationSchema = z
   .object({
