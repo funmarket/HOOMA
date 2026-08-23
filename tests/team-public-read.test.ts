@@ -69,10 +69,10 @@ test('managed Team discovery cannot grant edit UI without canonical EDIT_TEAM au
 test('Team edit UI prefers authenticated managed Team state and writes through protected PATCH', () => {
   assert.match(teamProfilePage, /queryFn: listManagedTeams/);
   assert.match(teamProfilePage, /const managedTeam = managedTeamsQuery\.data\?\.items\.find/);
-  assert.match(teamProfilePage, /const team = managedTeam \?\? teamQuery\.data/);
+  assert.match(teamProfilePage, /const team = managedTeam \?\? memberTeam \?\? teamQuery\.data/);
   assert.match(teamProfilePage, /const canManage = Boolean\(managedTeam\)/);
   assert.match(teamProfilePage, /Edit Team/);
-  assert.match(teamProfilePage, /editing && canManage/);
+  assert.match(teamProfilePage, /editing && managedTeam/);
   assert.match(teamProfilePage, /mutation\.error instanceof Error/);
   assert.match(teamApi, /patch<TeamDetailItem>\(`\/api\/v1\/teams\/\$\{teamId\}`/);
 });

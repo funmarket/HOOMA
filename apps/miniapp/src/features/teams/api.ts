@@ -27,6 +27,12 @@ export type TeamRosterPlayer = {
 
 export type TeamRosterPage = { items: TeamRosterPlayer[] };
 
+export type TeamMemberPlayer = Omit<TeamRosterPlayer, 'isActive'>;
+export type TeamMemberTeam = Omit<TeamDetailItem, 'players'> & {
+  players?: TeamMemberPlayer[];
+};
+export type TeamMinePage = { items: TeamMemberTeam[] };
+
 export type TeamPlayerCandidate = {
   userId: string;
   displayName: string;
@@ -43,6 +49,7 @@ export const teamQueryKeys = {
     [...teamQueryKeys.all, 'list', filters] as const,
   detail: (teamId: string) => [...teamQueryKeys.all, 'detail', teamId] as const,
   managed: () => [...teamQueryKeys.all, 'managed'] as const,
+  mine: () => [...teamQueryKeys.all, 'mine'] as const,
   roster: (teamId: string) => [...teamQueryKeys.all, 'roster', teamId] as const,
   publicRoster: (teamId: string) => [...teamQueryKeys.all, 'public-roster', teamId] as const,
   rosterCandidates: (teamId: string) => [...teamQueryKeys.roster(teamId), 'candidates'] as const,
@@ -74,6 +81,10 @@ export function getTeam(teamId: string) {
 
 export function listManagedTeams() {
   return get<TeamManagedPage>('/api/v1/teams/managed');
+}
+
+export function listMyTeams() {
+  return get<TeamMinePage>('/api/v1/teams/mine');
 }
 
 export function updateTeam(teamId: string, input: TeamUpdateInput) {

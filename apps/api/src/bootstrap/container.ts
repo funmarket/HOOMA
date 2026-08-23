@@ -40,6 +40,7 @@ import { PrismaPlatformAdminRepository } from '../modules/platform-admin/infrast
 import { PlatformAdminService } from '../modules/platform-admin/application/platform-admin.service.js';
 import { PrismaTeamRepository } from '../modules/teams/infrastructure/prisma-team.repository.js';
 import { PrismaTeamAuthorityRepository } from '../modules/teams/infrastructure/prisma-team-authority.repository.js';
+import { PrismaTeamMemberReadRepository } from '../modules/teams/infrastructure/prisma-team-member-read.repository.js';
 import { PrismaTeamRosterRepository } from '../modules/teams/infrastructure/prisma-team-roster.repository.js';
 import { TeamService } from '../modules/teams/application/team.service.js';
 
@@ -110,8 +111,14 @@ export function buildContainer() {
 
   const teamRepository = new PrismaTeamRepository(db);
   const teamAuthorityRepository = new PrismaTeamAuthorityRepository(db);
+  const teamMemberReadRepository = new PrismaTeamMemberReadRepository(db);
   const teamRosterRepository = new PrismaTeamRosterRepository(db);
-  const teams = new TeamService(teamRepository, teamAuthorityRepository, teamRosterRepository);
+  const teams = new TeamService(
+    teamRepository,
+    teamAuthorityRepository,
+    teamRosterRepository,
+    teamMemberReadRepository,
+  );
 
   return {
     db,
@@ -138,6 +145,7 @@ export function buildContainer() {
       platformAdmin: platformAdminRepository,
       teams: teamRepository,
       teamAuthority: teamAuthorityRepository,
+      teamMemberRead: teamMemberReadRepository,
       teamRoster: teamRosterRepository,
     },
     services: {
