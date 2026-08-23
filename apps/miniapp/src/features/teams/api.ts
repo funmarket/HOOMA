@@ -1,4 +1,5 @@
 import type {
+  TeamAssistantDelegationInput,
   TeamChallengeCreateInput,
   TeamPlayerCreateInput,
   TeamUpdateInput,
@@ -11,7 +12,6 @@ import type {
   TeamDetailItem,
   TeamGameDetailItem,
   TeamGamePage,
-  TeamManagedPage,
   TeamPage,
 } from '../../types/domain';
 
@@ -43,6 +43,45 @@ export type TeamPlayerCandidate = {
 
 export type TeamPlayerCandidatePage = { items: TeamPlayerCandidate[] };
 
+export type TeamDelegatedPermission = TeamAssistantDelegationInput['permissions'][number];
+
+export type TeamManagedAuthority = {
+  teamId: string;
+  communityId: string;
+  role: 'COACH' | 'MANAGER' | 'ASSISTANT';
+  permissions: TeamDelegatedPermission[];
+  source: 'RESPONSIBILITY' | 'LEGACY';
+};
+
+export type TeamManagedItem = TeamDetailItem & {
+  authority: TeamManagedAuthority;
+};
+export type TeamManagedPage = { items: TeamManagedItem[] };
+
+export type TeamAssistantAssignment = {
+  id: string;
+  userId: string;
+  role: 'ASSISTANT';
+  permissions: TeamDelegatedPermission[];
+  appointedByUserId: string;
+  revokedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TeamAssistantItem = TeamAssistantAssignment & {
+  player: {
+    id: string;
+    userId?: string | null;
+    displayName: string;
+    shirtNumber?: number | null;
+    position?: string | null;
+    photoUrl?: string | null;
+  };
+};
+
+export type TeamAssistantPage = { items: TeamAssistantItem[] };
+
 export const teamQueryKeys = {
   all: ['teams'] as const,
   list: (filters: { search: string; city: string; houma: string }) =>
@@ -53,6 +92,7 @@ export const teamQueryKeys = {
   roster: (teamId: string) => [...teamQueryKeys.all, 'roster', teamId] as const,
   publicRoster: (teamId: string) => [...teamQueryKeys.all, 'public-roster', teamId] as const,
   rosterCandidates: (teamId: string) => [...teamQueryKeys.roster(teamId), 'candidates'] as const,
+  assistants: (teamId: string) => [...teamQueryKeys.all, 'assistants', teamId] as const,
   challenges: () => [...teamQueryKeys.all, 'challenges'] as const,
   incomingChallenges: () => [...teamQueryKeys.challenges(), 'incoming'] as const,
   outgoingChallenges: () => [...teamQueryKeys.challenges(), 'outgoing'] as const,
@@ -109,6 +149,18 @@ export function addTeamPlayer(teamId: string, input: TeamPlayerCreateInput) {
 
 export function removeTeamPlayer(teamId: string, teamPlayerId: string) {
   return del<TeamRosterPlayer>(`/api/v1/teams/${teamId}/players/${teamPlayerId}`);
+}
+
+export function listTeamAssistants(teamId: string) {
+  return get<TeamAssistantPage>(`/api/v1/teams/${teamId}/assistants`);
+}
+
+export function saveTeamAssistant(teamId: string, input: TeamAssistantDelegationInput) {
+  return post<TeamAssistantAssignment>(`/api/v1/teams/${teamId}/assistants`, input);
+}
+
+export function revokeTeamAssistant(teamId: string, responsibilityId: string) {
+  return del<TeamAssistantAssignment>(`/api/v1/teams/${teamId}/assistants/${responsibilityId}`);
 }
 
 export function listIncomingChallenges() {
