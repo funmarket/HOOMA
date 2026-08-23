@@ -104,7 +104,10 @@ test('Coach rosters a joined HOOMA user with canonical profile presentation', as
   const after = (await service.rosterCandidates(coachUserId, teamId)) as {
     items: Array<{ userId: string }>;
   };
-  assert.equal(after.items.some((candidate) => candidate.userId === playerUserId), false);
+  assert.equal(
+    after.items.some((candidate) => candidate.userId === playerUserId),
+    false,
+  );
 
   const stored = await db.teamPlayer.findFirst({ where: { teamId, userId: playerUserId } });
   assert.equal(stored?.displayName, 'Le Coin Midfielder');
