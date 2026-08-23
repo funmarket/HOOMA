@@ -229,6 +229,14 @@ export class PrismaTeamRepository implements TeamRepository {
     });
   }
 
+  getCurrentLineup(teamId: string) {
+    return this.db.teamLineup.findFirst({
+      where: { teamId, isCurrent: true, deletedAt: null },
+      select: lineupSelect,
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    });
+  }
+
   async listManagedTeams(teamIds: string[]) {
     if (!teamIds.length) return { items: [] };
     const items = await this.db.team.findMany({
