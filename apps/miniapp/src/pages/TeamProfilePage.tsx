@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronRight, MapPin, Pencil, Shield, Users } from 'lucide-react';
 import { TeamLineupPitch } from '../components/teams/TeamLineupPitch';
 import { getTeam, listManagedTeams, teamQueryKeys, updateTeam } from '../features/teams/api';
@@ -20,9 +20,9 @@ function TeamEditForm({ team, onDone }: { team: TeamDetailItem; onDone: () => vo
     mutationFn: () =>
       updateTeam(team.id, {
         name: name.trim(),
-        city: city.trim() || undefined,
-        houma: houma.trim() || undefined,
-        badgeUrl: badgeUrl.trim() || undefined,
+        city: city.trim(),
+        houma: houma.trim(),
+        badgeUrl: badgeUrl.trim(),
         isPublic,
         acceptingChallenges,
       }),
@@ -96,7 +96,11 @@ function TeamEditForm({ team, onDone }: { team: TeamDetailItem; onDone: () => vo
           />
         </label>
         {mutation.isError ? (
-          <div className="vintage-empty">Team changes could not be saved.</div>
+          <div className="vintage-empty">
+            {mutation.error instanceof Error
+              ? mutation.error.message
+              : 'Team changes could not be saved.'}
+          </div>
         ) : null}
         <div className="grid grid-cols-2 gap-3">
           <button
@@ -124,23 +128,25 @@ function TeamEditForm({ team, onDone }: { team: TeamDetailItem; onDone: () => vo
 export function TeamProfilePage() {
   const { teamId = '' } = useParams();
   const navigate = useNavigate();
-  const [editing, setEditing] = useState(false);
-  const teamQuery = useQuery({
-    queryKey: teamQueryKeys.detail(teamId),
-    queryFn: () => getTeam(teamId),
-    enabled: Boolean(teamId),
-  });
+  const [searchParams] = useSearchParams();
+  const [editing, setEditing] = useState(searchParams.get('edit') === '1');
   const managedTeamsQuery = useQuery({
     queryKey: teamQueryKeys.managed(),
     queryFn: listManagedTeams,
     retry: false,
   });
-  const team = teamQuery.data;
+  const managedTeam = managedTeamsQuery.data?.items.find((item) => item.id === teamId) as
+    TeamDetailItem | undefined;
+  const teamQuery = useQuery({
+    queryKey: teamQueryKeys.detail(teamId),
+    queryFn: () => getTeam(teamId),
+    enabled: Boolean(teamId) && !managedTeamsQuery.isLoading && !managedTeam,
+  });
+  const team = managedTeam ?? teamQuery.data;
   const lineup = team?.lineups?.[0] ?? null;
-  const canManage =
-    managedTeamsQuery.data?.items.some((managedTeam) => managedTeam.id === teamId) ?? false;
+  const canManage = Boolean(managedTeam);
 
-  if (teamQuery.isLoading) {
+  if (managedTeamsQuery.isLoading || (!managedTeam && teamQuery.isLoading)) {
     return (
       <div className="page-shell vintage-page">
         <div className="vintage-empty h-72 animate-pulse" />

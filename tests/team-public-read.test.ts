@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { teamUpdateSchema } from '@hooma/contracts';
 import type { DatabaseClient } from '../apps/api/src/infrastructure/database/prisma.js';
+import type { TeamAuthorityRepository } from '../apps/api/src/modules/teams/application/team-authority.repository.js';
+import type { TeamRepository } from '../apps/api/src/modules/teams/application/team-repository.js';
+import { TeamService } from '../apps/api/src/modules/teams/application/team.service.js';
 import { PrismaTeamRepository } from '../apps/api/src/modules/teams/infrastructure/prisma-team.repository.js';
 
 const teamProfilePage = readFileSync('apps/miniapp/src/pages/TeamProfilePage.tsx', 'utf8');
@@ -36,10 +40,45 @@ test('public Team detail only selects published lineups', async () => {
   assert.equal(args.select.lineups.where.deletedAt, null);
 });
 
-test('Team edit UI is gated by the managed Teams source and writes through the protected PATCH route', () => {
+test('managed Team discovery cannot grant edit UI without canonical EDIT_TEAM authority', async () => {
+  const repo = {
+    listManagedTeams: async () => ({
+      items: [{ id: 'coach-team' }, { id: 'legacy-only-team' }],
+    }),
+  } as unknown as TeamRepository;
+  const authority = {
+    list: async () => [
+      {
+        teamId: 'coach-team',
+        communityId: 'community-1',
+        role: 'COACH' as const,
+        permissions: [],
+        source: 'RESPONSIBILITY' as const,
+      },
+    ],
+  } as unknown as TeamAuthorityRepository;
+
+  const service = new TeamService(repo, authority);
+  const result = await service.managedTeams('coach-user');
+
+  assert.deepEqual(result, { items: [{ id: 'coach-team' }] });
+});
+
+test('Team edit UI prefers authenticated managed Team state and writes through protected PATCH', () => {
   assert.match(teamProfilePage, /queryFn: listManagedTeams/);
-  assert.match(teamProfilePage, /managedTeamsQuery\.data\?\.items\.some/);
+  assert.match(teamProfilePage, /const managedTeam = managedTeamsQuery\.data\?\.items\.find/);
+  assert.match(teamProfilePage, /const team = managedTeam \?\? teamQuery\.data/);
+  assert.match(teamProfilePage, /const canManage = Boolean\(managedTeam\)/);
   assert.match(teamProfilePage, /Edit Team/);
   assert.match(teamProfilePage, /editing && canManage/);
+  assert.match(teamProfilePage, /mutation\.error instanceof Error/);
   assert.match(teamApi, /patch<TeamDetailItem>\(`\/api\/v1\/teams\/\$\{teamId\}`/);
+});
+
+test('Team edit contract permits explicit clearing of optional fields', () => {
+  const parsed = teamUpdateSchema.parse({ city: '', houma: '', badgeUrl: '' });
+  assert.deepEqual(parsed, { city: '', houma: '', badgeUrl: '' });
+  assert.match(teamProfilePage, /city: city\.trim\(\)/);
+  assert.match(teamProfilePage, /houma: houma\.trim\(\)/);
+  assert.match(teamProfilePage, /badgeUrl: badgeUrl\.trim\(\)/);
 });

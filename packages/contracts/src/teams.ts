@@ -58,8 +58,11 @@ export const teamCreateSchema = z.object({
 });
 
 export const teamUpdateSchema = teamCreateSchema
-  .omit({ communityId: true })
+  .omit({ communityId: true, badgeUrl: true })
   .partial()
+  .extend({
+    badgeUrl: z.union([z.string().trim().url().max(1000), z.literal('')]).optional(),
+  })
   .refine((value) => Object.keys(value).length > 0, 'At least one team field is required.');
 
 export const teamPlayerCreateSchema = z.object({
