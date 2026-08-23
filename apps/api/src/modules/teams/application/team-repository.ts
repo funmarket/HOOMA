@@ -3,6 +3,7 @@ import type {
   TeamChallengeMessageCreateInput,
   TeamCreateInput,
   TeamLineupCreateInput,
+  TeamLineupUpdateInput,
   TeamPlayerCreateInput,
   TeamUpdateInput,
 } from '@hooma/contracts';
@@ -41,6 +42,12 @@ export interface TeamRepository {
   update(teamId: string, input: TeamUpdateInput): Promise<unknown>;
   addPlayer(teamId: string, input: TeamPlayerCreateInput): Promise<unknown>;
   createLineup(userId: string, teamId: string, input: TeamLineupCreateInput): Promise<unknown>;
+  updateLineup(
+    userId: string,
+    teamId: string,
+    lineupId: string,
+    input: TeamLineupUpdateInput,
+  ): Promise<unknown>;
   createChallenge(userId: string, input: TeamChallengeCreateInput): Promise<unknown>;
   listIncomingChallenges(teamIds: string[], limit: number): Promise<unknown>;
   listOutgoingChallenges(teamIds: string[], limit: number): Promise<unknown>;
