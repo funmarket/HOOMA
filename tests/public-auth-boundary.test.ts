@@ -190,6 +190,7 @@ test('optional authentication does not downgrade supplied invalid bearer credent
 
 test('real web auth lifecycle works through Express, Prisma, and disposable Postgres', async () => {
   const username = `ci_web_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const otherUsername = `ci_alt_${Date.now().toString(36)}`;
   const password = 'correct-horse-battery-staple';
   const email = `${username}@example.com`;
 
@@ -232,7 +233,7 @@ test('real web auth lifecycle works through Express, Prisma, and disposable Post
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        username: `${username}_other`,
+        username: otherUsername,
         password,
         email: email.toUpperCase(),
       }),
