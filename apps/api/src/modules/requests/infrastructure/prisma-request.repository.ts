@@ -3,6 +3,7 @@ import type { DatabaseClient } from '../../../infrastructure/database/prisma.js'
 import { decodeTimeIdCursor, encodeTimeIdCursor } from '../../../infrastructure/database/cursor.js';
 import { AppError } from '../../../http/errors/app-error.js';
 import type { RequestCreateInput, RequestRepository } from '../application/request-repository.js';
+import { loadRequestDiscovery } from './request-discovery-read-model.js';
 
 export class PrismaRequestRepository implements RequestRepository {
   constructor(private readonly db: DatabaseClient) {}
@@ -51,6 +52,10 @@ export class PrismaRequestRepository implements RequestRepository {
     };
   }
 
+  discover(userId: string) {
+    return loadRequestDiscovery(this.db, userId);
+  }
+
   async create(userId: string, input: RequestCreateInput) {
     return this.db.$transaction(async (tx) => {
       if (input.eventId) {
@@ -94,8 +99,11 @@ export class PrismaRequestRepository implements RequestRepository {
         await tx.$queryRaw`SELECT id FROM "Request" WHERE id = ${requestId} FOR UPDATE`;
         const request = await tx.request.findFirst({
           where: { id: requestId, deletedAt: null },
+          include: { community: { select: { visibility: true, deletedAt: true } } },
         });
-        if (!request) throw new AppError(404, 'REQUEST_NOT_FOUND', 'Request not found.');
+        if (!request || request.community.deletedAt) {
+          throw new AppError(404, 'REQUEST_NOT_FOUND', 'Request not found.');
+        }
         if (
           request.expiresAt <= new Date() ||
           !['OPEN', 'PARTIAL', 'CLAIMED'].includes(request.status)
@@ -106,11 +114,14 @@ export class PrismaRequestRepository implements RequestRepository {
         const membership = await tx.membership.findUnique({
           where: { communityId_userId: { communityId: request.communityId, userId } },
         });
-        if (!membership || membership.status !== 'ACTIVE') {
+        if (membership?.status === 'BANNED') {
+          throw new AppError(403, 'COMMUNITY_ACCESS_DENIED', 'Access to this community is denied.');
+        }
+        if (request.community.visibility === 'PRIVATE' && membership?.status !== 'ACTIVE') {
           throw new AppError(
             403,
             'COMMUNITY_ACCESS_DENIED',
-            'Not an active member of this community.',
+            'Private community requests are available only to active members.',
           );
         }
 
