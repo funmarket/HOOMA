@@ -171,9 +171,15 @@ test('Team roster management stays mutation-gated while lineup managers can read
 });
 
 test('Team lineup builder uses canonical Team endpoints and supports publish lifecycle', () => {
-  assert.match(teamApi, /get<TeamEditableLineup \| null>\(`\/api\/v1\/teams\/\$\{teamId\}\/lineups\/current`/);
+  assert.match(
+    teamApi,
+    /get<TeamEditableLineup \| null>\(`\/api\/v1\/teams\/\$\{teamId\}\/lineups\/current`/,
+  );
   assert.match(teamApi, /post<TeamEditableLineup>\(`\/api\/v1\/teams\/\$\{teamId\}\/lineups`/);
-  assert.match(teamApi, /put<TeamEditableLineup>\(`\/api\/v1\/teams\/\$\{teamId\}\/lineups\/\$\{lineupId\}`/);
+  assert.match(
+    teamApi,
+    /put<TeamEditableLineup>\(`\/api\/v1\/teams\/\$\{teamId\}\/lineups\/\$\{lineupId\}`/,
+  );
   assert.match(teamLineupBuilderPage, /hasLineupAuthority/);
   assert.match(teamLineupBuilderPage, /getCurrentTeamLineup/);
   assert.match(teamLineupBuilderPage, /listTeamRoster/);
