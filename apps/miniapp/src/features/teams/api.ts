@@ -1,10 +1,12 @@
 import type {
   TeamAssistantDelegationInput,
   TeamChallengeCreateInput,
+  TeamLineupCreateInput,
+  TeamLineupUpdateInput,
   TeamPlayerCreateInput,
   TeamUpdateInput,
 } from '@hooma/contracts';
-import { del, get, patch, post } from '../../shared/api/http-client';
+import { del, get, patch, post, put } from '../../shared/api/http-client';
 import type {
   TeamChallengeDetailItem,
   TeamChallengeItem,
@@ -12,6 +14,7 @@ import type {
   TeamDetailItem,
   TeamGameDetailItem,
   TeamGamePage,
+  TeamLineupItem,
   TeamPage,
 } from '../../types/domain';
 
@@ -82,6 +85,11 @@ export type TeamAssistantItem = TeamAssistantAssignment & {
 
 export type TeamAssistantPage = { items: TeamAssistantItem[] };
 
+export type TeamEditableLineup = TeamLineupItem & {
+  isCurrent: boolean;
+  isPublished: boolean;
+};
+
 export const teamQueryKeys = {
   all: ['teams'] as const,
   list: (filters: { search: string; city: string; houma: string }) =>
@@ -89,6 +97,7 @@ export const teamQueryKeys = {
   detail: (teamId: string) => [...teamQueryKeys.all, 'detail', teamId] as const,
   managed: () => [...teamQueryKeys.all, 'managed'] as const,
   mine: () => [...teamQueryKeys.all, 'mine'] as const,
+  authority: (teamId: string) => [...teamQueryKeys.all, 'authority', teamId] as const,
   roster: (teamId: string) => [...teamQueryKeys.all, 'roster', teamId] as const,
   publicRoster: (teamId: string) => [...teamQueryKeys.all, 'public-roster', teamId] as const,
   rosterCandidates: (teamId: string) => [...teamQueryKeys.roster(teamId), 'candidates'] as const,
@@ -127,6 +136,10 @@ export function listMyTeams() {
   return get<TeamMinePage>('/api/v1/teams/mine');
 }
 
+export function getTeamAuthority(teamId: string) {
+  return get<TeamManagedAuthority | null>(`/api/v1/teams/${teamId}/authority`);
+}
+
 export function updateTeam(teamId: string, input: TeamUpdateInput) {
   return patch<TeamDetailItem>(`/api/v1/teams/${teamId}`, input);
 }
@@ -161,6 +174,18 @@ export function saveTeamAssistant(teamId: string, input: TeamAssistantDelegation
 
 export function revokeTeamAssistant(teamId: string, responsibilityId: string) {
   return del<TeamAssistantAssignment>(`/api/v1/teams/${teamId}/assistants/${responsibilityId}`);
+}
+
+export function createTeamLineup(teamId: string, input: TeamLineupCreateInput) {
+  return post<TeamEditableLineup>(`/api/v1/teams/${teamId}/lineups`, input);
+}
+
+export function updateTeamLineup(
+  teamId: string,
+  lineupId: string,
+  input: TeamLineupUpdateInput,
+) {
+  return put<TeamEditableLineup>(`/api/v1/teams/${teamId}/lineups/${lineupId}`, input);
 }
 
 export function listIncomingChallenges() {
