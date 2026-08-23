@@ -136,7 +136,12 @@ test('creator bootstrap requires the server-configured secret before touching th
   const configured = '0123456789abcdef0123456789abcdef';
 
   await assert.rejects(
-    () => service.bootstrapFirstPlatformAdmin('creator-user-id', 'wrong-token-value-that-is-long-enough', configured),
+    () =>
+      service.bootstrapFirstPlatformAdmin(
+        'creator-user-id',
+        'wrong-token-value-that-is-long-enough',
+        configured,
+      ),
     (error: unknown) =>
       typeof error === 'object' &&
       error !== null &&
@@ -181,7 +186,10 @@ test('app-admin access endpoint reports only canonical Platform Admin authority'
 
   await withPlatformAdminServer('community-admin', async (baseUrl) => {
     const response = await fetch(`${baseUrl}/api/v1/app-admin/me`);
-    const body = (await response.json()) as { isPlatformAdmin: boolean; roles: PlatformRole[] };
+    const body = (await response.json()) as {
+      isPlatformAdmin: boolean;
+      roles: PlatformRole[];
+    };
 
     assert.equal(response.status, 200);
     assert.equal(body.isPlatformAdmin, false);
