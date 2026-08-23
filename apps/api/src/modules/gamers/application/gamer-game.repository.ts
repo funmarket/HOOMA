@@ -32,13 +32,10 @@ export type GamerGameUpdateData = GamerGameUpdateInput & {
 };
 
 export type GamerGameCreateResult =
-  | { kind: 'created'; game: GamerGameRecord }
-  | { kind: 'conflict' };
+  { kind: 'created'; game: GamerGameRecord } | { kind: 'conflict' };
 
 export type GamerGameUpdateResult =
-  | { kind: 'updated'; game: GamerGameRecord }
-  | { kind: 'not_found' }
-  | { kind: 'conflict' };
+  { kind: 'updated'; game: GamerGameRecord } | { kind: 'not_found' } | { kind: 'conflict' };
 
 export interface GamerGameRepository {
   listPublic(
