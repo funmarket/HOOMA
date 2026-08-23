@@ -15,11 +15,13 @@ import {
 } from '../domain/team-access.js';
 import type { TeamAuthorityRepository } from './team-authority.repository.js';
 import type { TeamListInput, TeamRepository } from './team-repository.js';
+import type { TeamRosterRepository } from './team-roster.repository.js';
 
 export class TeamService {
   constructor(
     private readonly repo: TeamRepository,
     private readonly authority: TeamAuthorityRepository,
+    private readonly rosterRepo: TeamRosterRepository,
   ) {}
 
   listPublic(input: TeamListInput) {
@@ -61,9 +63,24 @@ export class TeamService {
     return this.repo.update(teamId, input);
   }
 
-  async addPlayer(userId: string, teamId: string, input: TeamPlayerCreateInput) {
+  async roster(userId: string, teamId: string) {
     await this.requireTeamCapability(userId, teamId, 'MANAGE_ROSTER');
-    return this.repo.addPlayer(teamId, input);
+    return this.rosterRepo.listActive(teamId);
+  }
+
+  async addPlayer(
+    userId: string,
+    teamId: string,
+    input: TeamPlayerCreateInput,
+    requestId: string,
+  ) {
+    await this.requireTeamCapability(userId, teamId, 'MANAGE_ROSTER');
+    return this.rosterRepo.addPlayer(userId, teamId, input, requestId);
+  }
+
+  async removePlayer(userId: string, teamId: string, teamPlayerId: string, requestId: string) {
+    await this.requireTeamCapability(userId, teamId, 'MANAGE_ROSTER');
+    return this.rosterRepo.removePlayer(userId, teamId, teamPlayerId, requestId);
   }
 
   async listAssistants(userId: string, teamId: string) {
