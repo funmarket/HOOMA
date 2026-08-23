@@ -41,10 +41,9 @@ export type GamerGameUpdateResult =
   | { kind: 'conflict' };
 
 export interface GamerGameRepository {
-  listPublic(input: GamerGameListQuery): Promise<{
-    items: GamerGameRecord[];
-    nextCursor: string | null;
-  }>;
+  listPublic(
+    input: GamerGameListQuery,
+  ): Promise<{ items: GamerGameRecord[]; nextCursor: string | null }>;
   getPublic(identifier: string): Promise<GamerGameRecord | null>;
   create(input: GamerGameCreateData): Promise<GamerGameCreateResult>;
   update(id: string, input: GamerGameUpdateData): Promise<GamerGameUpdateResult>;
