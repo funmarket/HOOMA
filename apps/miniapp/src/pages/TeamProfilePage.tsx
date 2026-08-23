@@ -7,6 +7,7 @@ import {
   addTeamPlayer,
   getTeam,
   listManagedTeams,
+  listPublicTeamRoster,
   listTeamPlayerCandidates,
   listTeamRoster,
   removeTeamPlayer,
@@ -165,6 +166,12 @@ export function TeamProfilePage() {
     enabled: Boolean(teamId) && canManage,
     retry: false,
   });
+  const publicRosterQuery = useQuery({
+    queryKey: teamQueryKeys.publicRoster(teamId),
+    queryFn: () => listPublicTeamRoster(teamId),
+    enabled: Boolean(teamId) && !managedTeamsQuery.isLoading && !canManage,
+    retry: false,
+  });
   const candidatesQuery = useQuery({
     queryKey: teamQueryKeys.rosterCandidates(teamId),
     queryFn: () => listTeamPlayerCandidates(teamId),
@@ -172,7 +179,9 @@ export function TeamProfilePage() {
     retry: false,
   });
   const lineup = team?.lineups?.[0] ?? null;
-  const rosterPlayers = canManage ? (rosterQuery.data?.items ?? []) : (team?.players ?? []);
+  const rosterPlayers = canManage
+    ? (rosterQuery.data?.items ?? [])
+    : (publicRosterQuery.data?.items ?? []);
   const selectedCandidate = candidatesQuery.data?.items.find(
     (candidate) => candidate.userId === selectedCandidateId,
   );
@@ -180,6 +189,7 @@ export function TeamProfilePage() {
   const refreshTeam = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: teamQueryKeys.roster(teamId) }),
+      queryClient.invalidateQueries({ queryKey: teamQueryKeys.publicRoster(teamId) }),
       queryClient.invalidateQueries({ queryKey: teamQueryKeys.rosterCandidates(teamId) }),
       queryClient.invalidateQueries({ queryKey: teamQueryKeys.managed() }),
       queryClient.invalidateQueries({ queryKey: teamQueryKeys.detail(teamId) }),
@@ -273,7 +283,12 @@ export function TeamProfilePage() {
             </button>
           ) : null}
         </div>
-        <TeamLineupPitch teamName={team.name} lineup={lineup} />
+        <TeamLineupPitch
+          teamName={team.name}
+          lineup={lineup}
+          roster={rosterPlayers}
+          onOpenProfile={(userId) => navigate(`/profile/${userId}`)}
+        />
       </section>
 
       <section className="teams-section">
@@ -448,19 +463,39 @@ export function TeamProfilePage() {
         ) : null}
 
         <div className="mt-4 grid gap-2">
-          {canManage && rosterQuery.isLoading ? (
+          {(canManage ? rosterQuery.isLoading : publicRosterQuery.isLoading) ? (
             <div className="vintage-empty">Loading active roster…</div>
           ) : rosterPlayers.length ? (
             rosterPlayers.map((player) => (
               <article className="team-roster-row" key={player.id}>
-                <span>
-                  {player.photoUrl ? (
-                    <img src={player.photoUrl} alt="" />
-                  ) : (
-                    player.displayName.slice(0, 1).toUpperCase()
-                  )}
-                </span>
-                <strong>{player.displayName}</strong>
+                {player.userId ? (
+                  <button
+                    type="button"
+                    className="contents"
+                    onClick={() => navigate(`/profile/${player.userId}`)}
+                    aria-label={`Open ${player.displayName} profile`}
+                  >
+                    <span>
+                      {player.photoUrl ? (
+                        <img src={player.photoUrl} alt="" />
+                      ) : (
+                        player.displayName.slice(0, 1).toUpperCase()
+                      )}
+                    </span>
+                    <strong>{player.displayName}</strong>
+                  </button>
+                ) : (
+                  <>
+                    <span>
+                      {player.photoUrl ? (
+                        <img src={player.photoUrl} alt="" />
+                      ) : (
+                        player.displayName.slice(0, 1).toUpperCase()
+                      )}
+                    </span>
+                    <strong>{player.displayName}</strong>
+                  </>
+                )}
                 <small>
                   {player.position ?? 'ANY'}
                   {player.shirtNumber != null ? ` #${player.shirtNumber}` : ''}
