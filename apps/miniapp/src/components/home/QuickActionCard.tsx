@@ -8,7 +8,8 @@ export type QuickActionCardProps = {
   icon?: ReactNode;
   artworkSrc?: string;
   accentValue?: string;
-  onClick: () => void;
+  onClick?: () => void;
+  disabled?: boolean;
 };
 
 export function QuickActionCard({
@@ -18,6 +19,7 @@ export function QuickActionCard({
   artworkSrc,
   accentValue,
   onClick,
+  disabled = false,
 }: QuickActionCardProps) {
   const subtitleText = accentValue ? subtitle.replace(accentValue, '').trim() : subtitle;
 
@@ -26,6 +28,7 @@ export function QuickActionCard({
       type="button"
       className={cn('quick-action-card-pro', artworkSrc && 'quick-action-card-artwork')}
       onClick={onClick}
+      disabled={disabled}
     >
       {artworkSrc ? (
         <img className="quick-action-artwork" src={artworkSrc} alt="" aria-hidden="true" />
