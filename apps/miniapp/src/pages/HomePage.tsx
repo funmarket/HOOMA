@@ -3,7 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { MatchDayHero } from '../components/hero/MatchDayHero';
 import { HomeEventTicketCard } from '../components/home/HomeEventTicketCard';
 import { QuickActionCard } from '../components/home/QuickActionCard';
+import hoomaActionArtwork from '../assets/quick-actions/hooma.png';
 import teamsActionArtwork from '../assets/quick-actions/teams.png';
+import ultrasActionArtwork from '../assets/quick-actions/ultras.png';
+import gamersActionArtwork from '../assets/quick-actions/gamers.png';
+import placesActionArtwork from '../assets/quick-actions/places.png';
 import requestsActionArtwork from '../assets/quick-actions/requests.png';
 import rideActionArtwork from '../assets/quick-actions/ride.png';
 import fundmeActionArtwork from '../assets/quick-actions/fundme.png';
@@ -129,10 +133,34 @@ export function HomePage() {
         </div>
         <div className="vintage-home-grid">
           <QuickActionCard
+            title="HOOMA"
+            subtitle="Community"
+            artworkSrc={hoomaActionArtwork}
+            onClick={() => navigate('/community')}
+          />
+          <QuickActionCard
             title="Teams"
             subtitle="Manage squads"
             artworkSrc={teamsActionArtwork}
             onClick={() => navigate('/teams')}
+          />
+          <QuickActionCard
+            title="Ultras"
+            subtitle="Coming soon"
+            artworkSrc={ultrasActionArtwork}
+            disabled
+          />
+          <QuickActionCard
+            title="Gamers"
+            subtitle="Coming soon"
+            artworkSrc={gamersActionArtwork}
+            disabled
+          />
+          <QuickActionCard
+            title="Places"
+            subtitle="Watch + Pitch"
+            artworkSrc={placesActionArtwork}
+            onClick={() => navigate('/places')}
           />
           <QuickActionCard
             title="Requests"
