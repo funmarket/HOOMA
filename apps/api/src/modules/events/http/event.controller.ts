@@ -9,21 +9,6 @@ export function eventRouter(service: EventService) {
   const router = Router();
 
   router.get(
-    '/discover',
-    asyncHandler(async (req, res) => {
-      const type =
-        req.query.type === 'PLAY' || req.query.type === 'WATCH' ? req.query.type : undefined;
-      const from = typeof req.query.from === 'string' ? new Date(req.query.from) : undefined;
-      res.json(
-        await service.discover(getAuth(req).user.id, {
-          ...(type !== undefined ? { type } : {}),
-          ...(from !== undefined ? { from } : {}),
-        }),
-      );
-    }),
-  );
-
-  router.get(
     '/',
     asyncHandler(async (req, res) => {
       const type =
