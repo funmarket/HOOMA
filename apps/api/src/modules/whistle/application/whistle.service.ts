@@ -17,7 +17,7 @@ interface CommunityMembershipGate {
 }
 
 interface IdentityPresentationReader {
-  getMe(userId: string): Promise<{ displayName: string; photoUrl: string | null } | null>;
+  getMe(userId: string): Promise<unknown>;
 }
 
 function unavailable(cause?: unknown) {
@@ -25,6 +25,21 @@ function unavailable(cause?: unknown) {
     retryable: true,
     ...(cause instanceof Error ? { cause: cause.name } : {}),
   });
+}
+
+function requirePresentation(value: unknown) {
+  if (!value || typeof value !== 'object') throw unavailable();
+  const presentation = value as Record<string, unknown>;
+  const displayName = presentation.effectiveDisplayName;
+  const photoUrl = presentation.effectivePhotoUrl;
+  if (typeof displayName !== 'string' || !displayName.trim()) throw unavailable();
+  if (photoUrl !== null && photoUrl !== undefined && typeof photoUrl !== 'string') {
+    throw unavailable();
+  }
+  return {
+    displayName,
+    photoUrl: typeof photoUrl === 'string' && photoUrl.trim() ? photoUrl : null,
+  };
 }
 
 function feedResponse(
@@ -89,8 +104,7 @@ export class WhistleService {
 
   async postCommunity(userId: string, communityId: string, body: string) {
     await this.communities.requireMembership(userId, communityId);
-    const presentation = await this.identity.getMe(userId);
-    if (!presentation) throw unavailable();
+    const presentation = requirePresentation(await this.identity.getMe(userId));
 
     try {
       for (let attempt = 0; attempt < 2; attempt += 1) {
