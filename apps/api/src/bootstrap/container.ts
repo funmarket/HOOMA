@@ -38,6 +38,8 @@ import { PrismaPlayRepository } from '../modules/play/infrastructure/prisma-play
 import { PlayService } from '../modules/play/application/play.service.js';
 import { PrismaChatRepository } from '../modules/chat/infrastructure/prisma-chat.repository.js';
 import { ChatService } from '../modules/chat/application/chat.service.js';
+import { RedisWhistleStore } from '../modules/whistle/infrastructure/redis-whistle.store.js';
+import { WhistleService } from '../modules/whistle/application/whistle.service.js';
 import { PrismaAdminReadRepository } from '../modules/admin/infrastructure/prisma-admin-read.repository.js';
 import { AdminService } from '../modules/admin/application/admin.service.js';
 import { PrismaPlatformAdminRepository } from '../modules/platform-admin/infrastructure/prisma-platform-admin.repository.js';
@@ -110,6 +112,9 @@ export function buildContainer() {
   const chatRepository = new PrismaChatRepository(db);
   const chat = new ChatService(chatRepository, communities);
 
+  const whistleStore = new RedisWhistleStore(redis);
+  const whistles = new WhistleService(whistleStore, communities, identity);
+
   const adminReadRepository = new PrismaAdminReadRepository(db);
   const admin = new AdminService(adminReadRepository, communities, events);
 
@@ -173,6 +178,7 @@ export function buildContainer() {
       gamers,
       play,
       chat,
+      whistles,
       admin,
       platformAdmin,
       teams,
