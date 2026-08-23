@@ -376,7 +376,11 @@ export function TeamProfilePage() {
         </div>
       </section>
 
-      <TeamAssistantManager teamId={teamId} rosterPlayers={managedRosterPlayers} enabled={canManage} />
+      <TeamAssistantManager
+        teamId={teamId}
+        rosterPlayers={managedRosterPlayers}
+        enabled={canManage}
+      />
 
       <button className="vintage-outline-cta mt-5 w-full" onClick={() => navigate('/teams')}>
         Back to Teams <ChevronRight size={18} />
