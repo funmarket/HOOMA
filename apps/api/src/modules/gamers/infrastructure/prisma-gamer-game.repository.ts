@@ -34,6 +34,36 @@ function prismaCode(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError ? error.code : null;
 }
 
+function createData(input: GamerGameCreateData): Prisma.GamerGameCreateInput {
+  return {
+    slug: input.slug,
+    name: input.name,
+    normalizedName: input.normalizedName,
+    description: input.description ?? null,
+    logoUrl: input.logoUrl ?? null,
+    coverUrl: input.coverUrl ?? null,
+    publisher: input.publisher ?? null,
+    platforms: input.platforms,
+    status: input.status,
+    featured: input.featured,
+  };
+}
+
+function updateData(input: GamerGameUpdateData): Prisma.GamerGameUpdateInput {
+  return {
+    ...(input.slug !== undefined ? { slug: input.slug } : {}),
+    ...(input.name !== undefined ? { name: input.name } : {}),
+    ...(input.normalizedName !== undefined ? { normalizedName: input.normalizedName } : {}),
+    ...(input.description !== undefined ? { description: input.description } : {}),
+    ...(input.logoUrl !== undefined ? { logoUrl: input.logoUrl } : {}),
+    ...(input.coverUrl !== undefined ? { coverUrl: input.coverUrl } : {}),
+    ...(input.publisher !== undefined ? { publisher: input.publisher } : {}),
+    ...(input.platforms !== undefined ? { platforms: input.platforms } : {}),
+    ...(input.status !== undefined ? { status: input.status } : {}),
+    ...(input.featured !== undefined ? { featured: input.featured } : {}),
+  };
+}
+
 export class PrismaGamerGameRepository implements GamerGameRepository {
   constructor(private readonly db: DatabaseClient) {}
 
@@ -88,7 +118,7 @@ export class PrismaGamerGameRepository implements GamerGameRepository {
 
   async create(input: GamerGameCreateData) {
     try {
-      const game = await this.db.gamerGame.create({ data: input, select: publicSelect });
+      const game = await this.db.gamerGame.create({ data: createData(input), select: publicSelect });
       return { kind: 'created' as const, game: mapPublic(game) };
     } catch (error) {
       if (prismaCode(error) === 'P2002') return { kind: 'conflict' as const };
@@ -100,7 +130,7 @@ export class PrismaGamerGameRepository implements GamerGameRepository {
     try {
       const game = await this.db.gamerGame.update({
         where: { id },
-        data: input,
+        data: updateData(input),
         select: publicSelect,
       });
       return { kind: 'updated' as const, game: mapPublic(game) };
