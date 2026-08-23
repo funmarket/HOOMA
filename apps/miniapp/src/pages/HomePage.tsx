@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { MatchDayHero } from '../components/hero/MatchDayHero';
 import { HomeEventTicketCard } from '../components/home/HomeEventTicketCard';
+import { HoomaNowFeed } from '../components/home/HoomaNowFeed';
 import { QuickActionCard } from '../components/home/QuickActionCard';
 import hoomaActionArtwork from '../assets/quick-actions/hooma.png';
 import teamsActionArtwork from '../assets/quick-actions/teams.png';
@@ -75,6 +76,9 @@ export function HomePage() {
   });
   const rideCount = (rides.data?.offers.length || 0) + (rides.data?.requests.length || 0);
   const nextEvent = events.data?.items[0];
+  const hoomaNowLoading =
+    events.isLoading || requests.isLoading || rides.isLoading || funds.isLoading;
+  const hoomaNowHasError = events.isError || requests.isError || rides.isError || funds.isError;
 
   return (
     <div className="page-shell vintage-page">
@@ -186,18 +190,17 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="vintage-home-section">
-        <div className="vintage-section-heading vintage-section-heading-inline">
-          <h2 className="vintage-kicker vintage-kicker-title">HOOMA NOW</h2>
-        </div>
-        <div className="vintage-empty vintage-feed-empty">
-          <strong>Football feed waiting for live data.</strong>
-          <small>
-            Matches, results, tables and scorers will use this media-card area when the HOOMA
-            football feed returns real content.
-          </small>
-        </div>
-      </section>
+      <HoomaNowFeed
+        communityName={active?.name}
+        events={events.data?.items ?? []}
+        requests={requests.data?.items ?? []}
+        rideOffers={rides.data?.offers ?? []}
+        rideRequests={rides.data?.requests ?? []}
+        funds={funds.data?.items ?? []}
+        isLoading={hoomaNowLoading}
+        hasError={hoomaNowHasError}
+        onNavigate={navigate}
+      />
     </div>
   );
 }

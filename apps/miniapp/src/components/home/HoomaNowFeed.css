@@ -1,0 +1,293 @@
+.hooma-now {
+  position: relative;
+  overflow: hidden;
+  margin-top: 2.4rem;
+  padding: 1.05rem;
+  border: 1px solid rgba(190, 145, 60, 0.44);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 88% 8%, rgba(170, 255, 0, 0.08), transparent 28%),
+    radial-gradient(circle at 12% 100%, rgba(184, 137, 54, 0.1), transparent 34%),
+    linear-gradient(160deg, rgba(15, 16, 13, 0.99), rgba(4, 5, 4, 0.99));
+  box-shadow:
+    0 22px 48px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.hooma-now::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.13;
+  background-image: linear-gradient(rgba(233, 221, 195, 0.08) 1px, transparent 1px);
+  background-size: 100% 9px;
+}
+
+.hooma-now-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.15rem 0.1rem 0.9rem;
+}
+
+.hooma-now-eyebrow,
+.hooma-now-kicker {
+  color: var(--accent);
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.hooma-now-header h2 {
+  margin: 0.22rem 0 0;
+  color: var(--cream);
+  font-size: clamp(1.7rem, 7vw, 2.55rem);
+  font-weight: 950;
+  line-height: 0.94;
+  letter-spacing: -0.055em;
+}
+
+.hooma-now-header p {
+  margin: 0.45rem 0 0;
+  color: #9e9a90;
+  font-size: 0.76rem;
+}
+
+.hooma-now-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  flex: 0 0 auto;
+  padding: 0.4rem 0.58rem;
+  border: 1px solid rgba(170, 255, 0, 0.28);
+  border-radius: 999px;
+  background: rgba(170, 255, 0, 0.055);
+  color: var(--accent);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.hooma-now-live i {
+  width: 0.38rem;
+  height: 0.38rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(170, 255, 0, 0.08);
+}
+
+.hooma-now-stack {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.62rem;
+}
+
+.hooma-now-card {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 2rem 2.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.72rem;
+  width: 100%;
+  padding: 0.86rem 0.85rem 0.86rem 0.62rem;
+  overflow: hidden;
+  text-align: left;
+  border: 1px solid rgba(210, 166, 45, 0.2);
+  border-radius: 13px;
+  background: linear-gradient(145deg, rgba(13, 14, 11, 0.98), rgba(7, 8, 6, 0.99));
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease;
+}
+
+.hooma-now-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: rgba(184, 137, 54, 0.62);
+}
+
+.hooma-now-card:hover {
+  border-color: rgba(210, 166, 45, 0.46);
+  background: linear-gradient(145deg, rgba(18, 19, 15, 0.99), rgba(8, 9, 7, 0.99));
+}
+
+.hooma-now-card:active {
+  transform: scale(0.992);
+}
+
+.hooma-now-card-request::after,
+.hooma-now-card-match::after {
+  background: var(--accent);
+}
+
+.hooma-now-card-watch::after {
+  background: #d1a247;
+}
+
+.hooma-now-card-ride::after {
+  background: #f0dfb5;
+}
+
+.hooma-now-card-fund::after {
+  background: #c48f31;
+}
+
+.hooma-now-rank {
+  align-self: start;
+  padding-top: 0.08rem;
+  color: #615f58;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.hooma-now-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(210, 166, 45, 0.32);
+  border-radius: 50%;
+  color: var(--cream);
+  background: radial-gradient(circle at 50% 35%, #171913, #090a08 72%);
+}
+
+.hooma-now-icon svg {
+  stroke-width: 1.65;
+}
+
+.hooma-now-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.26rem;
+}
+
+.hooma-now-copy > strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #f7f7f4;
+  font-size: clamp(0.94rem, 3.7vw, 1.1rem);
+  font-weight: 850;
+  line-height: 1.08;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hooma-now-meta,
+.hooma-now-detail {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.32rem;
+  color: #a8a399;
+  font-size: 0.69rem;
+  font-weight: 590;
+  line-height: 1.25;
+}
+
+.hooma-now-meta svg,
+.hooma-now-detail svg {
+  flex: 0 0 auto;
+}
+
+.hooma-now-detail {
+  overflow: hidden;
+  color: #807d75;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hooma-now-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  align-self: center;
+  color: #d7c18e;
+  font-size: 0.66rem;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.hooma-now-progress {
+  width: min(15rem, 100%);
+  height: 0.22rem;
+  overflow: hidden;
+  margin-top: 0.18rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.hooma-now-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #a2742d, #d7b45b);
+}
+
+.hooma-now-empty {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.28rem;
+  padding: 1.15rem;
+  border: 1px dashed rgba(210, 166, 45, 0.28);
+  border-radius: 13px;
+  color: #9c988f;
+  background: rgba(0, 0, 0, 0.15);
+  font-size: 0.78rem;
+}
+
+.hooma-now-empty strong {
+  color: var(--cream);
+  font-size: 0.9rem;
+}
+
+.hooma-now-warning {
+  position: relative;
+  z-index: 1;
+  margin: 0.72rem 0 0;
+  color: #c8a766;
+  font-size: 0.66rem;
+}
+
+@media (max-width: 560px) {
+  .hooma-now {
+    margin-top: 2rem;
+    padding: 0.88rem;
+    border-radius: 15px;
+  }
+
+  .hooma-now-card {
+    grid-template-columns: 1.4rem 2.35rem minmax(0, 1fr);
+    gap: 0.58rem;
+    padding: 0.78rem 0.7rem 0.78rem 0.55rem;
+  }
+
+  .hooma-now-icon {
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+
+  .hooma-now-action {
+    grid-column: 3;
+    justify-self: start;
+    margin-top: 0.12rem;
+  }
+
+  .hooma-now-header p {
+    max-width: 15rem;
+  }
+}
