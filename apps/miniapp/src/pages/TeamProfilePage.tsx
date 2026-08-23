@@ -159,8 +159,7 @@ export function TeamProfilePage() {
     retry: false,
   });
   const managedTeam = managedTeamsQuery.data?.items.find((item) => item.id === teamId) as
-    | TeamDetailItem
-    | undefined;
+    TeamDetailItem | undefined;
   const memberTeam = myTeamsQuery.data?.items.find((item) => item.id === teamId);
   const teamQuery = useQuery({
     queryKey: teamQueryKeys.detail(teamId),
@@ -494,7 +493,9 @@ export function TeamProfilePage() {
         ) : null}
 
         <div className="mt-4 grid gap-2">
-          {(canManage ? rosterQuery.isLoading : isTeamPlayer ? false : publicRosterQuery.isLoading) ? (
+          {(
+            canManage ? rosterQuery.isLoading : isTeamPlayer ? false : publicRosterQuery.isLoading
+          ) ? (
             <div className="vintage-empty">Loading active roster…</div>
           ) : rosterPlayers.length ? (
             rosterPlayers.map((player) => (
