@@ -266,6 +266,13 @@ export function teamRouter(service: TeamService) {
     ),
   );
 
+  router.get(
+    '/:teamId/lineups/current',
+    asyncHandler(async (req, res) =>
+      res.json(await service.currentLineup(getAuth(req).user.id, String(req.params.teamId))),
+    ),
+  );
+
   router.post(
     '/:teamId/lineups',
     asyncHandler(async (req, res) =>
