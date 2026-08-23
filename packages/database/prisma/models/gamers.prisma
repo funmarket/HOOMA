@@ -1,0 +1,33 @@
+enum GamerGameStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum GamerGamePlatform {
+  EA
+  PLAYSTATION
+  XBOX
+  NINTENDO
+  PC
+  MOBILE
+  OTHER
+}
+
+model GamerGame {
+  id             String              @id @default(cuid())
+  slug           String              @unique @db.VarChar(120)
+  name           String              @db.VarChar(120)
+  normalizedName String              @unique @db.VarChar(120)
+  description    String?             @db.VarChar(1200)
+  logoUrl        String?
+  coverUrl       String?
+  publisher      String?             @db.VarChar(120)
+  platforms      GamerGamePlatform[] @default([])
+  status         GamerGameStatus     @default(ACTIVE)
+  featured       Boolean             @default(false)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([status, featured, name, id])
+  @@index([featured, status, createdAt])
+}
