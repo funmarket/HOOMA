@@ -417,12 +417,7 @@ export class PrismaTeamRepository implements TeamRepository {
     });
   }
 
-  updateLineup(
-    userId: string,
-    teamId: string,
-    lineupId: string,
-    input: TeamLineupUpdateInput,
-  ) {
+  updateLineup(userId: string, teamId: string, lineupId: string, input: TeamLineupUpdateInput) {
     return this.db.$transaction(async (tx) => {
       const existing = await tx.teamLineup.findFirst({
         where: { id: lineupId, teamId, deletedAt: null },
