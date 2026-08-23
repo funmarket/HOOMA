@@ -28,7 +28,11 @@ export class GamerService {
       normalizedName: normalizeGamerGameName(input.name),
     });
     if (result.kind === 'conflict') {
-      throw new AppError(409, 'GAMER_GAME_CONFLICT', 'A game with this name or slug already exists.');
+      throw new AppError(
+        409,
+        'GAMER_GAME_CONFLICT',
+        'A game with this name or slug already exists.',
+      );
     }
     return result.game;
   }
@@ -46,7 +50,11 @@ export class GamerService {
       throw new AppError(404, 'GAMER_GAME_NOT_FOUND', 'Game not found.');
     }
     if (result.kind === 'conflict') {
-      throw new AppError(409, 'GAMER_GAME_CONFLICT', 'A game with this name or slug already exists.');
+      throw new AppError(
+        409,
+        'GAMER_GAME_CONFLICT',
+        'A game with this name or slug already exists.',
+      );
     }
     return result.game;
   }
@@ -54,7 +62,11 @@ export class GamerService {
   private requireSlug(name: string) {
     const slug = slugifyGamerGameName(name);
     if (!slug) {
-      throw new AppError(400, 'GAMER_GAME_NAME_INVALID', 'Game name must contain letters or numbers.');
+      throw new AppError(
+        400,
+        'GAMER_GAME_NAME_INVALID',
+        'Game name must contain letters or numbers.',
+      );
     }
     return slug;
   }
