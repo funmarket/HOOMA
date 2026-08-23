@@ -1,0 +1,279 @@
+/* Team community presentation: one visual source for the Team hero, lineup stage and roster. */
+
+.team-profile-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 10.5rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 1.15rem;
+  padding: 1.2rem;
+  border-color: rgba(201, 155, 43, 0.46);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(170, 255, 0, 0.14), transparent 16rem),
+    radial-gradient(circle at 12% 110%, rgba(184, 137, 54, 0.12), transparent 18rem),
+    linear-gradient(135deg, #0a0e0a 0%, #050806 48%, #020403 100%);
+  box-shadow:
+    0 22px 48px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.team-profile-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(110deg, transparent 0 58%, rgba(170, 255, 0, 0.035) 58% 59%, transparent 59% 66%, rgba(184, 137, 54, 0.04) 66% 67%, transparent 67%),
+    radial-gradient(circle at 75% 40%, rgba(255, 255, 255, 0.035) 0 1px, transparent 1.5px);
+  background-size: auto, 15px 15px;
+  mask-image: linear-gradient(90deg, transparent, #000 32%, #000);
+}
+
+.team-profile-hero::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  right: -4.5rem;
+  bottom: -5.5rem;
+  width: 16rem;
+  height: 16rem;
+  border: 1px solid rgba(170, 255, 0, 0.09);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1.8rem rgba(170, 255, 0, 0.018),
+    0 0 0 4rem rgba(170, 255, 0, 0.012);
+}
+
+.team-profile-badge {
+  position: relative;
+  width: clamp(5.6rem, 16vw, 7.4rem);
+  height: clamp(5.6rem, 16vw, 7.4rem);
+  border-color: rgba(170, 255, 0, 0.62);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 50% 28%, rgba(170, 255, 0, 0.13), transparent 58%),
+    linear-gradient(145deg, #101b11, #040805);
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.025),
+    0 0 28px rgba(170, 255, 0, 0.055);
+}
+
+.team-profile-badge::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  pointer-events: none;
+  border: 1px solid rgba(201, 155, 43, 0.25);
+  border-radius: 20px;
+}
+
+.team-profile-badge img {
+  position: relative;
+  z-index: 1;
+  max-width: 82%;
+  max-height: 82%;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.32));
+}
+
+.team-profile-title {
+  color: var(--hv-cream);
+  font-size: clamp(2.25rem, 8vw, 4rem);
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.54),
+    0 12px 30px rgba(0, 0, 0, 0.38);
+}
+
+.team-profile-meta {
+  width: fit-content;
+  margin-top: 0.48rem;
+  padding: 0.28rem 0.52rem;
+  border: 1px solid rgba(232, 221, 196, 0.09);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.025);
+  color: #c2beb4;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.team-profile-meta svg {
+  color: var(--hv-lime);
+}
+
+.team-profile-hero > .ghost-button {
+  align-self: start;
+  min-height: 2.8rem;
+  border-color: rgba(170, 255, 0, 0.32);
+  background: rgba(4, 8, 5, 0.74);
+  backdrop-filter: blur(12px);
+}
+
+.team-profile-hero ~ .teams-section {
+  position: relative;
+  margin-top: 1.45rem;
+}
+
+.team-profile-hero ~ .teams-section > .vintage-section-heading {
+  margin-bottom: 0.8rem;
+  padding-inline: 0.15rem;
+}
+
+.team-profile-hero ~ .teams-section > .vintage-section-heading .vintage-kicker {
+  letter-spacing: 0.14em;
+}
+
+.team-profile-hero ~ .teams-section > .vintage-section-heading .section-title {
+  color: var(--hv-cream);
+  font-size: clamp(1.8rem, 6vw, 2.5rem);
+  letter-spacing: -0.045em;
+}
+
+.team-profile-hero ~ .teams-section > .vintage-section-heading .accent-button {
+  min-height: 3rem;
+  padding-inline: 1.15rem;
+  border-color: #d9f45d;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #c8ee37, #98bd17);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 10px 24px rgba(128, 174, 17, 0.14);
+}
+
+.team-roster-row {
+  position: relative;
+  overflow: hidden;
+  min-height: 4.8rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  padding: 0.78rem 0.82rem;
+  border-color: rgba(201, 155, 43, 0.24);
+  border-radius: 14px;
+  background:
+    linear-gradient(90deg, rgba(170, 255, 0, 0.035), transparent 28%),
+    linear-gradient(145deg, #0b0e0b, #050706);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.018),
+    0 8px 22px rgba(0, 0, 0, 0.18);
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease;
+}
+
+.team-roster-row:hover {
+  transform: translateY(-1px);
+  border-color: rgba(170, 255, 0, 0.32);
+  background:
+    linear-gradient(90deg, rgba(170, 255, 0, 0.06), transparent 34%),
+    linear-gradient(145deg, #0d110d, #060806);
+}
+
+.team-roster-row::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 3.2rem;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.35;
+  background: repeating-linear-gradient(135deg, transparent 0 7px, rgba(201, 155, 43, 0.045) 7px 8px);
+}
+
+.team-roster-row span {
+  position: relative;
+  z-index: 1;
+  width: 3.2rem;
+  height: 3.2rem;
+  border-color: rgba(218, 181, 84, 0.88);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(170, 255, 0, 0.09), transparent 62%),
+    #071008;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.34),
+    0 0 0 3px rgba(4, 8, 5, 0.9);
+}
+
+.team-roster-row img {
+  filter: contrast(1.03) saturate(0.94);
+}
+
+.team-roster-row strong {
+  position: relative;
+  z-index: 1;
+  color: var(--hv-cream);
+  font-size: 0.96rem;
+  letter-spacing: -0.015em;
+}
+
+.team-roster-row small {
+  position: relative;
+  z-index: 1;
+  padding: 0.28rem 0.48rem;
+  border: 1px solid rgba(170, 255, 0, 0.14);
+  border-radius: 999px;
+  background: rgba(170, 255, 0, 0.025);
+  color: var(--hv-lime);
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.team-roster-row .ghost-button {
+  position: relative;
+  z-index: 2;
+  min-height: 2.4rem;
+  border-color: rgba(239, 91, 79, 0.28);
+  color: #efb0aa;
+  background: rgba(35, 8, 7, 0.34);
+}
+
+@media (max-width: 620px) {
+  .team-profile-hero {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    min-height: 9.4rem;
+    padding: 1rem;
+  }
+
+  .team-profile-hero > .ghost-button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .team-profile-hero {
+    gap: 0.78rem;
+    padding: 0.88rem;
+  }
+
+  .team-profile-badge {
+    width: 4.8rem;
+    height: 4.8rem;
+    border-radius: 20px;
+  }
+
+  .team-profile-title {
+    font-size: clamp(1.9rem, 10vw, 2.65rem);
+  }
+
+  .team-profile-meta {
+    font-size: 0.68rem;
+  }
+
+  .team-roster-row {
+    gap: 0.62rem;
+    padding: 0.68rem;
+  }
+
+  .team-roster-row span {
+    width: 2.85rem;
+    height: 2.85rem;
+  }
+}
