@@ -1,11 +1,11 @@
 import { Prisma } from '@hooma/database';
 import type { GamerGameListQuery } from '@hooma/contracts';
 import type { DatabaseClient } from '../../../infrastructure/database/prisma.js';
-import { decodeTimeIdCursor, encodeTimeIdCursor } from '../../../infrastructure/database/cursor.js';
-import type {
-  GamerGameRecord,
-  GamerGameRepository,
-} from '../application/gamer-game.repository.js';
+import {
+  decodeTimeIdCursor,
+  encodeTimeIdCursor,
+} from '../../../infrastructure/database/cursor.js';
+import type { GamerGameRecord, GamerGameRepository } from '../application/gamer-game.repository.js';
 
 const publicSelect = {
   id: true,
