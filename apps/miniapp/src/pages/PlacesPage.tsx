@@ -29,10 +29,13 @@ function placeStatusLabel(place: Place) {
 }
 
 function pitchRateLabel(pitch: PitchListing) {
-  if (pitch.hourlyRateMinor === null || pitch.hourlyRateMinor === undefined || !pitch.currency) {
-    return null;
-  }
-  const amount = pitch.hourlyRateMinor / 100;
+  const hasRate =
+    pitch.hourlyRateMinor !== null &&
+    pitch.hourlyRateMinor !== undefined &&
+    Boolean(pitch.currency);
+  if (!hasRate) return null;
+
+  const amount = pitch.hourlyRateMinor! / 100;
   return `${Number.isInteger(amount) ? amount.toFixed(0) : amount.toFixed(2)} ${pitch.currency} / hour`;
 }
 
