@@ -32,7 +32,9 @@ export class PrismaGamerGameRepository implements GamerGameRepository {
   constructor(private readonly db: DatabaseClient) {}
 
   async listPublic(input: GamerGameListQuery) {
-    const cursor = input.cursor ? decodeTimeIdCursor(input.cursor, 'Gamer game') : null;
+    const cursor = input.cursor
+      ? decodeTimeIdCursor(input.cursor, 'Gamer game')
+      : null;
     const rows = await this.db.gamerGame.findMany({
       where: {
         status: 'ACTIVE',
