@@ -191,21 +191,30 @@ test('optional authentication does not downgrade supplied invalid bearer credent
 test('real web auth lifecycle works through Express, Prisma, and disposable Postgres', async () => {
   const username = `ci_web_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const password = 'correct-horse-battery-staple';
+  const email = `${username}@example.com`;
 
   await withRealApp(async (baseUrl) => {
     const registerResponse = await fetch(`${baseUrl}/api/v1/auth/register`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username, password, displayName: 'CI Web User' }),
+      body: JSON.stringify({ username, password, displayName: 'CI Web User', email }),
     });
     const registered = (await registerResponse.json()) as {
-      user: { id: string; telegramUserId: string | null };
+      user: {
+        id: string;
+        telegramUserId: string | null;
+        username?: string | null;
+        password?: string;
+      };
       token: string;
       expiresAt: string;
     };
 
     assert.equal(registerResponse.status, 201);
     assert.equal(registered.user.telegramUserId, null);
+    assert.equal(registered.user.username, username);
+    assert.equal('password' in registered.user, false);
+    assert.equal(JSON.stringify(registered).includes(password), false);
     assert.ok(registered.user.id);
     assert.ok(registered.token);
     assert.ok(registered.expiresAt);
@@ -219,16 +228,82 @@ test('real web auth lifecycle works through Express, Prisma, and disposable Post
     assert.equal(duplicateResponse.status, 409);
     assert.equal(duplicate.error.code, 'USERNAME_TAKEN');
 
+    const duplicateEmailResponse = await fetch(`${baseUrl}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        username: `${username}_other`,
+        password,
+        email: email.toUpperCase(),
+      }),
+    });
+    const duplicateEmail = (await duplicateEmailResponse.json()) as { error: { code: string } };
+    assert.equal(duplicateEmailResponse.status, 409);
+    assert.equal(duplicateEmail.error.code, 'EMAIL_TAKEN');
+
     const meFromRegistrationResponse = await fetch(`${baseUrl}/api/v1/me`, {
       headers: { authorization: `Bearer ${registered.token}` },
     });
     const meFromRegistration = (await meFromRegistrationResponse.json()) as {
       id: string;
       telegramUserId: string | null;
+      telegramUsername?: string | null;
+      effectiveUsername?: string | null;
+      effectiveDisplayName: string;
+      effectivePhotoUrl?: string | null;
+      presentation?: { displayName?: string | null; photoUrl?: string | null } | null;
     };
     assert.equal(meFromRegistrationResponse.status, 200);
     assert.equal(meFromRegistration.id, registered.user.id);
     assert.equal(meFromRegistration.telegramUserId, null);
+    assert.equal(meFromRegistration.telegramUsername, null);
+    assert.equal(meFromRegistration.effectiveUsername, username);
+    assert.equal(meFromRegistration.effectiveDisplayName, 'CI Web User');
+    assert.equal(meFromRegistration.effectivePhotoUrl, null);
+    assert.equal(meFromRegistration.presentation?.displayName, 'CI Web User');
+
+    const profileOverrideResponse = await fetch(`${baseUrl}/api/v1/me/profile`, {
+      method: 'PATCH',
+      headers: {
+        authorization: `Bearer ${registered.token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        displayName: 'CI Profile Override',
+        photoUrl: 'https://example.com/ci-profile.jpg',
+      }),
+    });
+    const profileOverride = (await profileOverrideResponse.json()) as {
+      effectiveDisplayName: string;
+      effectivePhotoUrl?: string | null;
+      presentation?: { displayName?: string | null; photoUrl?: string | null } | null;
+    };
+    assert.equal(profileOverrideResponse.status, 200);
+    assert.equal(profileOverride.effectiveDisplayName, 'CI Profile Override');
+    assert.equal(profileOverride.effectivePhotoUrl, 'https://example.com/ci-profile.jpg');
+    assert.equal(profileOverride.presentation?.displayName, 'CI Profile Override');
+    assert.equal(profileOverride.presentation?.photoUrl, 'https://example.com/ci-profile.jpg');
+
+    const profileClearResponse = await fetch(`${baseUrl}/api/v1/me/profile`, {
+      method: 'PATCH',
+      headers: {
+        authorization: `Bearer ${registered.token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ displayName: null, photoUrl: null }),
+    });
+    const profileClear = (await profileClearResponse.json()) as {
+      effectiveDisplayName: string;
+      effectiveUsername?: string | null;
+      effectivePhotoUrl?: string | null;
+      presentation?: { displayName?: string | null; photoUrl?: string | null } | null;
+    };
+    assert.equal(profileClearResponse.status, 200);
+    assert.equal(profileClear.effectiveDisplayName, 'CI Web User');
+    assert.equal(profileClear.effectiveUsername, username);
+    assert.equal(profileClear.effectivePhotoUrl, null);
+    assert.equal(profileClear.presentation?.displayName, null);
+    assert.equal(profileClear.presentation?.photoUrl, null);
 
     const loginResponse = await fetch(`${baseUrl}/api/v1/auth/login`, {
       method: 'POST',
@@ -236,7 +311,7 @@ test('real web auth lifecycle works through Express, Prisma, and disposable Post
       body: JSON.stringify({ username, password }),
     });
     const loggedIn = (await loginResponse.json()) as {
-      user: { id: string; telegramUserId: string | null };
+      user: { id: string; telegramUserId: string | null; password?: string };
       token: string;
       expiresAt: string;
     };
@@ -244,6 +319,7 @@ test('real web auth lifecycle works through Express, Prisma, and disposable Post
     assert.equal(loginResponse.status, 200);
     assert.equal(loggedIn.user.id, registered.user.id);
     assert.equal(loggedIn.user.telegramUserId, null);
+    assert.equal('password' in loggedIn.user, false);
     assert.ok(loggedIn.token);
 
     const logoutResponse = await fetch(`${baseUrl}/api/v1/auth/logout`, {
