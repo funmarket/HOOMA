@@ -113,7 +113,11 @@ export function PlacesPage() {
               return (
                 <article key={`watch-${place.id}`} className="surface-card overflow-hidden">
                   {place.photoUrl ? (
-                    <img src={place.photoUrl} alt={place.name} className="h-44 w-full object-cover" />
+                    <img
+                      src={place.photoUrl}
+                      alt={place.name}
+                      className="h-44 w-full object-cover"
+                    />
                   ) : null}
                   <div className="grid gap-2 p-4">
                     <div className="flex items-start justify-between gap-3">
@@ -127,7 +131,9 @@ export function PlacesPage() {
                     <p className="text-sm">
                       {[place.city, place.houma].filter(Boolean).join(', ') || place.address}
                     </p>
-                    {place.description ? <p className="text-sm muted">{place.description}</p> : null}
+                    {place.description ? (
+                      <p className="text-sm muted">{place.description}</p>
+                    ) : null}
                     {place.menuItems?.length ? (
                       <div className="flex flex-wrap gap-2 pt-2">
                         {place.menuItems.map((menuItem) => (
@@ -159,7 +165,11 @@ export function PlacesPage() {
             return (
               <article key={`pitch-${pitch.id}`} className="surface-card overflow-hidden">
                 {pitch.photoUrl ? (
-                  <img src={pitch.photoUrl} alt={pitch.name} className="h-44 w-full object-cover" />
+                  <img
+                    src={pitch.photoUrl}
+                    alt={pitch.name}
+                    className="h-44 w-full object-cover"
+                  />
                 ) : null}
                 <div className="grid gap-2 p-4">
                   <div>
@@ -174,7 +184,9 @@ export function PlacesPage() {
                       pitch.fullAddress ||
                       'Location available from Pitch'}
                   </p>
-                  {pitch.description ? <p className="text-sm muted">{pitch.description}</p> : null}
+                  {pitch.description ? (
+                    <p className="text-sm muted">{pitch.description}</p>
+                  ) : null}
                   {rateLabel ? <p className="text-sm font-black">{rateLabel}</p> : null}
                   <button
                     type="button"
