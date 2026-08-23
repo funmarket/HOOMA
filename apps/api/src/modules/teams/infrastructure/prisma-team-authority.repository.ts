@@ -180,7 +180,9 @@ export class PrismaTeamAuthorityRepository implements TeamAuthorityRepository {
       if (responsibilityTeamIds.has(team.id)) continue;
       const role = team.community.memberships[0]?.role;
       if (role !== 'OWNER' && role !== 'ADMIN') continue;
-      authorities.push(legacyAuthority({ teamId: team.id, communityId: team.communityId, role }));
+      authorities.push(
+        legacyAuthority({ teamId: team.id, communityId: team.communityId, role }),
+      );
     }
 
     return authorities;
@@ -338,7 +340,11 @@ export class PrismaTeamAuthorityRepository implements TeamAuthorityRepository {
           where: { id: responsibilityId, teamId, role: 'ASSISTANT' },
         });
         if (!existing) {
-          throw new AppError(404, 'TEAM_ASSISTANT_NOT_FOUND', 'Assistant assignment not found.');
+          throw new AppError(
+            404,
+            'TEAM_ASSISTANT_NOT_FOUND',
+            'Assistant assignment not found.',
+          );
         }
         if (existing.revokedAt) return existing;
 
@@ -395,7 +401,9 @@ export class PrismaTeamAuthorityRepository implements TeamAuthorityRepository {
     }
 
     const membership = await tx.membership.findUnique({
-      where: { communityId_userId: { communityId: team.communityId, userId: actorUserId } },
+      where: {
+        communityId_userId: { communityId: team.communityId, userId: actorUserId },
+      },
       select: { role: true, status: true },
     });
     if (!membership || membership.status !== 'ACTIVE' || membership.role !== 'OWNER') {
