@@ -29,12 +29,24 @@ const CAPABILITIES: Array<{
   label: string;
   detail: string;
 }> = [
-  { value: 'EDIT_TEAM', label: 'Team settings', detail: 'Identity, visibility and challenge status.' },
+  {
+    value: 'EDIT_TEAM',
+    label: 'Team settings',
+    detail: 'Identity, visibility and challenge status.',
+  },
   { value: 'MANAGE_ROSTER', label: 'Roster', detail: 'Add and remove active Team players.' },
   { value: 'MANAGE_LINEUP', label: 'Lineup', detail: 'Build, save and publish Team lineups.' },
   { value: 'CREATE_CHALLENGE', label: 'Send challenges', detail: 'Challenge another Team.' },
-  { value: 'RESPOND_CHALLENGE', label: 'Respond', detail: 'Accept or decline incoming challenges.' },
-  { value: 'MESSAGE_CHALLENGE', label: 'Challenge messages', detail: 'Use accepted challenge threads.' },
+  {
+    value: 'RESPOND_CHALLENGE',
+    label: 'Respond',
+    detail: 'Accept or decline incoming challenges.',
+  },
+  {
+    value: 'MESSAGE_CHALLENGE',
+    label: 'Challenge messages',
+    detail: 'Use accepted challenge threads.',
+  },
 ];
 
 function hasCapability(
@@ -265,7 +277,11 @@ export function TeamControlRoomPage() {
   if (!team || !authority) {
     return (
       <div className="page-shell vintage-page">
-        <button type="button" className="ghost-button mb-4" onClick={() => navigate(`/teams/${teamId}`)}>
+        <button
+          type="button"
+          className="ghost-button mb-4"
+          onClick={() => navigate(`/teams/${teamId}`)}
+        >
           <ArrowLeft size={16} /> Team
         </button>
         <div className="vintage-empty">
@@ -277,24 +293,35 @@ export function TeamControlRoomPage() {
     );
   }
 
-  const enabledCapabilities = CAPABILITIES.filter((item) => hasCapability(authority, item.value));
+  const enabledCapabilities = CAPABILITIES.filter((item) =>
+    hasCapability(authority, item.value),
+  );
   const hasMatchAuthority = canCreateChallenge || canRespondChallenge || canMessageChallenge;
 
   return (
     <div className="page-shell vintage-page">
-      <button type="button" className="ghost-button mb-4" onClick={() => navigate(`/teams/${teamId}`)}>
+      <button
+        type="button"
+        className="ghost-button mb-4"
+        onClick={() => navigate(`/teams/${teamId}`)}
+      >
         <ArrowLeft size={16} /> Team
       </button>
 
       <section className="team-profile-hero">
         <span className="team-profile-badge">
-          {team.badgeUrl ? <img src={team.badgeUrl} alt={`${team.name} badge`} /> : <Shield size={56} />}
+          {team.badgeUrl ? (
+            <img src={team.badgeUrl} alt={`${team.name} badge`} />
+          ) : (
+            <Shield size={56} />
+          )}
         </span>
         <div className="min-w-0 flex-1">
           <div className="vintage-kicker">Team Control Room</div>
           <h1 className="team-profile-title">{team.name}</h1>
           <p className="team-profile-meta">
-            <MapPin size={16} /> {[team.city, team.houma].filter(Boolean).join(', ') || 'Location TBA'}
+            <MapPin size={16} />{' '}
+            {[team.city, team.houma].filter(Boolean).join(', ') || 'Location TBA'}
           </p>
           <p className="team-profile-meta">
             <Users size={16} /> {authority.role} authority
@@ -307,11 +334,15 @@ export function TeamControlRoomPage() {
         <div className="vintage-kicker">Canonical authority</div>
         <h2 className="section-title">What this account can control</h2>
         <p className="mt-1 text-sm muted">
-          Coach and Manager retain full Team authority. Assistants receive only permissions delegated by the Coach.
+          Coach and Manager retain full Team authority. Assistants receive only permissions delegated
+          by the Coach.
         </p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {enabledCapabilities.map((capability) => (
-            <article className="rounded-2xl border border-white/10 bg-white/5 p-3" key={capability.value}>
+            <article
+              className="rounded-2xl border border-white/10 bg-white/5 p-3"
+              key={capability.value}
+            >
               <strong className="block">{capability.label}</strong>
               <small className="muted">{capability.detail}</small>
             </article>
@@ -337,7 +368,8 @@ export function TeamControlRoomPage() {
             </button>
           </div>
           <p className="mt-2 text-sm muted">
-            The lineup builder remains the single Team lineup editor. Draft, publish and unpublish there.
+            The lineup builder remains the single Team lineup editor. Draft, publish and unpublish
+            there.
           </p>
         </section>
       ) : null}
@@ -393,7 +425,8 @@ export function TeamControlRoomPage() {
               {addMode === 'member' ? (
                 <div className="grid gap-3">
                   <p className="text-sm leading-6 muted">
-                    Select a real HOOMA member. Their canonical account and public player profile remain linked.
+                    Select a real HOOMA member. Their canonical account and public player profile
+                    remain linked.
                   </p>
                   {candidatesQuery.isLoading ? (
                     <div className="vintage-empty">Loading eligible HOOMA members…</div>
@@ -410,7 +443,9 @@ export function TeamControlRoomPage() {
                           type="button"
                           key={candidate.userId}
                           className={`reference-row flex items-center gap-3 p-3 text-left ${
-                            selectedCandidateId === candidate.userId ? 'ring-1 ring-[var(--accent)]' : ''
+                            selectedCandidateId === candidate.userId
+                              ? 'ring-1 ring-[var(--accent)]'
+                              : ''
                           }`}
                           onClick={() => {
                             addPlayerMutation.reset();
@@ -419,7 +454,11 @@ export function TeamControlRoomPage() {
                         >
                           <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-white/10 font-black">
                             {candidate.photoUrl ? (
-                              <img className="h-full w-full object-cover" src={candidate.photoUrl} alt="" />
+                              <img
+                                className="h-full w-full object-cover"
+                                src={candidate.photoUrl}
+                                alt=""
+                              />
                             ) : (
                               candidate.displayName.slice(0, 1).toUpperCase()
                             )}
@@ -459,7 +498,8 @@ export function TeamControlRoomPage() {
               ) : (
                 <div className="grid gap-3">
                   <p className="text-sm leading-6 muted">
-                    Guest players are roster-only entries and never receive a HOOMA account or Assistant authority.
+                    Guest players are roster-only entries and never receive a HOOMA account or
+                    Assistant authority.
                   </p>
                   <label className="grid gap-2 text-[17px] font-semibold">
                     Guest player name
@@ -477,7 +517,9 @@ export function TeamControlRoomPage() {
                     type="button"
                     className="accent-button"
                     disabled={addPlayerMutation.isPending || !guestPlayerName.trim()}
-                    onClick={() => addPlayerMutation.mutate({ displayName: guestPlayerName.trim() })}
+                    onClick={() =>
+                      addPlayerMutation.mutate({ displayName: guestPlayerName.trim() })
+                    }
                   >
                     {addPlayerMutation.isPending ? 'Adding…' : 'Add guest player'}
                   </button>
@@ -555,16 +597,25 @@ export function TeamControlRoomPage() {
         </section>
       ) : null}
 
-      <TeamAssistantManager teamId={teamId} rosterPlayers={rosterPlayers} enabled={isCoach} />
+      <TeamAssistantManager
+        teamId={teamId}
+        rosterPlayers={rosterPlayers}
+        enabled={isCoach}
+      />
 
       {hasMatchAuthority ? (
         <section className="teams-section">
           <div className="vintage-kicker">Match operations</div>
           <h2 className="section-title">Challenge desk</h2>
           <p className="mt-1 text-sm muted">
-            Challenge requests, accepted games and challenge threads remain in the canonical Teams match flow.
+            Challenge requests, accepted games and challenge threads remain in the canonical Teams
+            match flow.
           </p>
-          <button type="button" className="vintage-outline-cta mt-4 w-full" onClick={() => navigate('/teams')}>
+          <button
+            type="button"
+            className="vintage-outline-cta mt-4 w-full"
+            onClick={() => navigate('/teams')}
+          >
             Open Teams match desk <ChevronRight size={18} />
           </button>
         </section>
