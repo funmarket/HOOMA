@@ -251,7 +251,11 @@ export function HoomaNowFeed(props: HoomaNowFeedProps) {
         <div>
           <div className="hooma-now-eyebrow">LIVE FROM YOUR FOOTBALL WORLD</div>
           <h2 id="hooma-now-title">HOOMA NOW</h2>
-          <p>{props.communityName ? `What's moving in ${props.communityName}.` : 'What matters next.'}</p>
+          <p>
+            {props.communityName
+              ? `What's moving in ${props.communityName}.`
+              : 'What matters next.'}
+          </p>
         </div>
         <span className="hooma-now-live" aria-label="Live">
           <i /> LIVE
