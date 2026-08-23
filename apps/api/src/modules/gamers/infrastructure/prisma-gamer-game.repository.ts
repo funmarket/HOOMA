@@ -2,10 +2,7 @@ import { Prisma } from '@hooma/database';
 import type { GamerGameListQuery } from '@hooma/contracts';
 import type { DatabaseClient } from '../../../infrastructure/database/prisma.js';
 import { decodeTimeIdCursor, encodeTimeIdCursor } from '../../../infrastructure/database/cursor.js';
-import type {
-  GamerGameRecord,
-  GamerGameRepository,
-} from '../application/gamer-game.repository.js';
+import type { GamerGameRecord, GamerGameRepository } from '../application/gamer-game.repository.js';
 
 const publicSelect = {
   id: true,
@@ -32,9 +29,7 @@ export class PrismaGamerGameRepository implements GamerGameRepository {
   constructor(private readonly db: DatabaseClient) {}
 
   async listPublic(input: GamerGameListQuery) {
-    const cursor = input.cursor
-      ? decodeTimeIdCursor(input.cursor, 'Gamer game')
-      : null;
+    const cursor = input.cursor ? decodeTimeIdCursor(input.cursor, 'Gamer game') : null;
     const rows = await this.db.gamerGame.findMany({
       where: {
         status: 'ACTIVE',
@@ -67,8 +62,7 @@ export class PrismaGamerGameRepository implements GamerGameRepository {
     const last = selected.at(-1);
     return {
       items: selected.map(mapPublic),
-      nextCursor:
-        hasMore && last ? encodeTimeIdCursor(last.createdAt, last.id) : null,
+      nextCursor: hasMore && last ? encodeTimeIdCursor(last.createdAt, last.id) : null,
     };
   }
 
