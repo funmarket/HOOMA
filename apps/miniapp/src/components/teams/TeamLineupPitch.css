@@ -33,9 +33,7 @@
   min-height: 78px;
   padding: 0.95rem 1rem;
   border-bottom: 1px solid rgba(201, 155, 43, 0.24);
-  background:
-    linear-gradient(90deg, rgba(170, 255, 0, 0.055), transparent 42%),
-    rgba(3, 7, 4, 0.9);
+  background: linear-gradient(90deg, rgba(170, 255, 0, 0.055), transparent 42%), rgba(3, 7, 4, 0.9);
   backdrop-filter: blur(14px);
 }
 
@@ -272,9 +270,7 @@
   padding: 0;
   border: 1px solid rgba(218, 181, 84, 0.94);
   border-radius: 999px;
-  background:
-    radial-gradient(circle at 50% 30%, rgba(170, 255, 0, 0.12), transparent 60%),
-    #061008;
+  background: radial-gradient(circle at 50% 30%, rgba(170, 255, 0, 0.12), transparent 60%), #061008;
   color: var(--hv-lime);
   box-shadow:
     0 9px 22px rgba(0, 0, 0, 0.48),
