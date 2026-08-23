@@ -10,6 +10,10 @@ import { TeamService } from '../apps/api/src/modules/teams/application/team.serv
 import { PrismaTeamRepository } from '../apps/api/src/modules/teams/infrastructure/prisma-team.repository.js';
 
 const teamProfilePage = readFileSync('apps/miniapp/src/pages/TeamProfilePage.tsx', 'utf8');
+const teamAssistantManager = readFileSync(
+  'apps/miniapp/src/components/teams/TeamAssistantManager.tsx',
+  'utf8',
+);
 const teamApi = readFileSync('apps/miniapp/src/features/teams/api.ts', 'utf8');
 
 test('public Team detail only selects published lineups', async () => {
@@ -85,6 +89,24 @@ test('Team roster management uses protected API, confirmation, and real API erro
   assert.match(teamProfilePage, /window\.confirm/);
   assert.match(teamProfilePage, /removePlayerMutation\.error instanceof Error/);
   assert.match(teamProfilePage, /Assistant authority will be cleaned safely/);
+});
+
+test('Coach Assistant UI uses linked roster players and canonical Team authority endpoints', () => {
+  assert.match(teamApi, /get<TeamAssistantPage>\(`\/api\/v1\/teams\/\$\{teamId\}\/assistants`/);
+  assert.match(teamApi, /post<TeamAssistantItem>\(`\/api\/v1\/teams\/\$\{teamId\}\/assistants`/);
+  assert.match(teamApi, /del<TeamAssistantItem>/);
+  assert.match(teamProfilePage, /TeamAssistantManager/);
+  assert.match(teamProfilePage, /rosterPlayers=\{managedRosterPlayers\}/);
+  assert.match(teamAssistantManager, /rosterPlayers\.filter\(\(player\) => Boolean\(player\.userId\)\)/);
+  assert.match(teamAssistantManager, /Guest roster entries cannot receive Assistant authority/);
+  assert.match(teamAssistantManager, /window\.confirm/);
+  assert.match(teamAssistantManager, /EDIT_TEAM/);
+  assert.match(teamAssistantManager, /MANAGE_ROSTER/);
+  assert.match(teamAssistantManager, /MANAGE_LINEUP/);
+  assert.match(teamAssistantManager, /CREATE_CHALLENGE/);
+  assert.match(teamAssistantManager, /RESPOND_CHALLENGE/);
+  assert.match(teamAssistantManager, /MESSAGE_CHALLENGE/);
+  assert.doesNotMatch(teamAssistantManager, /User ID/);
 });
 
 test('Team edit contract permits explicit clearing of optional fields', () => {
