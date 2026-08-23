@@ -7,6 +7,7 @@ import {
   normalizeSelectedProfileIdentities,
   resolveEffectiveProfileIdentities,
 } from '../domain/profile-identities.js';
+import { resolveUserPresentation } from '../domain/profile-presentation.js';
 import type { TelegramIdentityInput } from '../domain/types.js';
 
 const identityUserSelect = {
@@ -37,20 +38,39 @@ const meSelect = {
   profileIdentities: { select: { type: true } },
 } satisfies Prisma.UserSelect;
 
+const publicProfileSelect = {
+  id: true,
+  username: true,
+  authName: true,
+  authUsername: true,
+  displayAuthUsername: true,
+  firstName: true,
+  lastName: true,
+  photoUrl: true,
+  profile: {
+    select: {
+      skillLevel: true,
+      skillRating: true,
+      preferredPositions: true,
+      bio: true,
+      favoriteClub: {
+        select: { id: true, name: true, slug: true, countryCode: true, logoUrl: true },
+      },
+    },
+  },
+  profileIdentities: { select: { type: true } },
+} satisfies Prisma.UserSelect;
+
 const presentationSelect = {
   displayName: true,
   photoUrl: true,
 } as const;
 
 type MeRecord = Prisma.UserGetPayload<{ select: typeof meSelect }>;
+type PublicProfileRecord = Prisma.UserGetPayload<{ select: typeof publicProfileSelect }>;
 type PresentationRecord = Prisma.UserProfilePresentationGetPayload<{
   select: typeof presentationSelect;
 }>;
-
-function nonBlank(value: string | null | undefined) {
-  const normalized = value?.trim();
-  return normalized ? normalized : null;
-}
 
 function toMeView(user: MeRecord, presentation: PresentationRecord | null) {
   const {
@@ -65,23 +85,23 @@ function toMeView(user: MeRecord, presentation: PresentationRecord | null) {
     profileIdentities.map((identity) => identity.type),
   );
   const effectiveIdentities = resolveEffectiveProfileIdentities(selectedIdentities);
-  const effectiveUsername =
-    nonBlank(displayAuthUsername) ?? nonBlank(authUsername) ?? nonBlank(telegramUsername);
-  const telegramDisplayName = nonBlank([base.firstName, base.lastName].filter(Boolean).join(' '));
-  const effectiveDisplayName =
-    nonBlank(presentation?.displayName) ??
-    nonBlank(authName) ??
-    telegramDisplayName ??
-    effectiveUsername ??
-    'HOOMA member';
-  const effectivePhotoUrl = nonBlank(presentation?.photoUrl) ?? nonBlank(base.photoUrl);
+  const resolved = resolveUserPresentation(
+    {
+      username: telegramUsername,
+      authName,
+      authUsername,
+      displayAuthUsername,
+      firstName: base.firstName,
+      lastName: base.lastName,
+      photoUrl: base.photoUrl,
+    },
+    presentation,
+  );
 
   return {
     ...base,
     telegramUsername,
-    effectiveDisplayName,
-    effectiveUsername,
-    effectivePhotoUrl,
+    ...resolved,
     presentation: presentation
       ? {
           displayName: presentation.displayName,
@@ -91,6 +111,30 @@ function toMeView(user: MeRecord, presentation: PresentationRecord | null) {
     profile: base.profile
       ? {
           ...base.profile,
+          selectedIdentities,
+          effectiveIdentities,
+        }
+      : null,
+  };
+}
+
+function toPublicProfileView(user: PublicProfileRecord, presentation: PresentationRecord | null) {
+  const selectedIdentities = normalizeSelectedProfileIdentities(
+    user.profileIdentities.map((identity) => identity.type),
+  );
+  const effectiveIdentities = resolveEffectiveProfileIdentities(selectedIdentities);
+  const resolved = resolveUserPresentation(user, presentation);
+
+  return {
+    id: user.id,
+    ...resolved,
+    profile: user.profile
+      ? {
+          skillLevel: user.profile.skillLevel,
+          skillRating: user.profile.skillRating,
+          preferredPositions: user.profile.preferredPositions,
+          bio: user.profile.bio,
+          favoriteClub: user.profile.favoriteClub,
           selectedIdentities,
           effectiveIdentities,
         }
@@ -302,6 +346,20 @@ export class PrismaIdentityRepository implements IdentityRepository {
       }),
     ]);
     return toMeView(user, presentation);
+  }
+
+  async getPublicProfile(userId: string) {
+    const [user, presentation] = await Promise.all([
+      this.db.user.findFirst({
+        where: { id: userId, deletedAt: null },
+        select: publicProfileSelect,
+      }),
+      this.db.userProfilePresentation.findUnique({
+        where: { userId },
+        select: presentationSelect,
+      }),
+    ]);
+    return user ? toPublicProfileView(user, presentation) : null;
   }
 
   async updateProfile(userId: string, input: ProfileUpdateInput) {

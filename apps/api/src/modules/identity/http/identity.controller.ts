@@ -8,6 +8,12 @@ import { parseBody } from '../../../http/middleware/parse.js';
 export function identityRouter(service: IdentityService) {
   const router = Router();
   router.get(
+    '/profiles/:userId',
+    asyncHandler(async (req, res) =>
+      res.json(await service.getPublicProfile(String(req.params.userId))),
+    ),
+  );
+  router.get(
     '/me',
     asyncHandler(async (req, res) => res.json(await service.getMe(getAuth(req).user.id))),
   );

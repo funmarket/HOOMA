@@ -10,6 +10,10 @@ const identityRepository = readFileSync(
   'apps/api/src/modules/identity/infrastructure/prisma-identity.repository.ts',
   'utf8',
 );
+const profilePresentation = readFileSync(
+  'apps/api/src/modules/identity/domain/profile-presentation.ts',
+  'utf8',
+);
 const presentationSchema = readFileSync(
   'packages/database/prisma/profile-presentation.prisma',
   'utf8',
@@ -69,9 +73,10 @@ test('username is canonical account identity, never a Profile override', () => {
   assert.doesNotMatch(profilePage, /HOOMA username/);
   assert.doesNotMatch(profilePage, /setUsername/);
   assert.doesNotMatch(profilePage, /username: username\.trim/);
+  assert.match(identityRepository, /resolveUserPresentation\(/);
   assert.match(
-    identityRepository,
-    /const effectiveUsername =[\s\S]*?nonBlank\(displayAuthUsername\) \?\? nonBlank\(authUsername\) \?\? nonBlank\(telegramUsername\)/,
+    profilePresentation,
+    /const effectiveUsername =[\s\S]*?nonBlank\(user\.displayAuthUsername\) \?\?[\s\S]*?nonBlank\(user\.authUsername\) \?\?[\s\S]*?nonBlank\(user\.username\)/,
   );
 });
 

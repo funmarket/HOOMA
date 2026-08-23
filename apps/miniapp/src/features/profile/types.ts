@@ -1,4 +1,4 @@
-import type { Me } from '../../types/domain';
+import type { Club, Me } from '../../types/domain';
 
 export type SelectedProfileIdentity = 'PLAYER' | 'FAN' | 'GAMER';
 export type EffectiveProfileIdentity = SelectedProfileIdentity | 'ULTRAFAN' | 'GHOST_RIDER';
@@ -19,4 +19,20 @@ export type ProfileMe = Omit<Me, 'profile' | 'telegramUserId'> & {
         effectiveIdentities: EffectiveProfileIdentity[];
       })
     | null;
+};
+
+export type PublicPlayerProfile = {
+  id: string;
+  effectiveDisplayName: string;
+  effectiveUsername?: string | null;
+  effectivePhotoUrl?: string | null;
+  profile?: {
+    skillLevel: string;
+    skillRating: number;
+    preferredPositions: string[];
+    bio?: string | null;
+    favoriteClub?: Club | null;
+    selectedIdentities: SelectedProfileIdentity[];
+    effectiveIdentities: EffectiveProfileIdentity[];
+  } | null;
 };

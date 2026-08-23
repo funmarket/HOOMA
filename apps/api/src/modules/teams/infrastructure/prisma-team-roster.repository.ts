@@ -56,13 +56,25 @@ function canonicalRosterPresentation(user: RosterCandidateUser, presentation: Pr
 export class PrismaTeamRosterRepository implements TeamRosterRepository {
   constructor(private readonly db: DatabaseClient) {}
 
-  async listActive(teamId: string) {
-    const items = await this.db.teamPlayer.findMany({
+  private activePlayers(teamId: string) {
+    return this.db.teamPlayer.findMany({
       where: { teamId, isActive: true },
       select: rosterPlayerSelect,
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      orderBy: [{ createdAt: 'asc' as const }, { id: 'asc' as const }],
     });
-    return { items };
+  }
+
+  async listActive(teamId: string) {
+    return { items: await this.activePlayers(teamId) };
+  }
+
+  async listPublicActive(teamId: string) {
+    const team = await this.db.team.findFirst({
+      where: { id: teamId, status: 'ACTIVE', isPublic: true, deletedAt: null },
+      select: { id: true },
+    });
+    if (!team) throw new AppError(404, 'TEAM_NOT_FOUND', 'Team not found.');
+    return { items: await this.activePlayers(teamId) };
   }
 
   async listCandidates(teamId: string) {

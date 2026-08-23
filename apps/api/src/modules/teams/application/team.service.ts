@@ -44,6 +44,10 @@ export class TeamService {
     return team;
   }
 
+  publicRoster(teamId: string) {
+    return this.rosterRepo.listPublicActive(teamId);
+  }
+
   async getChallenge(userId: string, challengeId: string) {
     const teamIds = await this.authorizedTeamIds(userId);
     return this.repo.getChallenge(challengeId, teamIds);

@@ -2,6 +2,7 @@ import type { TeamPlayerCreateInput } from '@hooma/contracts';
 
 export interface TeamRosterRepository {
   listActive(teamId: string): Promise<unknown>;
+  listPublicActive(teamId: string): Promise<unknown>;
   listCandidates(teamId: string): Promise<unknown>;
   addPlayer(
     actorUserId: string,

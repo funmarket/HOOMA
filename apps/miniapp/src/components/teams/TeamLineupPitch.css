@@ -72,14 +72,39 @@
   text-align: center;
 }
 
-.team-lineup-player b {
+.team-lineup-avatar {
   display: grid;
-  width: 2.1rem;
-  height: 2.1rem;
+  width: 2.7rem;
+  height: 2.7rem;
   place-items: center;
+  overflow: hidden;
+  padding: 0;
   border: 1px solid var(--hv-gold);
   border-radius: 999px;
   background: #071006;
+  color: var(--hv-lime);
+}
+
+button.team-lineup-avatar {
+  cursor: pointer;
+}
+
+button.team-lineup-avatar:focus-visible {
+  outline: 2px solid var(--hv-lime);
+  outline-offset: 2px;
+}
+
+.team-lineup-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.team-lineup-avatar b {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
   color: var(--hv-lime);
   font-size: 0.88rem;
 }
