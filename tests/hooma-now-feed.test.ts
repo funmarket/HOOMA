@@ -26,6 +26,7 @@ test('HOOMA NOW read model includes public HOOMAs but does not expose unrelated 
 
   assert.match(readModel, /visibility: 'PUBLIC'/);
   assert.match(readModel, /id: \{ in: membershipIds \}/);
+  assert.match(readModel, /db\.place\.findMany/);
   assert.match(readModel, /deletedAt: null/);
   assert.doesNotMatch(readModel, /visibility: \{ in: \['PUBLIC', 'PRIVATE'\] \}/);
 });
