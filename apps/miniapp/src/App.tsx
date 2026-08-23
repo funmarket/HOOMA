@@ -47,6 +47,9 @@ const FundDetailPage = lazy(() =>
 const FundMePage = lazy(() =>
   import('./pages/FundMePage').then((module) => ({ default: module.FundMePage })),
 );
+const GamersPage = lazy(() =>
+  import('./pages/GamersPage').then((module) => ({ default: module.GamersPage })),
+);
 const HomePage = lazy(() =>
   import('./pages/HomePage').then((module) => ({ default: module.HomePage })),
 );
@@ -163,6 +166,7 @@ export default function App() {
           <Route path="/telegram" element={routeElement(<HomePage />)} />
           <Route path="/events" element={routeElement(<EventsPage />)} />
           <Route path="/play" element={routeElement(<PlayPage />)} />
+          <Route path="/gamers" element={routeElement(<GamersPage />)} />
           <Route path="/places" element={routeElement(<PlacesPage />)} />
           <Route path="/places/new" element={routeElement(<AddPlacePage />)} />
           <Route path="/places/:placeId" element={routeElement(<PlaceDetailPage />)} />
