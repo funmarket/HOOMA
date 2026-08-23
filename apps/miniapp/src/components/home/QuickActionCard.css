@@ -28,6 +28,13 @@
   transform: scale(0.985);
   border-color: var(--hv-lime);
 }
+.quick-action-card-pro:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.quick-action-card-pro:disabled:active {
+  transform: none;
+}
 .quick-action-card-artwork {
   aspect-ratio: 500 / 650;
   min-height: 0;
@@ -43,6 +50,9 @@
 .quick-action-card-artwork:active {
   transform: scale(0.985);
   border-color: transparent;
+}
+.quick-action-card-artwork:disabled:active {
+  transform: none;
 }
 .quick-action-artwork {
   position: absolute;
