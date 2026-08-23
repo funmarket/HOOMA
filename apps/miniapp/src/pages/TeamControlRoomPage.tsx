@@ -293,9 +293,7 @@ export function TeamControlRoomPage() {
     );
   }
 
-  const enabledCapabilities = CAPABILITIES.filter((item) =>
-    hasCapability(authority, item.value),
-  );
+  const enabledCapabilities = CAPABILITIES.filter((item) => hasCapability(authority, item.value));
   const hasMatchAuthority = canCreateChallenge || canRespondChallenge || canMessageChallenge;
 
   return (
@@ -334,8 +332,8 @@ export function TeamControlRoomPage() {
         <div className="vintage-kicker">Canonical authority</div>
         <h2 className="section-title">What this account can control</h2>
         <p className="mt-1 text-sm muted">
-          Coach and Manager retain full Team authority. Assistants receive only permissions delegated
-          by the Coach.
+          Coach and Manager retain full Team authority. Assistants receive only permissions
+          delegated by the Coach.
         </p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {enabledCapabilities.map((capability) => (
@@ -597,11 +595,7 @@ export function TeamControlRoomPage() {
         </section>
       ) : null}
 
-      <TeamAssistantManager
-        teamId={teamId}
-        rosterPlayers={rosterPlayers}
-        enabled={isCoach}
-      />
+      <TeamAssistantManager teamId={teamId} rosterPlayers={rosterPlayers} enabled={isCoach} />
 
       {hasMatchAuthority ? (
         <section className="teams-section">
