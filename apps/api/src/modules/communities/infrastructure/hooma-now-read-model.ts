@@ -70,7 +70,7 @@ export async function loadHoomaNow(db: DatabaseClient, userId: string) {
     };
   }
 
-  const [events, requests, rideOffers, rideRequests, funds] = await Promise.all([
+  const [events, requests, rideOffers, rideRequests, funds, places] = await Promise.all([
     db.event.findMany({
       where: {
         communityId: { in: communityIds },
@@ -145,9 +145,18 @@ export async function loadHoomaNow(db: DatabaseClient, userId: string) {
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
     }),
+    db.place.findMany({
+      where: { communityId: { in: communityIds }, deletedAt: null },
+      select: { communityId: true, latitude: true, longitude: true },
+    }),
   ]);
 
   const anchors = new Map<string, CoordinateAccumulator>();
+  for (const place of places) {
+    if (place.communityId) {
+      addCoordinate(anchors, place.communityId, place.latitude, place.longitude);
+    }
+  }
   for (const event of events) {
     addCoordinate(anchors, event.communityId, event.latitude, event.longitude);
   }
