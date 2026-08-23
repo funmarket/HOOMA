@@ -27,6 +27,16 @@ export type TeamRosterPlayer = {
 
 export type TeamRosterPage = { items: TeamRosterPlayer[] };
 
+export type TeamPlayerCandidate = {
+  userId: string;
+  displayName: string;
+  photoUrl?: string | null;
+  preferredPositions: string[];
+  communityRole: 'OWNER' | 'ADMIN' | 'MEMBER';
+};
+
+export type TeamPlayerCandidatePage = { items: TeamPlayerCandidate[] };
+
 export const teamQueryKeys = {
   all: ['teams'] as const,
   list: (filters: { search: string; city: string; houma: string }) =>
@@ -34,6 +44,7 @@ export const teamQueryKeys = {
   detail: (teamId: string) => [...teamQueryKeys.all, 'detail', teamId] as const,
   managed: () => [...teamQueryKeys.all, 'managed'] as const,
   roster: (teamId: string) => [...teamQueryKeys.all, 'roster', teamId] as const,
+  rosterCandidates: (teamId: string) => [...teamQueryKeys.roster(teamId), 'candidates'] as const,
   challenges: () => [...teamQueryKeys.all, 'challenges'] as const,
   incomingChallenges: () => [...teamQueryKeys.challenges(), 'incoming'] as const,
   outgoingChallenges: () => [...teamQueryKeys.challenges(), 'outgoing'] as const,
@@ -70,6 +81,10 @@ export function updateTeam(teamId: string, input: TeamUpdateInput) {
 
 export function listTeamRoster(teamId: string) {
   return get<TeamRosterPage>(`/api/v1/teams/${teamId}/players`);
+}
+
+export function listTeamPlayerCandidates(teamId: string) {
+  return get<TeamPlayerCandidatePage>(`/api/v1/teams/${teamId}/player-candidates`);
 }
 
 export function addTeamPlayer(teamId: string, input: TeamPlayerCreateInput) {

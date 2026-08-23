@@ -16,6 +16,43 @@ const rosterPlayerSelect = {
   updatedAt: true,
 } satisfies Prisma.TeamPlayerSelect;
 
+const rosterCandidateUserSelect = {
+  id: true,
+  username: true,
+  authName: true,
+  authUsername: true,
+  displayAuthUsername: true,
+  firstName: true,
+  lastName: true,
+  photoUrl: true,
+  profile: { select: { preferredPositions: true } },
+} satisfies Prisma.UserSelect;
+
+type RosterCandidateUser = Prisma.UserGetPayload<{ select: typeof rosterCandidateUserSelect }>;
+
+type Presentation = {
+  displayName: string | null;
+  photoUrl: string | null;
+};
+
+function nonBlank(value: string | null | undefined) {
+  const normalized = value?.trim();
+  return normalized ? normalized : null;
+}
+
+function canonicalRosterPresentation(user: RosterCandidateUser, presentation: Presentation | null) {
+  const displayName =
+    nonBlank(presentation?.displayName) ??
+    nonBlank(user.authName) ??
+    nonBlank([user.firstName, user.lastName].filter(Boolean).join(' ')) ??
+    nonBlank(user.displayAuthUsername) ??
+    nonBlank(user.authUsername) ??
+    nonBlank(user.username) ??
+    'HOOMA player';
+  const photoUrl = nonBlank(presentation?.photoUrl) ?? nonBlank(user.photoUrl);
+  return { displayName, photoUrl };
+}
+
 export class PrismaTeamRosterRepository implements TeamRosterRepository {
   constructor(private readonly db: DatabaseClient) {}
 
@@ -26,6 +63,63 @@ export class PrismaTeamRosterRepository implements TeamRosterRepository {
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
     return { items };
+  }
+
+  async listCandidates(teamId: string) {
+    const team = await this.db.team.findFirst({
+      where: { id: teamId, status: 'ACTIVE', deletedAt: null },
+      select: { communityId: true },
+    });
+    if (!team) throw new AppError(404, 'TEAM_NOT_FOUND', 'Team not found.');
+
+    const memberships = await this.db.membership.findMany({
+      where: {
+        communityId: team.communityId,
+        status: 'ACTIVE',
+        user: { deletedAt: null },
+      },
+      select: {
+        role: true,
+        joinedAt: true,
+        user: { select: rosterCandidateUserSelect },
+      },
+      orderBy: [{ joinedAt: 'asc' }, { id: 'asc' }],
+    });
+    const userIds = memberships.map((membership) => membership.user.id);
+    if (!userIds.length) return { items: [] };
+
+    const [activePlayers, presentations] = await Promise.all([
+      this.db.teamPlayer.findMany({
+        where: { teamId, isActive: true, userId: { in: userIds } },
+        select: { userId: true },
+      }),
+      this.db.userProfilePresentation.findMany({
+        where: { userId: { in: userIds } },
+        select: { userId: true, displayName: true, photoUrl: true },
+      }),
+    ]);
+    const activeUserIds = new Set(activePlayers.map((player) => player.userId).filter(Boolean));
+    const presentationByUserId = new Map(
+      presentations.map((presentation) => [presentation.userId, presentation]),
+    );
+
+    return {
+      items: memberships
+        .filter((membership) => !activeUserIds.has(membership.user.id))
+        .map((membership) => {
+          const presentation = canonicalRosterPresentation(
+            membership.user,
+            presentationByUserId.get(membership.user.id) ?? null,
+          );
+          return {
+            userId: membership.user.id,
+            displayName: presentation.displayName,
+            photoUrl: presentation.photoUrl,
+            preferredPositions: membership.user.profile?.preferredPositions ?? [],
+            communityRole: membership.role,
+          };
+        }),
+    };
   }
 
   addPlayer(actorUserId: string, teamId: string, input: TeamPlayerCreateInput, requestId: string) {
@@ -41,12 +135,27 @@ export class PrismaTeamRosterRepository implements TeamRosterRepository {
         let saved;
         let action = 'TEAM_PLAYER_ADDED';
         if (input.userId) {
-          const users = await tx.$queryRaw<Array<{ id: string }>>`
-            SELECT id FROM "User" WHERE id = ${input.userId} AND "deletedAt" IS NULL FOR UPDATE
-          `;
-          if (!users.length) {
-            throw new AppError(404, 'TEAM_PLAYER_USER_NOT_FOUND', 'HOOMA user not found.');
+          const membership = await tx.membership.findFirst({
+            where: {
+              communityId: team.communityId,
+              userId: input.userId,
+              status: 'ACTIVE',
+              user: { deletedAt: null },
+            },
+            select: { user: { select: rosterCandidateUserSelect } },
+          });
+          if (!membership) {
+            throw new AppError(
+              409,
+              'TEAM_PLAYER_MEMBERSHIP_REQUIRED',
+              'Only an active member of this HOOMA can be added as a registered Team player.',
+            );
           }
+          const presentationRow = await tx.userProfilePresentation.findUnique({
+            where: { userId: input.userId },
+            select: { displayName: true, photoUrl: true },
+          });
+          const presentation = canonicalRosterPresentation(membership.user, presentationRow);
 
           const existingRows = await tx.teamPlayer.findMany({
             where: { teamId, userId: input.userId },
@@ -66,10 +175,10 @@ export class PrismaTeamRosterRepository implements TeamRosterRepository {
               where: { id: previous.id },
               data: {
                 isActive: true,
-                displayName: input.displayName,
+                displayName: presentation.displayName,
                 shirtNumber: input.shirtNumber ?? null,
                 position: input.position ?? null,
-                photoUrl: input.photoUrl || null,
+                photoUrl: presentation.photoUrl,
               },
               select: rosterPlayerSelect,
             });
@@ -79,20 +188,28 @@ export class PrismaTeamRosterRepository implements TeamRosterRepository {
               data: {
                 teamId,
                 userId: input.userId,
-                displayName: input.displayName,
+                displayName: presentation.displayName,
                 shirtNumber: input.shirtNumber ?? null,
                 position: input.position ?? null,
-                photoUrl: input.photoUrl || null,
+                photoUrl: presentation.photoUrl,
               },
               select: rosterPlayerSelect,
             });
           }
         } else {
+          const displayName = input.displayName?.trim();
+          if (!displayName) {
+            throw new AppError(
+              400,
+              'TEAM_GUEST_PLAYER_NAME_REQUIRED',
+              'Guest player name is required.',
+            );
+          }
           saved = await tx.teamPlayer.create({
             data: {
               teamId,
               userId: null,
-              displayName: input.displayName,
+              displayName,
               shirtNumber: input.shirtNumber ?? null,
               position: input.position ?? null,
               photoUrl: input.photoUrl || null,
