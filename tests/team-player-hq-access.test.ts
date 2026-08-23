@@ -37,7 +37,7 @@ test('My Team read model is based on active canonical TeamPlayer linkage and inc
     };
     select: {
       players: { select: { userId: boolean } };
-      lineups: { where: { isPublished: boolean; deletedAt: null } };
+      lineups: { where: { isCurrent: boolean; isPublished: boolean; deletedAt: null } };
     };
   };
   assert.equal(args.where.status, 'ACTIVE');
@@ -45,6 +45,7 @@ test('My Team read model is based on active canonical TeamPlayer linkage and inc
   assert.deepEqual(args.where.players, { some: { userId: 'user-1', isActive: true } });
   assert.equal(args.where.isPublic, undefined);
   assert.equal(args.select.players.select.userId, true);
+  assert.equal(args.select.lineups.where.isCurrent, true);
   assert.equal(args.select.lineups.where.isPublished, true);
   assert.equal(args.select.lineups.where.deletedAt, null);
 });
@@ -82,9 +83,13 @@ test('Mini App exposes My Team without turning player membership into management
   assert.match(teamsPage, /My Team \/ Team HQ/);
   assert.match(teamsPage, /queryFn: listMyTeams/);
   assert.match(teamProfilePage, /const memberTeam = myTeamsQuery\.data\?\.items\.find/);
-  assert.match(teamProfilePage, /const canManage = Boolean\(managedTeam\)/);
+  assert.match(teamProfilePage, /const authority = managedTeam\?\.authority \?\? authorityQuery\.data \?\? null/);
+  assert.match(teamProfilePage, /const canEditTeam = hasCapability\(authority, 'EDIT_TEAM'\)/);
+  assert.match(teamProfilePage, /const canManageRoster = hasCapability\(authority, 'MANAGE_ROSTER'\)/);
+  assert.match(teamProfilePage, /const canManageLineup = hasCapability\(authority, 'MANAGE_LINEUP'\)/);
   assert.match(teamProfilePage, /const isTeamPlayer = Boolean\(memberTeam\)/);
-  assert.match(teamProfilePage, /!canManage && !isTeamPlayer/);
+  assert.match(teamProfilePage, /team\.acceptingChallenges && !authority && !isTeamPlayer/);
   assert.match(teamProfilePage, /memberTeam\.players \?\? \[\]/);
-  assert.match(teamProfilePage, /isTeamPlayer \? 'My Team' : 'Public team'/);
+  assert.match(teamProfilePage, /authority \? 'Your Team' : isTeamPlayer \? 'My Team' : 'Public team'/);
+  assert.doesNotMatch(teamProfilePage, /const canManage = Boolean\(managedTeam\)/);
 });
