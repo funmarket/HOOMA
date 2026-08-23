@@ -7,6 +7,7 @@ import { TeamLineupPitch } from '../components/teams/TeamLineupPitch';
 import {
   addTeamPlayer,
   getTeam,
+  getTeamAuthority,
   listManagedTeams,
   listMyTeams,
   listPublicTeamRoster,
@@ -15,10 +16,23 @@ import {
   removeTeamPlayer,
   teamQueryKeys,
   updateTeam,
+  type TeamManagedAuthority,
   type TeamManagedItem,
 } from '../features/teams/api';
 import { notify } from '../lib/telegram';
 import type { TeamDetailItem } from '../types/domain';
+
+function hasCapability(
+  authority: TeamManagedAuthority | null | undefined,
+  capability: 'EDIT_TEAM' | 'MANAGE_ROSTER' | 'MANAGE_LINEUP',
+) {
+  if (!authority) return false;
+  return (
+    authority.role === 'COACH' ||
+    authority.role === 'MANAGER' ||
+    authority.permissions.includes(capability)
+  );
+}
 
 function TeamEditForm({ team, onDone }: { team: TeamDetailItem; onDone: () => void }) {
   const queryClient = useQueryClient();
@@ -163,6 +177,12 @@ export function TeamProfilePage() {
   const managedTeam = managedTeamsQuery.data?.items.find((item) => item.id === teamId) as
     TeamManagedItem | undefined;
   const memberTeam = myTeamsQuery.data?.items.find((item) => item.id === teamId);
+  const authorityQuery = useQuery({
+    queryKey: teamQueryKeys.authority(teamId),
+    queryFn: () => getTeamAuthority(teamId),
+    enabled: Boolean(teamId) && !managedTeam && Boolean(memberTeam),
+    retry: false,
+  });
   const teamQuery = useQuery({
     queryKey: teamQueryKeys.detail(teamId),
     queryFn: () => getTeam(teamId),
@@ -174,13 +194,17 @@ export function TeamProfilePage() {
       !memberTeam,
   });
   const team = managedTeam ?? memberTeam ?? teamQuery.data;
-  const canManage = Boolean(managedTeam);
-  const isCoach = managedTeam?.authority.role === 'COACH';
+  const authority = managedTeam?.authority ?? authorityQuery.data ?? null;
+  const canEditTeam = hasCapability(authority, 'EDIT_TEAM');
+  const canManageRoster = hasCapability(authority, 'MANAGE_ROSTER');
+  const canManageLineup = hasCapability(authority, 'MANAGE_LINEUP');
+  const canReadManagedRoster = canManageRoster || canManageLineup;
+  const isCoach = authority?.role === 'COACH';
   const isTeamPlayer = Boolean(memberTeam);
   const rosterQuery = useQuery({
     queryKey: teamQueryKeys.roster(teamId),
     queryFn: () => listTeamRoster(teamId),
-    enabled: Boolean(teamId) && canManage,
+    enabled: Boolean(teamId) && canReadManagedRoster,
     retry: false,
   });
   const publicRosterQuery = useQuery({
@@ -190,19 +214,19 @@ export function TeamProfilePage() {
       Boolean(teamId) &&
       !managedTeamsQuery.isLoading &&
       !myTeamsQuery.isLoading &&
-      !canManage &&
+      !canReadManagedRoster &&
       !isTeamPlayer,
     retry: false,
   });
   const candidatesQuery = useQuery({
     queryKey: teamQueryKeys.rosterCandidates(teamId),
     queryFn: () => listTeamPlayerCandidates(teamId),
-    enabled: Boolean(teamId) && canManage && addingPlayer && addMode === 'member',
+    enabled: Boolean(teamId) && canManageRoster && addingPlayer && addMode === 'member',
     retry: false,
   });
   const lineup = team?.lineups?.[0] ?? null;
   const managedRosterPlayers = rosterQuery.data?.items ?? [];
-  const rosterPlayers = canManage
+  const rosterPlayers = canReadManagedRoster
     ? managedRosterPlayers
     : memberTeam
       ? (memberTeam.players ?? [])
@@ -247,6 +271,7 @@ export function TeamProfilePage() {
   if (
     managedTeamsQuery.isLoading ||
     myTeamsQuery.isLoading ||
+    (!managedTeam && Boolean(memberTeam) && authorityQuery.isLoading) ||
     (!managedTeam && !memberTeam && teamQuery.isLoading)
   ) {
     return (
@@ -276,7 +301,7 @@ export function TeamProfilePage() {
         </span>
         <div className="min-w-0 flex-1">
           <div className="vintage-kicker">
-            {canManage ? 'Your Team' : isTeamPlayer ? 'My Team' : 'Public team'}
+            {authority ? 'Your Team' : isTeamPlayer ? 'My Team' : 'Public team'}
           </div>
           <h1 className="team-profile-title">{team.name}</h1>
           <p className="team-profile-meta">
@@ -287,7 +312,7 @@ export function TeamProfilePage() {
             <Users size={16} /> {team._count?.players ?? rosterPlayers.length} players
           </p>
         </div>
-        {canManage ? (
+        {canEditTeam ? (
           <button
             type="button"
             className="ghost-button shrink-0 px-3 py-2.5"
@@ -298,7 +323,7 @@ export function TeamProfilePage() {
         ) : null}
       </section>
 
-      {editing && managedTeam ? (
+      {editing && managedTeam && canEditTeam ? (
         <TeamEditForm team={managedTeam} onDone={() => setEditing(false)} />
       ) : null}
 
@@ -308,7 +333,15 @@ export function TeamProfilePage() {
             <div className="vintage-kicker">Lineup</div>
             <h2 className="section-title">Published shape</h2>
           </div>
-          {team.acceptingChallenges && !canManage && !isTeamPlayer ? (
+          {canManageLineup ? (
+            <button
+              type="button"
+              className="accent-button shrink-0 px-4"
+              onClick={() => navigate(`/teams/${team.id}/lineup`)}
+            >
+              Build lineup
+            </button>
+          ) : team.acceptingChallenges && !authority && !isTeamPlayer ? (
             <button
               className="accent-button shrink-0 px-4"
               onClick={() => navigate(`/teams/${team.id}/challenge`)}
@@ -331,7 +364,7 @@ export function TeamProfilePage() {
             <div className="vintage-kicker">Roster</div>
             <h2 className="section-title">Players</h2>
           </div>
-          {canManage ? (
+          {canManageRoster ? (
             <button
               type="button"
               className="ghost-button shrink-0 px-3 py-2.5"
@@ -348,7 +381,7 @@ export function TeamProfilePage() {
           ) : null}
         </div>
 
-        {addingPlayer && canManage ? (
+        {addingPlayer && canManageRoster ? (
           <div className="mt-4 grid gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -498,7 +531,11 @@ export function TeamProfilePage() {
 
         <div className="mt-4 grid gap-2">
           {(
-            canManage ? rosterQuery.isLoading : isTeamPlayer ? false : publicRosterQuery.isLoading
+            canReadManagedRoster
+              ? rosterQuery.isLoading
+              : isTeamPlayer
+                ? false
+                : publicRosterQuery.isLoading
           ) ? (
             <div className="vintage-empty">Loading active roster…</div>
           ) : rosterPlayers.length ? (
@@ -536,7 +573,7 @@ export function TeamProfilePage() {
                   {player.position ?? 'ANY'}
                   {player.shirtNumber != null ? ` #${player.shirtNumber}` : ''}
                 </small>
-                {canManage ? (
+                {canManageRoster ? (
                   <button
                     type="button"
                     className="ghost-button ml-auto px-3 py-2"

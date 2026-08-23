@@ -5,6 +5,7 @@ import {
   teamChallengeMessageCreateSchema,
   teamCreateSchema,
   teamLineupCreateSchema,
+  teamLineupUpdateSchema,
   teamListQuerySchema,
   teamPlayerCreateSchema,
   teamUpdateSchema,
@@ -166,6 +167,13 @@ export function teamRouter(service: TeamService) {
     ),
   );
 
+  router.get(
+    '/:teamId/authority',
+    asyncHandler(async (req, res) =>
+      res.json(await service.authorityForTeam(getAuth(req).user.id, String(req.params.teamId))),
+    ),
+  );
+
   router.patch(
     '/:teamId',
     asyncHandler(async (req, res) =>
@@ -258,6 +266,13 @@ export function teamRouter(service: TeamService) {
     ),
   );
 
+  router.get(
+    '/:teamId/lineups/current',
+    asyncHandler(async (req, res) =>
+      res.json(await service.currentLineup(getAuth(req).user.id, String(req.params.teamId))),
+    ),
+  );
+
   router.post(
     '/:teamId/lineups',
     asyncHandler(async (req, res) =>
@@ -270,6 +285,20 @@ export function teamRouter(service: TeamService) {
             parseBody(teamLineupCreateSchema, req),
           ),
         ),
+    ),
+  );
+
+  router.put(
+    '/:teamId/lineups/:lineupId',
+    asyncHandler(async (req, res) =>
+      res.json(
+        await service.updateLineup(
+          getAuth(req).user.id,
+          String(req.params.teamId),
+          String(req.params.lineupId),
+          parseBody(teamLineupUpdateSchema, req),
+        ),
+      ),
     ),
   );
 
