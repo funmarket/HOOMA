@@ -111,8 +111,17 @@ function parseStreamMessage(id: string, message: Record<string, string>): Whistl
   };
 }
 
-function redisTimeMilliseconds(value: [string, string]) {
-  return Number(value[0]) * 1000 + Math.floor(Number(value[1]) / 1000);
+function redisTimeMilliseconds(value: readonly string[]) {
+  const seconds = value[0];
+  const microseconds = value[1];
+  if (seconds === undefined || microseconds === undefined) {
+    throw new WhistleStoreCorruptError('Redis TIME reply is incomplete.');
+  }
+  const milliseconds = Number(seconds) * 1000 + Math.floor(Number(microseconds) / 1000);
+  if (!Number.isFinite(milliseconds)) {
+    throw new WhistleStoreCorruptError('Redis TIME reply is invalid.');
+  }
+  return milliseconds;
 }
 
 async function ensureCurrentWindow(
