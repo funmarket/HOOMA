@@ -13,6 +13,38 @@ enum GamerGamePlatform {
   OTHER
 }
 
+enum GamerPlayStyle {
+  CASUAL
+  COMPETITIVE
+  RANKED
+}
+
+enum GamerVisibility {
+  PUBLIC
+  MATCHED_ONLY
+  PRIVATE
+}
+
+enum GamerPlatformIdentityProvider {
+  EA_ID
+  PSN
+  XBOX
+  NINTENDO
+  STEAM
+  EPIC
+  GAME_USERNAME
+  OTHER
+}
+
+enum GamerSocialProvider {
+  DISCORD
+  KIK
+  YOUTUBE
+  TWITCH
+  TIKTOK
+  OTHER
+}
+
 model GamerGame {
   id             String              @id @default(cuid())
   slug           String              @unique @db.VarChar(120)
@@ -28,6 +60,64 @@ model GamerGame {
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
 
+  gamerProfiles GamerProfile[]
+
   @@index([status, featured, name, id])
   @@index([featured, status, createdAt])
+}
+
+model GamerProfile {
+  id              String          @id @default(cuid())
+  userId          String
+  gameId          String
+  gamerTag        String          @db.VarChar(80)
+  bio             String?         @db.VarChar(280)
+  playStyle       GamerPlayStyle  @default(CASUAL)
+  openToChallenge Boolean         @default(true)
+  region           String?         @db.VarChar(80)
+  language         String?         @db.VarChar(40)
+  preferredTimes   String?         @db.VarChar(160)
+  visibility       GamerVisibility @default(PUBLIC)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  game               GamerGame               @relation(fields: [gameId], references: [id], onDelete: Restrict)
+  platformIdentities GamerPlatformIdentity[]
+  socialLinks        GamerSocialLink[]
+
+  @@unique([userId, gameId])
+  @@index([gameId, openToChallenge, visibility, createdAt])
+  @@index([userId, createdAt])
+}
+
+model GamerPlatformIdentity {
+  id             String                        @id @default(cuid())
+  gamerProfileId String
+  provider       GamerPlatformIdentityProvider
+  label          String?                       @db.VarChar(80)
+  handle         String                        @db.VarChar(120)
+  visibility     GamerVisibility               @default(PUBLIC)
+  createdAt      DateTime                      @default(now())
+  updatedAt      DateTime                      @updatedAt
+
+  gamerProfile GamerProfile @relation(fields: [gamerProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([gamerProfileId, provider, handle])
+  @@index([gamerProfileId, provider])
+}
+
+model GamerSocialLink {
+  id             String              @id @default(cuid())
+  gamerProfileId String
+  provider       GamerSocialProvider
+  label          String?             @db.VarChar(80)
+  url            String
+  visibility     GamerVisibility     @default(PUBLIC)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  gamerProfile GamerProfile @relation(fields: [gamerProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([gamerProfileId, provider, url])
+  @@index([gamerProfileId, provider])
 }

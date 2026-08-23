@@ -2,8 +2,8 @@
 
 Last updated: 2026-08-23
 Repository: `funmarket/HOOMA`
-Working branch: `feat/gamers-landing`
-Current baseline main SHA: `84007ba2353f7a65acae0424b242772e9205ed8e`
+Working branch: `feat/gamers-cards-privacy-v1`
+Current baseline main SHA: `8b513bae15649794cc396812b2d1b47675fd5b7d`
 
 ## Purpose
 
@@ -23,6 +23,7 @@ tests. Repository truth wins.
 - Inspect current implementation before each change; do not guess.
 - Canonical HOOMA `User` remains the only account identity.
 - `GAMER` is an identity facet, not an authorization role.
+- Any authenticated HOOMA User can create a Gamer Card; Player, Team, admin, or pre-existing Gamer identity is never an eligibility gate.
 - Keep Gamer data out of `PlayerProfile`.
 - Keep `Team`, `GamerSquad`, `TeamChallenge`, and `GamerChallenge` separate.
 - Never reuse Coach/Assistant authority for Gamers.
@@ -54,7 +55,8 @@ Core loop: Discover -> Gamer Card -> Challenge -> Play externally -> Confirm res
 - The committed timestamped migration chain is authoritative.
 - Home PR #53 is merged and must remain preserved.
 - Team Control Room PR #62 is merged and its `/teams/:teamId/control` route is preserved.
-- No canonical shared Whistle domain is merged for Gamers yet.
+- Gamers landing PR #64 is merged at `8b513bae15649794cc396812b2d1b47675fd5b7d` and deployed.
+- Open Whistle PR #61 owns shared Redis/container/v1-router files; G2 intentionally avoids those files.
 
 ## Architectural invariants
 
@@ -112,23 +114,23 @@ Platform Admin catalog behavior merged in PR #60:
 - status and featured changes use the same canonical update path
 - no new admin role, Team authority, repository, schema, or migration was introduced
 
+## Current Gamer Card foundation
+
+PR #65 establishes the first G2 slice:
+
+- `GamerProfile` persists one Gamer Card per `(userId, gameId)`.
+- `GamerPlatformIdentity` stores gameplay IDs separately from football Player data.
+- `GamerSocialLink` stores Discord/Kik/YouTube/Twitch/TikTok/Other links separately from gameplay IDs.
+- `PUBLIC | MATCHED_ONLY | PRIVATE` exists for the card and individual links.
+- `CASUAL | COMPETITIVE | RANKED` play style is canonical.
+- creating a Gamer Card requires canonical authentication and an active `GamerGame`, nothing else.
+- creation atomically records the existing `GAMER` identity facet without creating a second account.
+- public Gamer Card reads expose only PUBLIC cards and PUBLIC child links.
+- `MATCHED_ONLY` remains hidden until an accepted GamerChallenge relationship exists; G2 does not fake that relationship.
+- social URLs are HTTPS-only at the contract boundary.
+- `/gamers` now exposes real My Gamer Cards and a real Create Gamer Card flow.
+
 ## Future domain models
-
-### GamerProfile
-
-One Gamer Card per `(userId, gameId)`. Game-specific tag, bio, play style, challenge availability,
-region/language/play-time metadata, showcase media, and timestamps belong here. Canonical account
-name, username, and avatar remain on HOOMA identity sources.
-
-### GamerPlatformIdentity
-
-Gameplay identities use provider/type + handle/value + visibility. Examples: EA ID, PSN, Xbox,
-Nintendo, Steam, Epic, mobile/game username, Other. Do not add one nullable column per provider.
-
-### GamerSocialLink
-
-Discord, Kik, YouTube, Twitch, TikTok, and Other stay separate from gameplay identities. Per-link
-privacy is `PUBLIC`, `MATCHED_ONLY`, or `PRIVATE`, enforced by backend response shaping.
 
 ### GamerChallenge
 
@@ -162,6 +164,8 @@ Add ratings only after result truth is stable. Rating is per game, never one glo
 ## Frontend target
 
 - `/gamers` = hero, My Gamer Cards, real catalog, honest loading/error/empty states.
+- Gamer Card creation is available to every authenticated HOOMA User.
+- Full Gamer Card editing and standalone public Gamer Card presentation remain to be completed in G2.
 - `/gamers/games/:gameId` = Challengers, Squads, Arena, and later Rankings.
 - No fake global Whistle tab.
 - Arena is a projection over `GamerChallenge`, never a standalone table.
@@ -172,6 +176,14 @@ Add ratings only after result truth is stable. Rating is per game, never one glo
 Use dedicated `/api/v1/gamers` routes with a Gamers rate-limit scope. Public reads cover games,
 game detail, challengers, Gamer Profiles, and Squads. Protected routes cover Gamer Cards,
 connections, challenges, Arena, results, and Squad lifecycle.
+
+Current G2 Gamer Card routes:
+
+- `GET /api/v1/gamers/profiles/mine`
+- `POST /api/v1/gamers/profiles`
+- `GET /api/v1/gamers/profiles/mine/:profileId`
+- `PATCH /api/v1/gamers/profiles/:profileId`
+- `GET /api/v1/gamers/profiles/:profileId`
 
 Platform Admin owns canonical game-catalog writes through existing app-level authority. Do not
 create a second generic Gamers admin role.
@@ -202,16 +214,28 @@ Status: **COMPLETE**
 - [x] `/gamers` route and real landing page.
 - [x] Real game cards with loading/error/empty/image fallbacks.
 - [x] Enable Home Gamers action only after the real route exists.
-- [x] Complete full G1 code validation on PR #64 head `cde8add0343066e623cf55ba8dd1e12bedf59f85` with CI #536.
+- [x] Merge PR #64 and verify Railway production deployment at `8b513bae15649794cc396812b2d1b47675fd5b7d`.
 
 ### G2 - Gamer Cards and privacy
 
-Status: **NOT STARTED**
+Status: **IN PROGRESS**
 
-- [ ] GamerProfile, GamerPlatformIdentity, GamerSocialLink migrations.
-- [ ] Unique `(userId, gameId)`.
-- [ ] Backend `PUBLIC | MATCHED_ONLY | PRIVATE` enforcement.
-- [ ] CRUD, create flow, public profile, My Gamer Cards.
+- [x] GamerProfile, GamerPlatformIdentity, GamerSocialLink contracts and Prisma models.
+- [x] Real migration `20260823233000_add_gamer_profiles`.
+- [x] Unique `(userId, gameId)`.
+- [x] Any authenticated canonical User can create a Gamer Card; no Gamer-role authorization gate.
+- [x] Active GamerGame required for creation.
+- [x] Creation records the existing `GAMER` identity facet atomically.
+- [x] Backend `PUBLIC | MATCHED_ONLY | PRIVATE` primitives and public-response enforcement.
+- [x] Gameplay identities and social links have independent visibility.
+- [x] Gamer Card create/update/mine/public API boundaries.
+- [x] Real Create Gamer Card flow and My Gamer Cards on `/gamers`.
+- [x] Permanent service tests for eligibility, duplicate prevention, inactive-game rejection, and privacy shaping.
+- [x] Full code validation on head `e8fa602a5a5eb63b9d2b6858bd57139499c11a85` with CI #552; 97/97 tests, migration deploy, formatting, build, security, and migration consistency all passed.
+- [ ] Full owner edit UI for existing Gamer Cards.
+- [ ] Standalone public Gamer Card UI.
+- [ ] UI for multiple gameplay identities/social links rather than one optional item during initial creation.
+- [ ] Implement `MATCHED_ONLY` disclosure only after canonical accepted GamerChallenge context exists.
 
 ### G3 - Challenger discovery
 
@@ -294,25 +318,30 @@ Status: **BLOCKED ON SHARED WHISTLE DOMAIN**
 - Merge SHA: `6e406be7381006caa5fffdee696f02d445f228f1`.
 - All 90 tests passed; Prisma, migration deploy/status, architecture, lint, typecheck, formatting,
   build, and security passed.
-- A temporary formatter diagnostic used during development was removed before the validated head.
 
-### 2026-08-23 - Gamers landing and Home wiring validated
+### 2026-08-23 - Gamers landing and Home wiring merged
 
 - PR #64: real `/gamers` Mini App landing and Home Quick Action wiring.
-- Built from `main` after Team Control Room PR #62 merged at
-  `84007ba2353f7a65acae0424b242772e9205ed8e`.
-- Home `Gamers` is no longer disabled and navigates to `/gamers`.
-- `/gamers` consumes `GET /api/v1/gamers/games`; there is no hardcoded production game catalog.
-- Landing includes loading, error/retry, empty, and broken-image fallback states.
-- No Team, Whistle, Prisma, or migration ownership was changed.
 - CI #536: full success on code head `cde8add0343066e623cf55ba8dd1e12bedf59f85`.
-- The temporary formatter diagnostic used to expose the exact Prettier diff was fully restored before
-  the validated head.
-- Final living-plan-only CI is the remaining merge gate.
+- Final CI #537 passed after the living-plan checkpoint.
+- Merge SHA: `8b513bae15649794cc396812b2d1b47675fd5b7d`.
+- Railway HOOMA Mini App production deployed that exact merge SHA successfully.
+
+### 2026-08-23 - G2 Gamer Card foundation validated
+
+- PR #65: authenticated Gamer Card persistence, API, privacy foundation, and interactive creation flow.
+- Coordinated around open Whistle PR #61 by making no changes to Redis, bootstrap container, server, or v1 router ownership.
+- Migration `20260823233000_add_gamer_profiles` creates GamerProfile, GamerPlatformIdentity, and GamerSocialLink with canonical foreign keys and indexes.
+- Any authenticated HOOMA User can create a Gamer Card for an active game; no Player/Team/admin/Gamer-role gate exists.
+- Public response shaping hides non-public cards and non-public platform/social data.
+- Temporary formatter diagnostics were fully removed before the validated code head.
+- CI #552: full success on code head `e8fa602a5a5eb63b9d2b6858bd57139499c11a85`.
+- 97/97 tests passed; Prisma validate/generate, architecture, lint, typecheck, migration deploy, formatting, build, security, and migration consistency all passed.
+- This is a coherent G2 foundation slice, not full G2 completion.
 
 ### Current resume point
 
-Run the final plan-only CI for PR #64 and merge it if green. Verify Railway production deploys the
-resulting `main` SHA for the HOOMA Mini App and confirm the Home `Gamers` Quick Action reaches the
-real `/gamers` route. After that, resume at G2: Gamer Cards and privacy. Re-check open PRs before any
-shared-source change.
+Run final CI for this living-plan-only checkpoint and merge PR #65 if green. Verify both the HOOMA
+API and HOOMA Mini App Railway production services deploy the resulting main SHA. Then continue G2
+with owner editing, multi-link management, and standalone public Gamer Card presentation before
+starting challenger discovery. Re-check open PR ownership first.

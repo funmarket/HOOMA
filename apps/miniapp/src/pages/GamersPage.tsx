@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { GamerGamePlatform, GamerGameStatus } from '@hooma/contracts';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import type {
+  GamerGamePlatform,
+  GamerGameStatus,
+  GamerPlayStyle,
+  GamerVisibility,
+} from '@hooma/contracts';
 import { get } from '../shared/api/http-client';
 import type { CursorPage } from '../types/domain';
+import { CreateGamerCardPage } from './CreateGamerCardPage';
 
 type GamerGameItem = {
   id: string;
@@ -17,6 +24,27 @@ type GamerGameItem = {
   featured: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+type GamerProfileItem = {
+  id: string;
+  userId: string;
+  gameId: string;
+  gamerTag: string;
+  bio: string | null;
+  playStyle: GamerPlayStyle;
+  openToChallenge: boolean;
+  region: string | null;
+  language: string | null;
+  preferredTimes: string | null;
+  visibility: GamerVisibility;
+  game: {
+    id: string;
+    slug: string;
+    name: string;
+    logoUrl: string | null;
+    coverUrl: string | null;
+  };
 };
 
 function platformLabel(platform: GamerGamePlatform) {
@@ -67,10 +95,21 @@ function GameArtwork({ game }: { game: GamerGameItem }) {
 }
 
 export function GamersPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [selectedProfile, setSelectedProfile] = useState<GamerProfileItem | null>(null);
   const games = useQuery({
     queryKey: ['gamers', 'games'],
     queryFn: () => get<CursorPage<GamerGameItem>>('/api/v1/gamers/games?limit=50'),
   });
+  const profiles = useQuery({
+    queryKey: ['gamers', 'profiles', 'mine'],
+    queryFn: () => get<GamerProfileItem[]>('/api/v1/gamers/profiles/mine'),
+    retry: false,
+  });
+  const profileByGame = new Map(profiles.data?.map((profile) => [profile.gameId, profile]) ?? []);
+
+  if (searchParams.get('create') === '1') return <CreateGamerCardPage />;
 
   return (
     <div className="page-shell">
@@ -98,11 +137,42 @@ export function GamersPage() {
             Challenge. Play. Prove it. Build your Squad.
           </p>
           <p className="mt-2 max-w-xl text-sm muted">
-            Choose your game here. Gamer Cards, challengers, Arena, results, and Squads build from
-            this canonical catalog without mixing with football Teams or Play.
+            One HOOMA account. Create a Gamer Card for each game you play and control what other
+            gamers can see.
           </p>
         </div>
       </section>
+
+      {selectedProfile ? (
+        <section className="surface-card mt-4 p-5" aria-label="Selected Gamer Card">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="section-kicker">{selectedProfile.game.name}</div>
+              <h2 className="section-title mt-1">{selectedProfile.gamerTag}</h2>
+            </div>
+            <button type="button" className="ghost-button" onClick={() => setSelectedProfile(null)}>
+              Close
+            </button>
+          </div>
+          {selectedProfile.bio ? <p className="mt-3 text-sm muted">{selectedProfile.bio}</p> : null}
+          <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold">
+            <span>{selectedProfile.playStyle}</span>
+            <span>•</span>
+            <span>{selectedProfile.visibility}</span>
+            <span>•</span>
+            <span>
+              {selectedProfile.openToChallenge ? 'Open to challenge' : 'Challenges paused'}
+            </span>
+          </div>
+          {selectedProfile.region || selectedProfile.language || selectedProfile.preferredTimes ? (
+            <div className="mt-3 text-sm muted">
+              {[selectedProfile.region, selectedProfile.language, selectedProfile.preferredTimes]
+                .filter(Boolean)
+                .join(' · ')}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="mt-6" aria-labelledby="my-gamer-cards-title">
         <div className="flex items-end justify-between gap-3">
@@ -112,20 +182,50 @@ export function GamersPage() {
               My Gamer Cards
             </h2>
           </div>
-          <span
-            className="rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.08em]"
-            style={{ borderColor: 'var(--border-strong)', color: 'var(--gold)' }}
-          >
-            Next phase
-          </span>
         </div>
-        <div className="surface-card mt-3 p-5">
-          <p className="font-black">No fake Gamer Cards.</p>
-          <p className="mt-1 text-sm muted">
-            Gamer Card creation will unlock after the profile and privacy layer is implemented. Your
-            HOOMA account remains the one canonical identity.
-          </p>
-        </div>
+
+        {profiles.isLoading ? (
+          <div className="surface-card mt-3 p-5 text-sm muted" role="status">
+            Loading your Gamer Cards…
+          </div>
+        ) : profiles.isError ? (
+          <div className="surface-card mt-3 p-5">
+            <p className="font-black">Sign in to create Gamer Cards.</p>
+            <p className="mt-1 text-sm muted">
+              Any authenticated HOOMA account can create a Gamer Card. No Player, Team, or approval
+              requirement applies.
+            </p>
+          </div>
+        ) : profiles.data?.length ? (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {profiles.data.map((profile) => (
+              <button
+                key={profile.id}
+                type="button"
+                className="surface-card min-h-28 p-4 text-left"
+                onClick={() => setSelectedProfile(profile)}
+              >
+                <div className="section-kicker">{profile.game.name}</div>
+                <div className="mt-1 text-xl font-black">{profile.gamerTag}</div>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs muted">
+                  <span>{profile.playStyle}</span>
+                  <span>•</span>
+                  <span>{profile.visibility}</span>
+                  <span>•</span>
+                  <span>{profile.openToChallenge ? 'Open to challenge' : 'Challenges paused'}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="surface-card mt-3 p-5">
+            <p className="font-black">Create your first Gamer Card.</p>
+            <p className="mt-1 text-sm muted">
+              Choose any active game below. Your existing HOOMA account stays your canonical
+              identity.
+            </p>
+          </div>
+        )}
       </section>
 
       <section className="mt-7" aria-labelledby="game-catalog-title">
@@ -149,53 +249,61 @@ export function GamersPage() {
               </button>
             </div>
           ) : games.data?.items.length ? (
-            games.data.items.map((game) => (
-              <article key={game.id} className="surface-card overflow-hidden">
-                <GameArtwork game={game} />
-                <div className="grid gap-3 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      {game.featured ? (
-                        <div className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--accent)]">
-                          Featured
-                        </div>
-                      ) : null}
-                      <h3 className="mt-1 text-xl font-black tracking-[-0.035em]">{game.name}</h3>
-                      {game.publisher ? (
-                        <p className="mt-1 text-xs muted">{game.publisher}</p>
-                      ) : null}
-                    </div>
-                    <span
-                      className="shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.08em]"
-                      style={{ borderColor: 'var(--border-strong)' }}
-                    >
-                      Active
-                    </span>
-                  </div>
-
-                  {game.description ? <p className="text-sm muted">{game.description}</p> : null}
-
-                  <div className="flex flex-wrap gap-2" aria-label={`${game.name} platforms`}>
-                    {game.platforms.map((platform) => (
+            games.data.items.map((game) => {
+              const profile = profileByGame.get(game.id);
+              return (
+                <article key={game.id} className="surface-card overflow-hidden">
+                  <GameArtwork game={game} />
+                  <div className="grid gap-3 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        {game.featured ? (
+                          <div className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--accent)]">
+                            Featured
+                          </div>
+                        ) : null}
+                        <h3 className="mt-1 text-xl font-black tracking-[-0.035em]">{game.name}</h3>
+                        {game.publisher ? (
+                          <p className="mt-1 text-xs muted">{game.publisher}</p>
+                        ) : null}
+                      </div>
                       <span
-                        key={platform}
-                        className="rounded-full border px-2.5 py-1 text-xs font-bold"
-                        style={{ borderColor: 'var(--border)' }}
+                        className="shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.08em]"
+                        style={{ borderColor: 'var(--border-strong)' }}
                       >
-                        {platformLabel(platform)}
+                        Active
                       </span>
-                    ))}
-                  </div>
+                    </div>
 
-                  <div
-                    className="border-t pt-3 text-xs muted"
-                    style={{ borderColor: 'var(--border)' }}
-                  >
-                    Challenger discovery unlocks after Gamer Cards are live.
+                    {game.description ? <p className="text-sm muted">{game.description}</p> : null}
+
+                    <div className="flex flex-wrap gap-2" aria-label={`${game.name} platforms`}>
+                      {game.platforms.map((platform) => (
+                        <span
+                          key={platform}
+                          className="rounded-full border px-2.5 py-1 text-xs font-bold"
+                          style={{ borderColor: 'var(--border)' }}
+                        >
+                          {platformLabel(platform)}
+                        </span>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="ghost-button w-full"
+                      onClick={() =>
+                        profile
+                          ? setSelectedProfile(profile)
+                          : navigate(`/gamers?create=1&gameId=${encodeURIComponent(game.id)}`)
+                      }
+                    >
+                      {profile ? `Open ${profile.gamerTag}` : 'Create Gamer Card'}
+                    </button>
                   </div>
-                </div>
-              </article>
-            ))
+                </article>
+              );
+            })
           ) : (
             <div className="surface-card p-5">
               <p className="font-black">No active games yet.</p>

@@ -1,4 +1,6 @@
 import type {
+  GamerCardCreateInput,
+  GamerCardUpdateInput,
   GamerGameCreateInput,
   GamerGameListQuery,
   GamerGameUpdateInput,
@@ -6,9 +8,19 @@ import type {
 import { AppError } from '../../../http/errors/app-error.js';
 import { normalizeGamerGameName, slugifyGamerGameName } from '../domain/game-catalog-identity.js';
 import type { GamerGameRepository } from './gamer-game.repository.js';
+import type { GamerProfileRecord, GamerProfileRepository } from './gamer-profile.repository.js';
+
+function publicProfile(profile: GamerProfileRecord) {
+  if (profile.visibility !== 'PUBLIC') return null;
+  return {
+    ...profile,
+    platformIdentities: profile.platformIdentities.filter((item) => item.visibility === 'PUBLIC'),
+    socialLinks: profile.socialLinks.filter((item) => item.visibility === 'PUBLIC'),
+  };
+}
 
 export class GamerService {
-  constructor(private readonly games: GamerGameRepository) {}
+  constructor(private readonly games: GamerGameRepository & GamerProfileRepository) {}
 
   listGames(input: GamerGameListQuery) {
     return this.games.listPublic(input);
@@ -57,6 +69,46 @@ export class GamerService {
       );
     }
     return result.game;
+  }
+
+  async createProfile(userId: string, input: GamerCardCreateInput) {
+    const result = await this.games.createProfile(userId, input);
+    if (result.kind === 'game_not_found') {
+      throw new AppError(404, 'GAMER_GAME_NOT_FOUND', 'Active game not found.');
+    }
+    if (result.kind === 'conflict') {
+      throw new AppError(
+        409,
+        'GAMER_PROFILE_EXISTS',
+        'You already have a Gamer Card for this game.',
+      );
+    }
+    return result.profile;
+  }
+
+  async updateProfile(userId: string, profileId: string, input: GamerCardUpdateInput) {
+    const result = await this.games.updateProfile(userId, profileId, input);
+    if (result.kind === 'not_found') {
+      throw new AppError(404, 'GAMER_PROFILE_NOT_FOUND', 'Gamer Card not found.');
+    }
+    return result.profile;
+  }
+
+  listMyProfiles(userId: string) {
+    return this.games.listMine(userId);
+  }
+
+  async getMyProfile(userId: string, profileId: string) {
+    const profile = await this.games.getMine(userId, profileId);
+    if (!profile) throw new AppError(404, 'GAMER_PROFILE_NOT_FOUND', 'Gamer Card not found.');
+    return profile;
+  }
+
+  async getPublicProfile(profileId: string) {
+    const profile = await this.games.getPublicProfile(profileId);
+    const visible = profile ? publicProfile(profile) : null;
+    if (!visible) throw new AppError(404, 'GAMER_PROFILE_NOT_FOUND', 'Gamer Card not found.');
+    return visible;
   }
 
   private requireSlug(name: string) {
