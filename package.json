@@ -22,7 +22,7 @@
     "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"tests/**/*.ts\" --max-warnings=0",
     "test": "node --import tsx --test tests/*.test.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\"",
-    "format:check": "prettier --write apps/api/src/modules/teams/infrastructure/prisma-team-roster.repository.ts apps/miniapp/src/features/teams/api.ts apps/miniapp/src/pages/TeamProfilePage.tsx tests/team-player-onboarding.test.ts && git diff -- apps/api/src/modules/teams/infrastructure/prisma-team-roster.repository.ts apps/miniapp/src/features/teams/api.ts apps/miniapp/src/pages/TeamProfilePage.tsx tests/team-player-onboarding.test.ts && exit 1",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\"",
     "db:validate": "npm -w @hooma/database run validate",
     "db:generate": "npm -w @hooma/database run generate",
     "db:migrate": "npm -w @hooma/database run migrate --",
