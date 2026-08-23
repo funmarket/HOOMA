@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, Trash2, UserCog } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   listTeamAssistants,
   revokeTeamAssistant,
@@ -56,10 +56,7 @@ export function TeamAssistantManager({
   });
 
   const assistants = assistantsQuery.data?.items ?? [];
-  const assistantPlayerIds = useMemo(
-    () => new Set(assistants.map((assistant) => assistant.player.id)),
-    [assistants],
-  );
+  const assistantPlayerIds = new Set(assistants.map((assistant) => assistant.player.id));
   const linkedPlayers = rosterPlayers.filter((player) => Boolean(player.userId));
   const selectablePlayers = linkedPlayers.filter(
     (player) => player.id === teamPlayerId || !assistantPlayerIds.has(player.id),
