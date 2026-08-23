@@ -93,8 +93,11 @@ test('Team roster management uses protected API, confirmation, and real API erro
 
 test('Coach Assistant UI uses linked roster players and canonical Team authority endpoints', () => {
   assert.match(teamApi, /get<TeamAssistantPage>\(`\/api\/v1\/teams\/\$\{teamId\}\/assistants`/);
-  assert.match(teamApi, /post<TeamAssistantItem>\(`\/api\/v1\/teams\/\$\{teamId\}\/assistants`/);
-  assert.match(teamApi, /del<TeamAssistantItem>/);
+  assert.match(
+    teamApi,
+    /post<TeamAssistantAssignment>\(`\/api\/v1\/teams\/\$\{teamId\}\/assistants`/,
+  );
+  assert.match(teamApi, /del<TeamAssistantAssignment>/);
   assert.match(teamProfilePage, /TeamAssistantManager/);
   assert.match(teamProfilePage, /rosterPlayers=\{managedRosterPlayers\}/);
   assert.match(teamAssistantManager, /rosterPlayers\.filter\(\(player\) => Boolean\(player\.userId\)\)/);
