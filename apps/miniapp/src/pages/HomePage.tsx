@@ -76,7 +76,8 @@ export function HomePage() {
   });
   const rideCount = (rides.data?.offers.length || 0) + (rides.data?.requests.length || 0);
   const nextEvent = events.data?.items[0];
-  const hoomaNowLoading = events.isLoading || requests.isLoading || rides.isLoading || funds.isLoading;
+  const hoomaNowLoading =
+    events.isLoading || requests.isLoading || rides.isLoading || funds.isLoading;
   const hoomaNowHasError = events.isError || requests.isError || rides.isError || funds.isError;
 
   return (
