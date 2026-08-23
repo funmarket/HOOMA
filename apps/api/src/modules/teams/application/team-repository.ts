@@ -24,6 +24,7 @@ export interface TeamRepository {
   listPublic(input: TeamListInput): Promise<unknown>;
   listManagedTeams(teamIds: string[]): Promise<ManagedTeamResult>;
   getPublic(teamId: string): Promise<unknown>;
+  getCurrentLineup(teamId: string): Promise<unknown>;
   getChallenge(challengeId: string, managedTeamIds: string[]): Promise<unknown>;
   getGame(gameId: string): Promise<unknown>;
   getCommunityCoachAccess(
