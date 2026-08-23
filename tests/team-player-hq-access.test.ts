@@ -12,6 +12,7 @@ import { PrismaTeamMemberReadRepository } from '../apps/api/src/modules/teams/in
 const teamController = readFileSync('apps/api/src/modules/teams/http/team.controller.ts', 'utf8');
 const teamsPage = readFileSync('apps/miniapp/src/pages/TeamsPage.tsx', 'utf8');
 const teamProfilePage = readFileSync('apps/miniapp/src/pages/TeamProfilePage.tsx', 'utf8');
+const teamControlRoomPage = readFileSync('apps/miniapp/src/pages/TeamControlRoomPage.tsx', 'utf8');
 const teamApi = readFileSync('apps/miniapp/src/features/teams/api.ts', 'utf8');
 
 test('My Team read model is based on active canonical TeamPlayer linkage and includes private Teams', async () => {
@@ -87,15 +88,6 @@ test('Mini App exposes My Team without turning player membership into management
     teamProfilePage,
     /const authority = managedTeam\?\.authority \?\? authorityQuery\.data \?\? null/,
   );
-  assert.match(teamProfilePage, /const canEditTeam = hasCapability\(authority, 'EDIT_TEAM'\)/);
-  assert.match(
-    teamProfilePage,
-    /const canManageRoster = hasCapability\(authority, 'MANAGE_ROSTER'\)/,
-  );
-  assert.match(
-    teamProfilePage,
-    /const canManageLineup = hasCapability\(authority, 'MANAGE_LINEUP'\)/,
-  );
   assert.match(teamProfilePage, /const isTeamPlayer = Boolean\(memberTeam\)/);
   assert.match(teamProfilePage, /team\.acceptingChallenges && !authority && !isTeamPlayer/);
   assert.match(teamProfilePage, /memberTeam\.players \?\? \[\]/);
@@ -103,5 +95,19 @@ test('Mini App exposes My Team without turning player membership into management
     teamProfilePage,
     /authority \? 'Your Team' : isTeamPlayer \? 'My Team' : 'Public team'/,
   );
-  assert.doesNotMatch(teamProfilePage, /const canManage = Boolean\(managedTeam\)/);
+  assert.match(teamProfilePage, /authority \? \(/);
+  assert.match(teamProfilePage, /Control Room/);
+  assert.doesNotMatch(teamProfilePage, /updateTeam/);
+  assert.doesNotMatch(teamProfilePage, /addTeamPlayer/);
+  assert.doesNotMatch(teamProfilePage, /removeTeamPlayer/);
+  assert.doesNotMatch(teamProfilePage, /TeamAssistantManager/);
+});
+
+test('Control Room requires canonical authority and never upgrades Team membership by itself', () => {
+  assert.match(teamControlRoomPage, /getTeamAuthority/);
+  assert.match(teamControlRoomPage, /if \(!team \|\| !authority\)/);
+  assert.match(teamControlRoomPage, /Team membership alone never grants management authority/);
+  assert.match(teamControlRoomPage, /authority\.role === 'COACH'/);
+  assert.match(teamControlRoomPage, /authority\.role === 'MANAGER'/);
+  assert.match(teamControlRoomPage, /authority\.permissions\.includes\(capability\)/);
 });
