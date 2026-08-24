@@ -18,6 +18,13 @@ export class PlaceService {
     });
   }
 
+  discover(userId: string, input: { query?: string; limit?: number }) {
+    return this.repo.discover(userId, {
+      ...(input.query !== undefined ? { query: input.query } : {}),
+      limit: Math.min(input.limit ?? 100, 200),
+    });
+  }
+
   async get(userId: string, placeId: string) {
     const place = await this.repo.get(userId, placeId);
     if (!place) throw new AppError(404, 'PLACE_NOT_FOUND', 'Place not found.');
