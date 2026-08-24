@@ -1,0 +1,276 @@
+:root[data-theme='future-pitch'] {
+  color-scheme: dark;
+  --bg-deep: #020302;
+  --bg: #050605;
+  --bg-elevated: #080a08;
+  --surface-1: #0b0d0b;
+  --surface-2: #101310;
+  --surface-3: #161a16;
+  --surface-hover: #1b201a;
+  --surface: var(--surface-1);
+  --text-primary: #f4f1e8;
+  --text-secondary: #a8aca3;
+  --text-muted: #70766d;
+  --text-disabled: #555b53;
+  --text: var(--text-primary);
+  --muted: var(--text-secondary);
+  --faint: var(--text-muted);
+  --border-subtle: #20251f;
+  --border: #293027;
+  --border-strong: #3a4337;
+  --lime: #b9ff31;
+  --lime-bright: #d2ff73;
+  --lime-soft: rgba(185, 255, 49, 0.1);
+  --electric-blue: #67b8ff;
+  --electric-blue-bright: #9cd3ff;
+  --electric-blue-soft: rgba(103, 184, 255, 0.1);
+  --accent: var(--lime);
+  --accent-strong: var(--lime-bright);
+  --accent-soft: var(--lime-soft);
+  --gold: #d0a14a;
+  --gold-bright: #f0c86a;
+  --gold-soft: rgba(208, 161, 74, 0.1);
+  --cream: var(--text-primary);
+  --paper: #ddd8ca;
+  --success: #53da88;
+  --warning: #ffc857;
+  --danger: #ff626e;
+  --shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+
+  --hv-bg: var(--bg);
+  --hv-ink: var(--bg-deep);
+  --hv-card: var(--surface-1);
+  --hv-card-2: var(--surface-2);
+  --hv-cream: var(--text-primary);
+  --hv-paper: var(--paper);
+  --hv-gold: var(--gold);
+  --hv-gold-line: rgba(208, 161, 74, 0.24);
+  --hv-lime: var(--lime);
+  --hv-lime-soft: var(--lime-soft);
+  --hv-white: var(--text-primary);
+  --hv-muted: var(--text-secondary);
+  --hv-danger: var(--danger);
+}
+
+:root[data-theme='future-pitch'] body {
+  background:
+    radial-gradient(circle at 86% -12%, rgba(103, 184, 255, 0.045), transparent 28rem),
+    radial-gradient(circle at 10% 38%, rgba(185, 255, 49, 0.025), transparent 22rem),
+    linear-gradient(180deg, var(--bg-deep) 0%, var(--bg) 56%, var(--bg-deep) 100%);
+}
+
+:root[data-theme='future-pitch'] body::before {
+  opacity: 0.025;
+  background-image: radial-gradient(rgba(244, 241, 232, 0.24) 0.4px, transparent 0.7px);
+}
+
+:root[data-theme='future-pitch'] .app-topbar {
+  background: linear-gradient(180deg, rgba(2, 3, 2, 0.995), rgba(5, 6, 5, 0.97));
+}
+
+:root[data-theme='future-pitch'] .app-profile-button {
+  border-color: var(--border-strong);
+  background: radial-gradient(circle at 50% 36%, var(--surface-3), var(--surface-1) 74%);
+  box-shadow: inset 0 0 0 2px rgba(2, 3, 2, 0.9);
+}
+
+:root[data-theme='future-pitch'] .app-notification-dot {
+  background: var(--lime);
+}
+
+:root[data-theme='future-pitch'] .app-bottom-nav {
+  background: rgba(5, 6, 5, 0.98);
+  border-color: var(--border);
+  box-shadow:
+    0 -5px 18px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(244, 241, 232, 0.025);
+}
+
+:root[data-theme='future-pitch'] .app-nav-item {
+  color: var(--text-secondary);
+}
+
+:root[data-theme='future-pitch'] .app-nav-item:not(:first-child)::before {
+  background: linear-gradient(180deg, transparent, var(--border-subtle), transparent);
+}
+
+:root[data-theme='future-pitch'] .app-nav-item-active,
+:root[data-theme='future-pitch'] .app-nav-item-active .app-nav-icon {
+  color: var(--lime);
+}
+
+:root[data-theme='future-pitch'] .app-nav-item-active::after {
+  background: var(--lime);
+}
+
+:root[data-theme='future-pitch'] .app-nav-icon-shell-active {
+  background: var(--lime-soft);
+}
+
+:root[data-theme='future-pitch'] .app-nav-item-active .app-nav-image-hooma {
+  box-shadow: 0 0 0 1px rgba(185, 255, 49, 0.56);
+}
+
+:root[data-theme='future-pitch'] .surface-card,
+:root[data-theme='future-pitch'] .reference-row {
+  background: var(--surface-1);
+  border-color: var(--border);
+  box-shadow:
+    0 14px 32px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(244, 241, 232, 0.018);
+}
+
+:root[data-theme='future-pitch'] .hooma-input {
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border-color: var(--border);
+}
+
+:root[data-theme='future-pitch'] .hooma-input::placeholder {
+  color: var(--text-muted);
+}
+
+:root[data-theme='future-pitch'] .hooma-input:focus {
+  border-color: var(--electric-blue);
+  box-shadow: 0 0 0 3px var(--electric-blue-soft);
+}
+
+:root[data-theme='future-pitch'] .accent-button,
+:root[data-theme='future-pitch'] .team-button-primary,
+:root[data-theme='future-pitch'] .vintage-pitch-stub {
+  color: #10130c;
+  background: linear-gradient(180deg, var(--lime-bright), var(--lime));
+  border-color: var(--lime-bright);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 7px 18px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme='future-pitch'] .ghost-button,
+:root[data-theme='future-pitch'] .icon-well,
+:root[data-theme='future-pitch'] .chip {
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border-color: var(--border);
+}
+
+:root[data-theme='future-pitch'] .chip {
+  background: rgba(103, 184, 255, 0.035);
+}
+
+:root[data-theme='future-pitch'] .theme-option-check {
+  color: var(--lime);
+}
+
+:root[data-theme='future-pitch'] .vintage-outline-cta,
+:root[data-theme='future-pitch'] .teams-tabs,
+:root[data-theme='future-pitch'] .team-button,
+:root[data-theme='future-pitch'] .pitch-control,
+:root[data-theme='future-pitch'] .vintage-pitch-card,
+:root[data-theme='future-pitch'] .teams-filter-bar label,
+:root[data-theme='future-pitch'] .teams-search-field,
+:root[data-theme='future-pitch'] .teams-filter-icon,
+:root[data-theme='future-pitch'] .team-request-toggle,
+:root[data-theme='future-pitch'] .team-roster-row,
+:root[data-theme='future-pitch'] .team-game-summary span {
+  background: var(--surface-1);
+  border-color: var(--border);
+}
+
+:root[data-theme='future-pitch'] .event-card-vintage,
+:root[data-theme='future-pitch'] .vintage-empty,
+:root[data-theme='future-pitch'] .vintage-action,
+:root[data-theme='future-pitch'] .team-card,
+:root[data-theme='future-pitch'] .challenge-card,
+:root[data-theme='future-pitch'] .game-card,
+:root[data-theme='future-pitch'] .vintage-community-hero,
+:root[data-theme='future-pitch'] .team-challenge-form {
+  background: var(--surface-1);
+  border-color: var(--border);
+}
+
+:root[data-theme='future-pitch'] .event-card-vintage .icon-well,
+:root[data-theme='future-pitch'] .vintage-icon {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+:root[data-theme='future-pitch'] .vintage-home-hero,
+:root[data-theme='future-pitch'] .play-hero,
+:root[data-theme='future-pitch'] .vintage-pitch-hero,
+:root[data-theme='future-pitch'] .vintage-community-stats {
+  border-color: var(--border-subtle);
+}
+
+:root[data-theme='future-pitch'] .teams-art::before {
+  background: radial-gradient(circle, var(--lime-soft), transparent 62%);
+}
+
+:root[data-theme='future-pitch'] .teams-art-shield,
+:root[data-theme='future-pitch'] .team-badge,
+:root[data-theme='future-pitch'] .team-profile-badge {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  box-shadow: none;
+}
+
+:root[data-theme='future-pitch'] .teams-tab-active,
+:root[data-theme='future-pitch'] .team-request-toggle .active {
+  background: var(--lime-soft);
+  border-color: var(--lime);
+}
+
+:root[data-theme='future-pitch'] .team-player-avatar {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+}
+
+:root[data-theme='future-pitch'] .vintage-pitch-stub {
+  border-left-color: rgba(16, 19, 12, 0.5);
+}
+
+:root[data-theme='future-pitch'] .vintage-feed-empty {
+  border-color: var(--border);
+  background: var(--surface-1);
+}
+
+:root[data-theme='future-pitch'] .vintage-feed-empty::before {
+  background:
+    radial-gradient(circle at 70% 30%, var(--electric-blue-soft), transparent 8%),
+    linear-gradient(155deg, rgba(103, 184, 255, 0.055), var(--surface-1) 72%);
+  border-right-color: var(--border);
+}
+
+:root[data-theme='future-pitch'] .vintage-feed-empty::after {
+  border-color: rgba(185, 255, 49, 0.34);
+  background: rgba(2, 3, 2, 0.88);
+}
+
+:root[data-theme='future-pitch'] .vintage-section-title,
+:root[data-theme='future-pitch'] .quick-action-card-pro:not(.quick-action-card-artwork) > strong,
+:root[data-theme='future-pitch'] .quick-action-icon-pro {
+  color: var(--text-primary);
+}
+
+:root[data-theme='future-pitch'] .vintage-actions-kicker,
+:root[data-theme='future-pitch'] .vintage-kicker-title,
+:root[data-theme='future-pitch'] .vintage-text-button {
+  color: var(--lime);
+}
+
+:root[data-theme='future-pitch'] .quick-action-card-pro:not(.quick-action-card-artwork) {
+  border-color: var(--border);
+  background: var(--surface-1);
+  box-shadow: inset 0 1px 0 rgba(244, 241, 232, 0.018);
+}
+
+:root[data-theme='future-pitch'] .team-profile-hero {
+  border-color: var(--border);
+  background:
+    radial-gradient(circle at 84% 16%, var(--electric-blue-soft), transparent 13rem),
+    var(--surface-1);
+}
+
+:root[data-theme='future-pitch'] .team-roster-row span {
+  border-color: var(--border-strong);
+}
