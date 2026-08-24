@@ -431,12 +431,24 @@ export class PrismaIdentityRepository implements IdentityRepository {
         create: {
           user: { connect: { id: userId } },
           ...(themeOverride !== undefined
-            ? { themeOverride: themeOverride as 'TELEGRAM' | 'LIGHT' | 'DARK' }
+            ? {
+                themeOverride: themeOverride as
+                  | 'TELEGRAM'
+                  | 'LIGHT'
+                  | 'DARK'
+                  | 'MATCHDAY_NEON',
+              }
             : {}),
         },
         update:
           themeOverride !== undefined
-            ? { themeOverride: themeOverride as 'TELEGRAM' | 'LIGHT' | 'DARK' }
+            ? {
+                themeOverride: themeOverride as
+                  | 'TELEGRAM'
+                  | 'LIGHT'
+                  | 'DARK'
+                  | 'MATCHDAY_NEON',
+              }
             : {},
       });
 
