@@ -19,7 +19,12 @@ export class RedisRuntime {
       return;
     }
 
-    const client = createClient({ url });
+    const client = createClient({
+      url,
+      socket: {
+        family: 0,
+      },
+    });
     client.on('error', (error) => {
       console.error('HOOMA Redis client error', error);
     });
