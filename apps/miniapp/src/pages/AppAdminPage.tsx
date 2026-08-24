@@ -18,9 +18,7 @@ export function AppAdminPage() {
   });
   const bootstrap = useMutation({
     mutationFn: () =>
-      post<PlatformAdminAccess>('/api/v1/admin/bootstrap', {
-        token: bootstrapToken.trim(),
-      }),
+      post<PlatformAdminAccess>('/api/v1/admin/bootstrap', { token: bootstrapToken.trim() }),
     onSuccess: async () => {
       setBootstrapToken('');
       await queryClient.invalidateQueries({ queryKey: ['platform-admin', 'me'] });
@@ -64,9 +62,9 @@ export function AppAdminPage() {
             <div className="section-kicker">Owner setup</div>
             <h2 className="mt-1 font-black">Claim the HOOMA App Owner Admin role</h2>
             <p className="mt-2 text-sm muted">
-              Use the private one-time setup key while signed in to the HOOMA account that owns the
-              application. Your canonical user ID becomes the database authority; Telegram
-              usernames and Team/community roles are never used for Admin access.
+              Use the private one-time setup key while signed in to the HOOMA account that should
+              own platform administration. Your canonical user ID becomes the database authority;
+              Telegram usernames and Team roles are not used for future access.
             </p>
             <form className="mt-4 grid gap-3" onSubmit={submitBootstrap}>
               <label className="grid gap-1 text-sm font-bold">
