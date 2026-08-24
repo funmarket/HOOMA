@@ -66,7 +66,16 @@ export function v1Router(container: AppContainer) {
     rateLimit(container.rateLimitStore, { scope: 'whistles', windowMs: 60_000, max: 120 }),
     whistleRouter(container.services.whistles),
   );
-  router.use('/admin', adminRouter(container.services.admin));
+
+  // "Admin" is reserved for HOOMA platform ownership. Community-scoped management
+  // lives under its own explicit boundary and cannot grant platform authority.
+  router.use('/community-management', adminRouter(container.services.admin));
+  router.use(
+    '/admin',
+    platformAdminRouter(container.services.platformAdmin, container.services.gamers),
+  );
+  // Compatibility alias for previously shipped owner links; it resolves to the same
+  // PLATFORM_ADMIN-protected router and never to community management.
   router.use(
     '/app-admin',
     platformAdminRouter(container.services.platformAdmin, container.services.gamers),
