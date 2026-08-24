@@ -18,6 +18,12 @@ type Member = {
   };
 };
 
+function communityRoleLabel(role: Member['role']): string {
+  if (role === 'OWNER') return 'Owner';
+  if (role === 'ADMIN') return 'Manager';
+  return 'Member';
+}
+
 export function MembersPage() {
   const { active } = useCommunity();
   const queryClient = useQueryClient();
@@ -57,7 +63,7 @@ export function MembersPage() {
 
   const ban = useMutation({
     mutationFn: (membershipId: string) =>
-      patch(`/api/v1/admin/communities/${active?.id}/members/${membershipId}/ban`, {}),
+      patch(`/api/v1/community-management/communities/${active?.id}/members/${membershipId}/ban`, {}),
     onSuccess: () => {
       notify('success');
       refresh();
@@ -103,7 +109,7 @@ export function MembersPage() {
                   ) : membership.role === 'ADMIN' ? (
                     <ShieldCheck size={12} />
                   ) : null}{' '}
-                  {membership.role}
+                  {communityRoleLabel(membership.role)}
                 </span>
               </div>
 
@@ -124,7 +130,7 @@ export function MembersPage() {
                       }
                     >
                       <ShieldCheck size={14} />
-                      {membership.role === 'ADMIN' ? 'Remove admin' : 'Make admin'}
+                      {membership.role === 'ADMIN' ? 'Remove manager' : 'Make manager'}
                     </button>
                   )}
                   {isOwner && (
@@ -134,7 +140,7 @@ export function MembersPage() {
                       onClick={() => {
                         if (
                           window.confirm(
-                            'Transfer community ownership to this member? You will become an admin.',
+                            'Transfer community ownership to this member? You will become a manager.',
                           )
                         ) {
                           transfer.mutate(membership.id);
