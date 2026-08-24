@@ -3,7 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
 
-const AdminPage = lazy(() =>
+const CommunityManagementPage = lazy(() =>
   import('./pages/AdminPage').then((module) => ({ default: module.AdminPage })),
 );
 const AppAdminPage = lazy(() =>
@@ -208,7 +208,8 @@ export default function App() {
           <Route path="/events/:eventId/check-in" element={routeElement(<CheckInPage />)} />
           <Route path="/community/new" element={routeElement(<NewCommunityPage />)} />
           <Route path="/community/members" element={routeElement(<MembersPage />)} />
-          <Route path="/admin" element={routeElement(<AdminPage />)} />
+          <Route path="/community-management" element={routeElement(<CommunityManagementPage />)} />
+          <Route path="/admin" element={routeElement(<AppAdminPage />)} />
           <Route path="/app-admin" element={routeElement(<AppAdminPage />)} />
           <Route path="/profile/:userId" element={routeElement(<PublicPlayerProfilePage />)} />
           <Route path="/profile" element={routeElement(<ProfilePage />)} />
