@@ -1,20 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { EventCard } from '../components/EventCard';
+import { proximityRankedEvents } from '../lib/hooma-proximity-feed';
 import { useCommunity } from '../providers/CommunityProvider';
 import { get } from '../shared/api/http-client';
-import type { CursorPage, EventItem } from '../types/domain';
+import type { HoomaNowResponse } from '../types/hooma-now';
 
 export function EventsPage() {
   const navigate = useNavigate();
   const { active, isLoading: communityIsLoading } = useCommunity();
   const query = useQuery({
-    queryKey: ['events', active?.id],
-    queryFn: () => get<CursorPage<EventItem>>(`/api/v1/events?communityId=${active?.id}`),
+    queryKey: ['hooma-now', active?.id],
+    queryFn: () => get<HoomaNowResponse>('/api/v1/communities/now'),
     enabled: Boolean(active),
   });
 
-  const events = query.data?.items ?? [];
+  const events = proximityRankedEvents(query.data?.events ?? [], query.data?.communities ?? []);
   const playEvents = events.filter((event) => event.type === 'PLAY');
   const watchEvents = events.filter((event) => event.type === 'WATCH');
 
@@ -33,7 +34,7 @@ export function EventsPage() {
         <h1 className="vintage-display">All events</h1>
         <div className="vintage-empty mt-5">
           <strong>No community selected.</strong>
-          <small>Create or join a HOOMA community to see Play and Watch events.</small>
+          <small>Create or join a HOOMA community to establish your local starting point.</small>
           <button
             type="button"
             className="vintage-outline-cta mt-4"
@@ -51,7 +52,7 @@ export function EventsPage() {
       <div className="vintage-kicker">Events</div>
       <h1 className="vintage-display">All events</h1>
       <p className="vintage-copy mt-2 text-sm">
-        Browse pickup matches and watch gatherings for {active.name}.
+        {active.name} first, then nearby Play and Watch events across the wider HOOMA network.
       </p>
 
       {query.isLoading ? (
@@ -99,7 +100,7 @@ export function EventsPage() {
       ) : (
         <div className="vintage-empty mt-5">
           <strong>No events yet.</strong>
-          <small>Create the first pickup match or watch event for this community.</small>
+          <small>New Play and Watch events across HOOMA will appear here.</small>
           <button
             type="button"
             className="vintage-outline-cta mt-4"

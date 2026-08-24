@@ -6,6 +6,7 @@ export type PickupMatchCardProps = {
   title: string;
   dateLabel: string;
   venueName?: string | null | undefined;
+  sourceLabel?: string | null | undefined;
   goingCount: number;
   capacity?: number | null | undefined;
   format?: string | null | undefined;
@@ -19,6 +20,7 @@ export function PickupMatchCard(props: PickupMatchCardProps) {
         <strong>{props.title}</strong>
       </div>
       <div className="pickup-match-card-meta">
+        {props.sourceLabel && <span>{props.sourceLabel}</span>}
         <span>
           <CalendarIcon size={16} />
           {props.dateLabel}

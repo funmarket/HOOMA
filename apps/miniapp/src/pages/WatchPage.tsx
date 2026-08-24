@@ -8,9 +8,10 @@ import { VintageCollectorTicket } from '../components/ticket/VintageCollectorTic
 import { listWatchClubs, watchQueryKeys } from '../features/watch/api';
 import { get } from '../shared/api/http-client';
 import { useCommunity } from '../providers/CommunityProvider';
+import { hoomaSourceLabel, proximityRankedEvents } from '../lib/hooma-proximity-feed';
 import { watchEventMatchesFilters } from '../lib/watch-event-filters';
 import { isOfficialWatchPlace, watchPlaceLocation } from '../lib/watch-place-display';
-import type { CursorPage, EventItem } from '../types/domain';
+import type { HoomaNowResponse } from '../types/hooma-now';
 
 function dateParts(value: string) {
   const date = new Date(value);
@@ -31,14 +32,20 @@ export function WatchPage() {
     queryFn: () => listWatchClubs(100),
   });
   const events = useQuery({
-    queryKey: ['events', active?.id, 'WATCH'],
-    queryFn: () =>
-      get<CursorPage<EventItem>>(`/api/v1/events?communityId=${active?.id}&type=WATCH`),
+    queryKey: ['hooma-now', active?.id],
+    queryFn: () => get<HoomaNowResponse>('/api/v1/communities/now'),
     enabled: Boolean(active),
   });
-
-  const visibleEvents = (events.data?.items ?? []).filter((event) =>
+  const rankedEvents = proximityRankedEvents(
+    events.data?.events ?? [],
+    events.data?.communities ?? [],
+    'WATCH',
+  );
+  const visibleEvents = rankedEvents.filter((event) =>
     watchEventMatchesFilters(event, { clubId, query: search }),
+  );
+  const communityById = new Map(
+    (events.data?.communities ?? []).map((community) => [community.id, community] as const),
   );
   const hasError = clubs.isError || events.isError;
 
@@ -88,6 +95,8 @@ export function WatchPage() {
               const home = event.watchDetails?.homeClub;
               const away = event.watchDetails?.awayClub;
               const parts = dateParts(event.startsAt);
+              const source = communityById.get(event.communityId);
+              const sourceLabel = hoomaSourceLabel(source, events.data?.activeCommunityId ?? null);
               return (
                 <VintageCollectorTicket
                   key={event.id}
@@ -103,7 +112,7 @@ export function WatchPage() {
                     place?.address ||
                     event.address ||
                     hub?.address ||
-                    active?.name ||
+                    sourceLabel ||
                     'Location TBA'
                   }
                   dateLabel={parts.date}
@@ -111,7 +120,7 @@ export function WatchPage() {
                   goingCount={event._count?.rsvps ?? 0}
                   officialVenue={officialVenue}
                   suggestedByCommunity={Boolean(hub) && !officialVenue}
-                  stubLabel={event.title}
+                  stubLabel={sourceLabel || event.community?.name || event.title}
                   venuePhotoUrl={place?.photoUrl}
                   onClick={() => navigate(`/events/${event.id}`)}
                 />
@@ -120,9 +129,7 @@ export function WatchPage() {
           ) : (
             <div className="vintage-empty">
               <strong>No watch events yet.</strong>
-              <small>
-                Create a real watch event and it will appear as a collector ticket here.
-              </small>
+              <small>New watch events across HOOMA will appear here.</small>
             </div>
           )}
         </section>
