@@ -16,6 +16,22 @@
   --hv-font-condensed: 'Arial Narrow', 'Roboto Condensed', 'Helvetica Neue', Arial, sans-serif;
 }
 
+:root[data-theme='matchday-neon'] {
+  --hv-bg: var(--bg);
+  --hv-ink: var(--bg-deep);
+  --hv-card: var(--surface-1);
+  --hv-card-2: var(--surface-2);
+  --hv-cream: var(--text-primary);
+  --hv-paper: #dbe3f0;
+  --hv-gold: #d0a14a;
+  --hv-gold-line: rgba(208, 161, 74, 0.2);
+  --hv-lime: var(--lime);
+  --hv-lime-soft: var(--lime-soft);
+  --hv-white: var(--text-primary);
+  --hv-muted: var(--text-secondary);
+  --hv-danger: var(--danger);
+}
+
 .vintage-page {
   position: relative;
   isolation: isolate;
@@ -968,6 +984,113 @@
   color: var(--hv-white);
   font-size: 0.86rem;
   font-weight: 850;
+}
+
+:root[data-theme='matchday-neon'] .vintage-outline-cta,
+:root[data-theme='matchday-neon'] .teams-tabs,
+:root[data-theme='matchday-neon'] .team-button,
+:root[data-theme='matchday-neon'] .pitch-control,
+:root[data-theme='matchday-neon'] .vintage-pitch-card,
+:root[data-theme='matchday-neon'] .teams-filter-bar label,
+:root[data-theme='matchday-neon'] .teams-search-field,
+:root[data-theme='matchday-neon'] .teams-filter-icon,
+:root[data-theme='matchday-neon'] .team-request-toggle,
+:root[data-theme='matchday-neon'] .team-roster-row,
+:root[data-theme='matchday-neon'] .team-game-summary span {
+  background: var(--bg-elevated);
+  border-color: var(--border);
+}
+:root[data-theme='matchday-neon'] .event-card-vintage,
+:root[data-theme='matchday-neon'] .vintage-empty,
+:root[data-theme='matchday-neon'] .vintage-action,
+:root[data-theme='matchday-neon'] .team-card,
+:root[data-theme='matchday-neon'] .challenge-card,
+:root[data-theme='matchday-neon'] .game-card,
+:root[data-theme='matchday-neon'] .vintage-community-hero,
+:root[data-theme='matchday-neon'] .team-challenge-form {
+  background: linear-gradient(145deg, var(--surface-1), var(--bg-elevated));
+  border-color: var(--border);
+}
+:root[data-theme='matchday-neon'] .event-card-vintage .icon-well,
+:root[data-theme='matchday-neon'] .vintage-icon {
+  background: var(--surface-1);
+  border-color: var(--border);
+}
+:root[data-theme='matchday-neon'] .vintage-home-hero,
+:root[data-theme='matchday-neon'] .play-hero,
+:root[data-theme='matchday-neon'] .vintage-pitch-hero,
+:root[data-theme='matchday-neon'] .vintage-community-stats {
+  border-color: var(--border-subtle);
+}
+:root[data-theme='matchday-neon'] .teams-art::before {
+  background: radial-gradient(circle, var(--lime-soft), transparent 62%);
+}
+:root[data-theme='matchday-neon'] .teams-art-shield,
+:root[data-theme='matchday-neon'] .team-badge,
+:root[data-theme='matchday-neon'] .team-profile-badge {
+  background: linear-gradient(145deg, var(--surface-2), var(--bg-elevated));
+  border-color: var(--lime);
+  box-shadow: none;
+}
+:root[data-theme='matchday-neon'] .teams-tab-active,
+:root[data-theme='matchday-neon'] .team-request-toggle .active {
+  background: var(--lime-soft);
+}
+:root[data-theme='matchday-neon'] .team-player-avatar {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+}
+:root[data-theme='matchday-neon'] .team-button-primary {
+  color: #031109;
+  background: linear-gradient(180deg, var(--lime-bright), var(--lime));
+  border-color: var(--lime-bright);
+}
+:root[data-theme='matchday-neon'] .vintage-pitch-stub {
+  color: #031109;
+  background: linear-gradient(180deg, var(--lime-bright), var(--lime));
+  border-left-color: rgba(3, 17, 9, 0.5);
+}
+:root[data-theme='matchday-neon'] .vintage-feed-empty {
+  border-color: var(--border);
+  background: linear-gradient(145deg, var(--surface-1), var(--bg-elevated));
+}
+:root[data-theme='matchday-neon'] .vintage-feed-empty::before {
+  background:
+    radial-gradient(circle at 70% 30%, var(--cyan-soft), transparent 8%),
+    linear-gradient(155deg, rgba(124, 109, 255, 0.16), var(--bg-elevated) 70%);
+  border-right-color: var(--border);
+}
+:root[data-theme='matchday-neon'] .vintage-feed-empty::after {
+  border-color: rgba(43, 255, 136, 0.42);
+  background: rgba(3, 5, 11, 0.84);
+}
+:root[data-theme='matchday-neon'] .vintage-section-title,
+:root[data-theme='matchday-neon'] .quick-action-card-pro:not(.quick-action-card-artwork) > strong,
+:root[data-theme='matchday-neon'] .quick-action-icon-pro {
+  color: var(--text-primary);
+}
+:root[data-theme='matchday-neon'] .vintage-actions-kicker,
+:root[data-theme='matchday-neon'] .vintage-kicker-title,
+:root[data-theme='matchday-neon'] .vintage-text-button {
+  color: var(--lime);
+}
+:root[data-theme='matchday-neon'] .quick-action-card-pro:not(.quick-action-card-artwork) {
+  border-color: var(--border);
+  background:
+    radial-gradient(circle at 50% 0, rgba(65, 217, 255, 0.035), transparent 46%),
+    linear-gradient(145deg, var(--surface-1), var(--bg-elevated));
+  box-shadow:
+    inset 0 1px 0 rgba(245, 248, 255, 0.018),
+    inset 0 0 0 1px rgba(65, 217, 255, 0.02);
+}
+:root[data-theme='matchday-neon'] .team-profile-hero {
+  border-color: var(--border);
+  background:
+    radial-gradient(circle at 82% 18%, var(--cyan-soft), transparent 14rem),
+    linear-gradient(145deg, var(--surface-1), var(--bg-elevated));
+}
+:root[data-theme='matchday-neon'] .team-roster-row span {
+  border-color: var(--border-strong);
 }
 
 @media (max-width: 520px) {
