@@ -45,6 +45,7 @@ if (!hasMigration) {
 if (process.env.NODE_ENV === 'production') {
   if (!process.env.DATABASE_URL) fail('DATABASE_URL is required in production.');
   if (!process.env.DIRECT_DATABASE_URL) fail('DIRECT_DATABASE_URL is required in production.');
+  if (!process.env.REDIS_URL) fail('REDIS_URL is required in production for Whistle.');
   if (!process.env.TELEGRAM_BOT_TOKEN) fail('TELEGRAM_BOT_TOKEN is required in production.');
   if (!process.env.TELEGRAM_WEBHOOK_SECRET)
     fail('TELEGRAM_WEBHOOK_SECRET is required in production.');

@@ -84,6 +84,25 @@ Internal admin-route Event cancellation is exposed through `/api/v1/admin/events
 - `PUT /api/v1/play/events/:eventId/formations/:formationId`
 - `POST /api/v1/play/events/:eventId/formations/:formationId/publish`
 
+## Whistle
+
+- `GET /api/v1/whistles/communities/:communityId`
+- `POST /api/v1/whistles/communities/:communityId`
+
+Both routes require an authenticated **active member** of the target community. A Whistle body is trimmed and limited to **33 Unicode graphemes**. The POST body is:
+
+```json
+{ "body": "North stand now" }
+```
+
+Whistle is a transient Redis-backed signal system, not permanent Chat. Every canonical user receives **11 total Whistles per UTC calendar day across every Whistle context combined**. Unused Whistles do not roll over. The quota and all current-day Whistle messages reset/disappear at the next **00:00 UTC**.
+
+Successful feed responses include `day`, `dailyLimit`, `remaining`, `resetAt`, and `items`. Successful sends return the same daily metadata plus the new `item`. `resetAt` is an ISO timestamp for the next UTC midnight.
+
+When the daily quota is exhausted, POST returns HTTP `429` with error code `WHISTLE_DAILY_LIMIT_REACHED` and details containing `dailyLimit`, `remaining`, and `resetAt`. If Redis cannot safely enforce/read Whistle state, the route fails closed with HTTP `503` and code `WHISTLE_UNAVAILABLE`; the API never falls back to an in-memory Whistle quota.
+
+There is intentionally no Whistle history, archive, delete, per-viewer reveal, or permanent message endpoint. PostgreSQL does not persist Whistle bodies.
+
 ## Watch
 
 - `GET /api/v1/watch/clubs`

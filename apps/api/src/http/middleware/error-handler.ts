@@ -2,6 +2,23 @@ import type { ErrorRequestHandler } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../errors/app-error.js';
 
+type ZodErrorLike = {
+  name: 'ZodError';
+  issues: unknown[];
+  flatten: () => unknown;
+};
+
+function isZodError(error: unknown): error is ZodErrorLike {
+  if (error instanceof ZodError) return true;
+  if (!error || typeof error !== 'object') return false;
+  const candidate = error as Partial<ZodErrorLike>;
+  return (
+    candidate.name === 'ZodError' &&
+    Array.isArray(candidate.issues) &&
+    typeof candidate.flatten === 'function'
+  );
+}
+
 export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   void _next;
 
@@ -18,7 +35,7 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
     });
   }
 
-  if (error instanceof ZodError) {
+  if (isZodError(error)) {
     return res.status(400).json({
       error: {
         code: 'VALIDATION_ERROR',
