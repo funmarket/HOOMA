@@ -29,6 +29,7 @@ enum ThemeOverride {
   TELEGRAM
   LIGHT
   DARK
+  MATCHDAY_NEON
 }
 
 enum SkillLevel {
@@ -422,8 +423,8 @@ model Community {
   invites             CommunityInvite[]
   events              Event[]
   requests            Request[]
-  rideOffers          RideOffer[]
-  rideRequests        RideRequest[]
+  rideOffers           RideOffer[]
+  rideRequests         RideRequest[]
   fundraisers         Fundraiser[]
   fanHubs             FanHub[]
   places              Place[]
