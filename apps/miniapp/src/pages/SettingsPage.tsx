@@ -118,7 +118,9 @@ export function SettingsPage() {
             <span className="min-w-0 flex-1">
               <span className="block font-black">{label}</span>
               {description && (
-                <span className="mt-1 block text-xs font-medium leading-5 muted">{description}</span>
+                <span className="mt-1 block text-xs font-medium leading-5 muted">
+                  {description}
+                </span>
               )}
               {value === 'matchday-neon' && (
                 <span className="theme-palette-preview mt-2" aria-hidden="true">

@@ -433,11 +433,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
           ...(themeOverride !== undefined
             ? {
                 themeOverride: themeOverride as
-                  | 'TELEGRAM'
-                  | 'LIGHT'
-                  | 'DARK'
-                  | 'MATCHDAY_NEON'
-                  | 'FUTURE_PITCH',
+                  'TELEGRAM' | 'LIGHT' | 'DARK' | 'MATCHDAY_NEON' | 'FUTURE_PITCH',
               }
             : {}),
         },
@@ -445,11 +441,7 @@ export class PrismaIdentityRepository implements IdentityRepository {
           themeOverride !== undefined
             ? {
                 themeOverride: themeOverride as
-                  | 'TELEGRAM'
-                  | 'LIGHT'
-                  | 'DARK'
-                  | 'MATCHDAY_NEON'
-                  | 'FUTURE_PITCH',
+                  'TELEGRAM' | 'LIGHT' | 'DARK' | 'MATCHDAY_NEON' | 'FUTURE_PITCH',
               }
             : {},
       });
