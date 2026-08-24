@@ -11,10 +11,11 @@ import { themeParams } from '@tma.js/sdk-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCurrentProfile, profileQueryKeys, updateCurrentProfile } from '../features/profile/api';
 
-type ThemeMode = 'telegram' | 'dark' | 'light';
+type ThemeMode = 'telegram' | 'dark' | 'light' | 'matchday-neon';
+type ResolvedTheme = 'dark' | 'light' | 'matchday-neon';
 type ThemeContextValue = {
   mode: ThemeMode;
-  resolved: 'dark' | 'light';
+  resolved: ResolvedTheme;
   setMode: (mode: ThemeMode) => void;
   toggle: () => void;
 };
@@ -44,16 +45,23 @@ function fromServerTheme(value?: string | null): ThemeMode | null {
   if (value === 'TELEGRAM') return 'telegram';
   if (value === 'DARK') return 'dark';
   if (value === 'LIGHT') return 'light';
+  if (value === 'MATCHDAY_NEON') return 'matchday-neon';
   return null;
 }
 
-function toServerTheme(value: ThemeMode): 'TELEGRAM' | 'DARK' | 'LIGHT' {
+function toServerTheme(value: ThemeMode): 'TELEGRAM' | 'DARK' | 'LIGHT' | 'MATCHDAY_NEON' {
   if (value === 'telegram') return 'TELEGRAM';
+  if (value === 'matchday-neon') return 'MATCHDAY_NEON';
   return value === 'dark' ? 'DARK' : 'LIGHT';
 }
 
 function validStoredTheme(value: string | null): ThemeMode | null {
-  return value === 'dark' || value === 'light' || value === 'telegram' ? value : null;
+  return value === 'dark' ||
+    value === 'light' ||
+    value === 'telegram' ||
+    value === 'matchday-neon'
+    ? value
+    : null;
 }
 
 function storedTheme(): ThemeMode {
@@ -74,7 +82,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const serverMode = fromServerTheme(meQuery.data?.preference?.themeOverride);
   const mode = manualMode ?? serverMode ?? initialMode;
-  const resolved = mode === 'telegram' ? telegramResolved : mode;
+  const resolved: ResolvedTheme = mode === 'telegram' ? telegramResolved : mode;
 
   const persistTheme = useMutation({
     mutationFn: (next: ThemeMode) => updateCurrentProfile({ themeOverride: toServerTheme(next) }),
@@ -93,7 +101,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.dataset.theme = resolved;
-    document.documentElement.style.backgroundColor = resolved === 'dark' ? '#050505' : '#ffffff';
+    document.documentElement.style.backgroundColor =
+      resolved === 'matchday-neon' ? '#03050B' : resolved === 'dark' ? '#050505' : '#ffffff';
   }, [resolved]);
 
   const setMode = useCallback(
