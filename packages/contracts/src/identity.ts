@@ -27,7 +27,9 @@ export const profileUpdateSchema = z.object({
   profileAudience: z.enum(['SPECTATOR', 'FAN']).optional(),
   selectedIdentities: selectedProfileIdentitiesSchema.optional(),
   bio: z.string().trim().max(280).nullable().optional(),
-  themeOverride: z.enum(['TELEGRAM', 'LIGHT', 'DARK', 'MATCHDAY_NEON']).optional(),
+  themeOverride: z
+    .enum(['TELEGRAM', 'LIGHT', 'DARK', 'MATCHDAY_NEON', 'FUTURE_PITCH'])
+    .optional(),
 });
 
 const classicUsernameSchema = z
