@@ -3,9 +3,7 @@
   overflow: hidden;
   border: 1px solid var(--hv-gold-line);
   border-radius: 12px;
-  background:
-    linear-gradient(180deg, rgba(183, 227, 29, 0.035), transparent 42%),
-    #090a08;
+  background: linear-gradient(180deg, rgba(183, 227, 29, 0.035), transparent 42%), #090a08;
   color: var(--hv-white);
 }
 
