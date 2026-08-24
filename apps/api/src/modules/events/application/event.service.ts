@@ -36,7 +36,7 @@ export class EventService {
   }
 
   async create(userId: string, input: EventCreateInput) {
-    await this.communities.requireAdmin(userId, input.communityId);
+    await this.communities.requireManager(userId, input.communityId);
     return this.repo.create(userId, input);
   }
 
@@ -49,7 +49,7 @@ export class EventService {
   async update(userId: string, eventId: string, input: EventUpdateInput, requestId: string) {
     const communityId = await this.repo.communityIdForEvent(eventId);
     if (!communityId) throw new AppError(404, 'EVENT_NOT_FOUND', 'Event not found');
-    await this.communities.requireAdmin(userId, communityId);
+    await this.communities.requireManager(userId, communityId);
     return this.repo.update(eventId, userId, input, requestId);
   }
 
@@ -64,7 +64,7 @@ export class EventService {
   async cancelEvent(userId: string, eventId: string, requestId: string) {
     const communityId = await this.repo.communityIdForEvent(eventId);
     if (!communityId) throw new AppError(404, 'EVENT_NOT_FOUND', 'Event not found');
-    await this.communities.requireAdmin(userId, communityId);
+    await this.communities.requireManager(userId, communityId);
     return this.uow.run(async (tx) => {
       const cancelled = await this.repo.cancel(eventId, userId, requestId, tx);
       for (const paymentIntentId of cancelled.pendingPaymentIntentIds) {

@@ -14,7 +14,7 @@ export class AdminService {
   }
 
   async dashboard(userId: string, communityId: string) {
-    await this.communities.requireAdmin(userId, communityId);
+    await this.communities.requireManager(userId, communityId);
     return this.reads.dashboard(communityId);
   }
 
@@ -28,7 +28,7 @@ export class AdminService {
       limit?: number;
     },
   ) {
-    await this.communities.requireAdmin(userId, communityId);
+    await this.communities.requireManager(userId, communityId);
     return this.reads.payments(communityId, {
       ...(input.method !== undefined ? { method: input.method } : {}),
       ...(input.status !== undefined ? { status: input.status } : {}),
@@ -38,7 +38,7 @@ export class AdminService {
   }
 
   async audit(userId: string, communityId: string, input: { cursor?: string; limit?: number }) {
-    await this.communities.requireAdmin(userId, communityId);
+    await this.communities.requireManager(userId, communityId);
     return this.reads.audit(communityId, {
       ...(input.cursor !== undefined ? { cursor: input.cursor } : {}),
       limit: Math.min(input.limit ?? 50, 100),

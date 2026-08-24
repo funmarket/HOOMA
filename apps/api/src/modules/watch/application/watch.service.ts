@@ -32,7 +32,7 @@ export class WatchService {
   }
 
   async createHub(userId: string, input: FanHubCreateInput) {
-    if (input.communityId) await this.communities.requireAdmin(userId, input.communityId);
+    if (input.communityId) await this.communities.requireManager(userId, input.communityId);
     return this.repo.createHub(userId, input);
   }
 
@@ -82,7 +82,7 @@ export class WatchService {
   }
 
   async createDeal(userId: string, input: VenueDealCreateInput) {
-    await this.communities.requireAdmin(userId, input.communityId);
+    await this.communities.requireManager(userId, input.communityId);
     return this.repo.createDeal(userId, input);
   }
 

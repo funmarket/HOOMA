@@ -11,7 +11,7 @@ export class PlayService {
     const access = await this.repo.getAccess(eventId);
     if (!access) throw new AppError(404, 'PLAY_EVENT_NOT_FOUND', 'Play event not found.');
     if (write && access.createdByUserId !== userId)
-      await this.communities.requireAdmin(userId, access.communityId);
+      await this.communities.requireManager(userId, access.communityId);
     else await this.communities.requireMembership(userId, access.communityId);
     return access;
   }

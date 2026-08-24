@@ -91,7 +91,7 @@ export class PaymentService {
           'Cash confirmation is not available for this payment.',
         );
       }
-      await this.communities.requireAdmin(input.actorUserId, context.communityId);
+      await this.communities.requireManager(input.actorUserId, context.communityId);
     }
 
     await this.uow.run(async (tx) => {
@@ -116,7 +116,7 @@ export class PaymentService {
         'Cash void is not available for this payment.',
       );
     }
-    await this.communities.requireAdmin(input.actorUserId, context.communityId);
+    await this.communities.requireManager(input.actorUserId, context.communityId);
 
     await this.uow.run(async (tx) => {
       const result = await this.repo.voidCashSettlement(input, tx);
@@ -136,7 +136,7 @@ export class PaymentService {
     starsAmount: number;
     active: boolean;
   }) {
-    await this.communities.requireAdmin(input.actorUserId, input.communityId);
+    await this.communities.requireManager(input.actorUserId, input.communityId);
     return this.repo.upsertSupporterBadge({
       communityId: input.communityId,
       starsAmount: input.starsAmount,
@@ -188,7 +188,7 @@ export class PaymentService {
     if (!context) {
       throw new AppError(404, 'STARS_PAYMENT_NOT_FOUND', 'Telegram Stars payment not found.');
     }
-    await this.communities.requireAdmin(input.actorUserId, context.communityId);
+    await this.communities.requireManager(input.actorUserId, context.communityId);
 
     if (!context.alreadyRefunded) {
       if (!context.telegramUserId) {

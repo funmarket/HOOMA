@@ -28,7 +28,7 @@ import type {
   TeamManagedPage,
 } from '../types/domain';
 
-type AdminMembership = {
+type CommunityManagementMembership = {
   id: string;
   role: 'OWNER' | 'ADMIN';
   community: Community & {
@@ -56,7 +56,7 @@ type Dashboard = {
   }>;
 };
 
-type AdminPayment = {
+type ManagedPayment = {
   id: string;
   purpose: string;
   status: PaymentStatus;
@@ -75,7 +75,7 @@ type AdminPayment = {
 };
 
 type PaymentPage = {
-  items: AdminPayment[];
+  items: ManagedPayment[];
   nextCursor: string | null;
 };
 
@@ -89,7 +89,7 @@ function payerName(user: Person): string {
   return full || user.username || 'HOOMA member';
 }
 
-function paymentContext(payment: AdminPayment): string {
+function paymentContext(payment: ManagedPayment): string {
   return (
     payment.eventRsvp?.event?.title ||
     payment.rideMatch?.offer?.title ||
@@ -103,6 +103,17 @@ function inviteState(invite: CommunityInvite): string {
   if (invite.expiresAt && new Date(invite.expiresAt) <= new Date()) return 'Expired';
   if (invite.maxUses != null && invite.useCount >= invite.maxUses) return 'Used up';
   return 'Active';
+}
+
+function communityRoleLabel(role: 'OWNER' | 'ADMIN' | 'MEMBER'): string {
+  if (role === 'OWNER') return 'Owner';
+  if (role === 'ADMIN') return 'Manager';
+  return 'Member';
+}
+
+function inviteSummary(invite: CommunityInvite): string {
+  const maxUses = invite.maxUses ?? '∞';
+  return `${communityRoleLabel(invite.role)} · ${invite.useCount}/${maxUses} uses · ${inviteState(invite)}`;
 }
 
 export function AdminPage() {
@@ -131,38 +142,41 @@ export function AdminPage() {
     acceptingChallenges: true,
   });
 
-  const admins = useQuery({
-    queryKey: ['admin-communities'],
-    queryFn: () => get<AdminMembership[]>('/api/v1/admin/communities'),
+  const managedCommunities = useQuery({
+    queryKey: ['community-management', 'communities'],
+    queryFn: () => get<CommunityManagementMembership[]>('/api/v1/community-management/communities'),
   });
 
-  const communityId = selected || admins.data?.[0]?.community.id || '';
+  const communityId = selected || managedCommunities.data?.[0]?.community.id || '';
   const selectedMembership = useMemo(
-    () => admins.data?.find((membership) => membership.community.id === communityId) ?? null,
-    [admins.data, communityId],
+    () =>
+      managedCommunities.data?.find((membership) => membership.community.id === communityId) ??
+      null,
+    [managedCommunities.data, communityId],
   );
   const isOwner = selectedMembership?.role === 'OWNER';
 
   const dashboard = useQuery({
-    queryKey: ['admin-dashboard', communityId],
-    queryFn: () => get<Dashboard>(`/api/v1/admin/communities/${communityId}/dashboard`),
+    queryKey: ['community-management', 'dashboard', communityId],
+    queryFn: () =>
+      get<Dashboard>(`/api/v1/community-management/communities/${communityId}/dashboard`),
     enabled: Boolean(communityId),
   });
 
   const cashDue = useQuery({
-    queryKey: ['admin-cash-due', communityId],
+    queryKey: ['community-management', 'cash-due', communityId],
     queryFn: () =>
       get<PaymentPage>(
-        `/api/v1/admin/communities/${communityId}/payments?method=CASH&status=AWAITING_CASH&limit=50`,
+        `/api/v1/community-management/communities/${communityId}/payments?method=CASH&status=AWAITING_CASH&limit=50`,
       ),
     enabled: Boolean(communityId),
   });
 
   const starsPaid = useQuery({
-    queryKey: ['admin-stars-paid', communityId],
+    queryKey: ['community-management', 'stars-paid', communityId],
     queryFn: () =>
       get<PaymentPage>(
-        `/api/v1/admin/communities/${communityId}/payments?method=TELEGRAM_STARS&status=PAID&limit=20`,
+        `/api/v1/community-management/communities/${communityId}/payments?method=TELEGRAM_STARS&status=PAID&limit=20`,
       ),
     enabled: Boolean(communityId),
   });
@@ -313,8 +327,12 @@ export function AdminPage() {
     onSuccess: async () => {
       notify('success');
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['admin-cash-due', communityId] }),
-        queryClient.invalidateQueries({ queryKey: ['admin-dashboard', communityId] }),
+        queryClient.invalidateQueries({
+          queryKey: ['community-management', 'cash-due', communityId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['community-management', 'dashboard', communityId],
+        }),
         queryClient.invalidateQueries({ queryKey: ['events'] }),
         queryClient.invalidateQueries({ queryKey: ['fundraisers'] }),
         queryClient.invalidateQueries({ queryKey: ['rides'] }),
@@ -326,13 +344,17 @@ export function AdminPage() {
   const refundStars = useMutation({
     mutationFn: (paymentId: string) =>
       post(`/api/v1/payments/${paymentId}/stars/refund`, {
-        reason: 'Community admin refund',
+        reason: 'Community manager refund',
       }),
     onSuccess: async () => {
       notify('success');
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['admin-stars-paid', communityId] }),
-        queryClient.invalidateQueries({ queryKey: ['admin-dashboard', communityId] }),
+        queryClient.invalidateQueries({
+          queryKey: ['community-management', 'stars-paid', communityId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['community-management', 'dashboard', communityId],
+        }),
         queryClient.invalidateQueries({ queryKey: ['digital-products', communityId] }),
       ]);
     },
@@ -353,11 +375,11 @@ export function AdminPage() {
     ['Funds', dashboard.data?.openFunds ?? 0, CircleDollarSign],
   ] as const;
 
-  if (!admins.isLoading && !admins.data?.length) {
+  if (!managedCommunities.isLoading && !managedCommunities.data?.length) {
     return (
       <div className="page-shell">
-        <div className="section-kicker">Owner / admin</div>
-        <h1 className="section-title">Command center</h1>
+        <div className="section-kicker">Community management</div>
+        <h1 className="section-title">Control room</h1>
         <div className="surface-card mt-5 p-5 text-sm muted">
           You do not manage a HOOMA community yet.
         </div>
@@ -367,10 +389,10 @@ export function AdminPage() {
 
   return (
     <div className="page-shell">
-      <div className="section-kicker">Owner / admin</div>
-      <h1 className="section-title">Command center</h1>
+      <div className="section-kicker">Community management</div>
+      <h1 className="section-title">Control room</h1>
       <p className="mt-1 text-sm muted">
-        Switch between every community you manage without leaving the dashboard.
+        Switch between every community you manage without leaving the control room.
       </p>
 
       <select
@@ -383,9 +405,9 @@ export function AdminPage() {
           setSupporterDraft(null);
         }}
       >
-        {admins.data?.map((membership) => (
+        {managedCommunities.data?.map((membership) => (
           <option value={membership.community.id} key={membership.community.id}>
-            {membership.community.name} · {membership.role}
+            {membership.community.name} · {communityRoleLabel(membership.role)}
           </option>
         ))}
       </select>
@@ -599,7 +621,7 @@ export function AdminPage() {
             }
           >
             <option value="MEMBER">Member</option>
-            {isOwner && <option value="ADMIN">Admin</option>}
+            {isOwner && <option value="ADMIN">Manager</option>}
           </select>
           <input
             className="hooma-input"
@@ -632,10 +654,7 @@ export function AdminPage() {
             <div className="reference-row flex items-center gap-3 p-3" key={invite.id}>
               <div className="min-w-0 flex-1">
                 <div className="font-mono text-sm font-black">{invite.codePrefix}••••</div>
-                <div className="mt-1 text-xs muted">
-                  {invite.role} · {invite.useCount}/{invite.maxUses ?? '∞'} uses ·{' '}
-                  {inviteState(invite)}
-                </div>
+                <div className="mt-1 text-xs muted">{inviteSummary(invite)}</div>
               </div>
               {!invite.revokedAt && (
                 <button

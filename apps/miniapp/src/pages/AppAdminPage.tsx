@@ -13,15 +13,15 @@ export function AppAdminPage() {
   const queryClient = useQueryClient();
   const [bootstrapToken, setBootstrapToken] = useState('');
   const access = useQuery({
-    queryKey: ['app-admin', 'me'],
-    queryFn: () => get<PlatformAdminAccess>('/api/v1/app-admin/me'),
+    queryKey: ['platform-admin', 'me'],
+    queryFn: () => get<PlatformAdminAccess>('/api/v1/admin/me'),
   });
   const bootstrap = useMutation({
     mutationFn: () =>
-      post<PlatformAdminAccess>('/api/v1/app-admin/bootstrap', { token: bootstrapToken.trim() }),
+      post<PlatformAdminAccess>('/api/v1/admin/bootstrap', { token: bootstrapToken.trim() }),
     onSuccess: async () => {
       setBootstrapToken('');
-      await queryClient.invalidateQueries({ queryKey: ['app-admin', 'me'] });
+      await queryClient.invalidateQueries({ queryKey: ['platform-admin', 'me'] });
     },
   });
 
@@ -48,9 +48,10 @@ export function AppAdminPage() {
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-5 w-5" aria-hidden="true" />
             <div>
-              <div className="font-black">Platform Admin access required</div>
+              <div className="font-black">App Owner Admin access required</div>
               <p className="mt-1 text-sm muted">
-                Team, Coach, Assistant, and community roles do not grant authority over HOOMA.
+                Team, Coach, Manager, Assistant, and community roles do not grant Admin authority
+                over HOOMA.
               </p>
             </div>
           </div>
@@ -58,8 +59,8 @@ export function AppAdminPage() {
 
         {access.data?.bootstrapAvailable ? (
           <section className="surface-card mt-4 p-5">
-            <div className="section-kicker">Creator setup</div>
-            <h2 className="mt-1 font-black">Claim the first HOOMA Admin role</h2>
+            <div className="section-kicker">Owner setup</div>
+            <h2 className="mt-1 font-black">Claim the HOOMA App Owner Admin role</h2>
             <p className="mt-2 text-sm muted">
               Use the private one-time setup key while signed in to the HOOMA account that should
               own platform administration. Your canonical user ID becomes the database authority;
@@ -102,7 +103,7 @@ export function AppAdminPage() {
 
   return (
     <div className="page-shell vintage-page">
-      <div className="vintage-kicker">HOOMA PLATFORM</div>
+      <div className="vintage-kicker">HOOMA APP OWNER</div>
       <h1 className="vintage-display">Admin</h1>
       <p className="mt-2 text-sm muted">
         Global application authority. Community and Team management remain separate.
@@ -112,7 +113,7 @@ export function AppAdminPage() {
         <div className="flex items-center gap-3">
           <ShieldCheck className="h-5 w-5" aria-hidden="true" />
           <div>
-            <div className="font-black">Platform Admin verified</div>
+            <div className="font-black">App Owner Admin verified</div>
             <p className="mt-1 text-sm muted">
               This access comes only from an active PLATFORM_ADMIN assignment on your canonical
               HOOMA user.
@@ -125,7 +126,7 @@ export function AppAdminPage() {
         <div className="section-kicker">Next admin modules</div>
         <p className="mt-2 text-sm muted">
           Watch and Pitch moderation will be wired here only after their approval workflows are
-          traced and protected by the same Platform Admin boundary.
+          traced and protected by the same App Owner Admin boundary.
         </p>
       </section>
     </div>

@@ -60,7 +60,7 @@ export function CommunityPage() {
           initials={initials(active.name)}
           name={active.name}
           description={community?.description || 'Your football community.'}
-          roleLabel={role === 'OWNER' ? 'Coach' : role === 'ADMIN' ? 'Coach' : null}
+          roleLabel={role === 'OWNER' ? 'Owner' : role === 'ADMIN' ? 'Manager' : null}
           members={community?._count.memberships ?? 0}
           events={community?._count.events ?? 0}
           rides={community?._count.rideOffers ?? 0}
@@ -81,8 +81,8 @@ export function CommunityPage() {
         {['OWNER', 'ADMIN'].includes(role) && (
           <CommunityActionButton
             icon={<ShieldIcon size={22} />}
-            label="Coach Control Room"
-            onClick={() => navigate('/admin')}
+            label="Community Management"
+            onClick={() => navigate('/community-management')}
           />
         )}
       </section>
