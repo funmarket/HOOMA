@@ -81,6 +81,7 @@ The V1 board is inline below `PlayHero`, preserves the canonical global proximit
 Status: **VERIFIED COMPLETE**
 
 Proof:
+
 - contract/UTC implementation head `e7b1131ac2e5aa8ddbb25bb8f03ab53f57a35598`
 - CI `#481` SUCCESS
 - ledger head `7589497638be4e4dfcd9948bb5e7a60874bf7882`, CI `#483` SUCCESS
@@ -93,6 +94,7 @@ Score: **10/10**
 Status: **VERIFIED COMPLETE**
 
 Proof:
+
 - pinned node-redis `5.8.2`
 - lazy Redis lifecycle and fail-closed runtime
 - local/CI Redis `7.4-alpine`
@@ -107,6 +109,7 @@ Score: **10/10**
 Status: **VERIFIED COMPLETE**
 
 Proof:
+
 - atomic Lua send uses Redis server `TIME`
 - one global user/day quota key
 - exact absolute next-midnight `PEXPIREAT`
@@ -123,6 +126,7 @@ Score: **10/10**
 Status: **VERIFIED COMPLETE**
 
 Proof:
+
 - membership gate precedes Redis access
 - canonical identity presentation snapshot
 - stable `429 WHISTLE_DAILY_LIMIT_REACHED`
@@ -140,6 +144,7 @@ Score: **10/10**
 Status: **VERIFIED COMPLETE**
 
 Proof:
+
 - synchronized against current global Play/Watch implementation before edits
 - inline board below `PlayHero`, before Players/Open Matches
 - global proximity-ranked Play discovery preserved
@@ -160,6 +165,7 @@ Score: **10/10**
 Status: **VERIFIED COMPLETE**
 
 Implemented:
+
 - re-audited live Railway project before writes
 - provisioned `HOOMA Redis` from `redis:7.4-alpine` in HOOMA production only
 - Redis has private networking endpoint `hooma-redis` and **no public domain**
@@ -172,6 +178,7 @@ Implemented:
 - PR `#61` was marked ready and merged with expected-head SHA protection
 
 Proof:
+
 - production-compatibility source head `27afc7402dff9e8c9ada0986844a7bf529f03792`
 - CI `#594`, run ID `32676163281`: **SUCCESS** through install, preflight, DB validation/generation, architecture, lint, typecheck, migrations, tests, format, build, security and migration checks
 - exact merged main SHA: `f0a1df35373d8fcc6dbbb223735546c5efa92465`
@@ -183,13 +190,16 @@ Proof:
 - final Mini App variable audit confirms no `REDIS_URL`
 
 Created infrastructure:
+
 - Railway production service `HOOMA Redis` (`fe231b22-3ee0-46ff-8f76-194f921a7d6e`)
 
 Source modified in F6:
+
 - `apps/api/src/infrastructure/redis/client.ts`
 - this living plan
 
 Intentionally untouched:
+
 - Prisma schema/migrations: still no Whistle model/migration
 - Team/ULTRAS Whistle surfaces
 - Team, Gamers, RIDE, Watch, Chat and Notifications business domains
@@ -197,12 +207,14 @@ Intentionally untouched:
 - `funmarket/HoomaUltimate`
 
 Conflict/release status:
+
 - current main was rechecked before merge and had not advanced beyond the synchronized Play/Watch base
 - no other implementation PR remained open at the merge gate
 - PR `#61` is merged; no unmerged Whistle implementation PR remains
 - API and Mini App both deployed the exact merge SHA successfully
 
 Known verification limit:
+
 - tooling available here does not provide an authenticated real-user/community session or expose secret auth material, so an authenticated live POST/GET Whistle smoke request could not be performed without fabricating credentials. This is recorded rather than overclaimed. Redis correctness is covered by permanent real-Redis CI integration tests and production deployment/configuration proof.
 
 Implementation score: **9/10**

@@ -103,6 +103,11 @@ export function SettingsPage() {
               'Matchday Neon',
               'Dark football-console inspired theme with neon match-night accents.',
             ],
+            [
+              'future-pitch',
+              'Future Pitch',
+              'Dark futuristic football presentation with electric live-match accents.',
+            ],
           ] as const
         ).map(([value, label, description]) => (
           <button
@@ -113,7 +118,9 @@ export function SettingsPage() {
             <span className="min-w-0 flex-1">
               <span className="block font-black">{label}</span>
               {description && (
-                <span className="mt-1 block text-xs font-medium leading-5 muted">{description}</span>
+                <span className="mt-1 block text-xs font-medium leading-5 muted">
+                  {description}
+                </span>
               )}
               {value === 'matchday-neon' && (
                 <span className="theme-palette-preview mt-2" aria-hidden="true">
@@ -121,6 +128,14 @@ export function SettingsPage() {
                   <span style={{ background: '#2BFF88' }} />
                   <span style={{ background: '#41D9FF' }} />
                   <span style={{ background: '#7C6DFF' }} />
+                </span>
+              )}
+              {value === 'future-pitch' && (
+                <span className="theme-palette-preview mt-2" aria-hidden="true">
+                  <span style={{ background: '#050605' }} />
+                  <span style={{ background: '#B9FF31' }} />
+                  <span style={{ background: '#67B8FF' }} />
+                  <span style={{ background: '#D0A14A' }} />
                 </span>
               )}
             </span>

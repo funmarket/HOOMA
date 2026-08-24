@@ -1,0 +1,1 @@
+ALTER TYPE "ThemeOverride" ADD VALUE 'FUTURE_PITCH';

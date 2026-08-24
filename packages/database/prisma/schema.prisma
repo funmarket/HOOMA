@@ -30,6 +30,7 @@ enum ThemeOverride {
   LIGHT
   DARK
   MATCHDAY_NEON
+  FUTURE_PITCH
 }
 
 enum SkillLevel {
@@ -425,19 +426,19 @@ model Community {
   requests            Request[]
   rideOffers           RideOffer[]
   rideRequests         RideRequest[]
-  fundraisers         Fundraiser[]
-  fanHubs             FanHub[]
-  places              Place[]
-  venueDeals          VenueDeal[]
-  paymentIntents      PaymentIntent[]
-  paymentDefaults     CommunityPaymentDefault[]
-  activeForUsers      UserPreference[]          @relation("ActiveCommunity")
-  digitalProducts     DigitalProduct[]
-  digitalEntitlements DigitalEntitlement[]
-  auditLogs           AuditLog[]
-  team                Team?
-  teamChallengesSent  TeamChallenge[]           @relation("TeamChallengeProposedCommunity")
-  teamChallengesInbox TeamChallenge[]           @relation("TeamChallengeChallengedCommunity")
+  fundraisers          Fundraiser[]
+  fanHubs              FanHub[]
+  places               Place[]
+  venueDeals           VenueDeal[]
+  paymentIntents       PaymentIntent[]
+  paymentDefaults      CommunityPaymentDefault[]
+  activeForUsers       UserPreference[]          @relation("ActiveCommunity")
+  digitalProducts      DigitalProduct[]
+  digitalEntitlements  DigitalEntitlement[]
+  auditLogs            AuditLog[]
+  team                 Team?
+  teamChallengesSent   TeamChallenge[]           @relation("TeamChallengeProposedCommunity")
+  teamChallengesInbox  TeamChallenge[]           @relation("TeamChallengeChallengedCommunity")
 
   @@index([createdByUserId])
   @@index([visibility, createdAt])
@@ -852,8 +853,8 @@ model PaymentAttempt {
   idempotencyKey       String               @unique @db.VarChar(180)
   providerCheckoutId   String?              @db.VarChar(200)
   providerPaymentId    String?              @db.VarChar(200)
-  providerAmountAtomic String?              @db.VarChar(120)
-  providerCurrency     String?              @db.VarChar(16)
+  providerAmountAtomic String?               @db.VarChar(120)
+  providerCurrency     String?               @db.VarChar(16)
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   completedAt          DateTime?
