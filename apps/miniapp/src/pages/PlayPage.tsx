@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { PlayHero } from '../components/hero/PlayHero';
 import { PickupMatchCard } from '../components/play/PickupMatchCard';
+import { WhistleBoard } from '../components/whistle/WhistleBoard';
 import { UsersIcon } from '../icons/UsersIcon';
 import { hoomaSourceLabel, proximityRankedEvents } from '../lib/hooma-proximity-feed';
 import { useCommunity } from '../providers/CommunityProvider';
@@ -38,6 +39,7 @@ export function PlayPage() {
   return (
     <div className="page-shell vintage-page">
       <PlayHero onCreateMatch={() => navigate('/events/new?type=PLAY')} />
+      {active ? <WhistleBoard communityId={active.id} /> : null}
       <section className="vintage-home-section" aria-labelledby="players-looking-title">
         <div className="vintage-section-heading">
           <div>
