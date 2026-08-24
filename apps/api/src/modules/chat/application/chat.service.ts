@@ -34,13 +34,13 @@ export class ChatService {
 
   async remove(userId: string, eventId: string, messageId: string) {
     const room = await this.room(userId, eventId);
-    let isAdmin = false;
+    let isManager = false;
     try {
-      await this.communities.requireAdmin(userId, room.communityId);
-      isAdmin = true;
+      await this.communities.requireManager(userId, room.communityId);
+      isManager = true;
     } catch (error) {
-      if (!(error instanceof AppError) || error.code !== 'ADMIN_REQUIRED') throw error;
+      if (!(error instanceof AppError) || error.code !== 'COMMUNITY_MANAGER_REQUIRED') throw error;
     }
-    return this.repo.softDelete(messageId, userId, isAdmin);
+    return this.repo.softDelete(messageId, userId, isManager);
   }
 }
