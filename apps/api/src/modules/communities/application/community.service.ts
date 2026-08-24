@@ -23,10 +23,12 @@ export class CommunityService {
     return membership;
   }
 
-  async requireAdmin(userId: string, communityId: string, tx?: TransactionHandle) {
+  async requireManager(userId: string, communityId: string, tx?: TransactionHandle) {
     const membership = await this.requireMembership(userId, communityId, tx);
+    // ADMIN is the persisted legacy CommunityRole value. It is community-scoped only and is
+    // presented to users as Manager; it never grants HOOMA Platform Admin authority.
     if (!['OWNER', 'ADMIN'].includes(membership.role)) {
-      throw new AppError(403, 'ADMIN_REQUIRED', 'Community admin access required');
+      throw new AppError(403, 'COMMUNITY_MANAGER_REQUIRED', 'Community manager access required');
     }
     return membership;
   }
@@ -67,9 +69,9 @@ export class CommunityService {
     },
     requestId: string,
   ) {
-    const actor = await this.requireAdmin(userId, communityId);
+    const actor = await this.requireManager(userId, communityId);
     if (input.role === 'ADMIN' && actor.role !== 'OWNER') {
-      throw new AppError(403, 'OWNER_REQUIRED', 'Only the owner can create admin invites.');
+      throw new AppError(403, 'OWNER_REQUIRED', 'Only the owner can create manager invites.');
     }
     const code = randomBytes(24).toString('base64url');
     const invite = await this.repo.createInvite({
@@ -86,12 +88,12 @@ export class CommunityService {
   }
 
   async invites(userId: string, communityId: string) {
-    await this.requireAdmin(userId, communityId);
+    await this.requireManager(userId, communityId);
     return this.repo.listInvites(communityId);
   }
 
   async revokeInvite(userId: string, communityId: string, inviteId: string, requestId: string) {
-    await this.requireAdmin(userId, communityId);
+    await this.requireManager(userId, communityId);
     return this.repo.revokeInvite(communityId, inviteId, userId, requestId);
   }
 
@@ -113,7 +115,7 @@ export class CommunityService {
   }
 
   async setCashDefault(userId: string, communityId: string, enabled: boolean) {
-    await this.requireAdmin(userId, communityId);
+    await this.requireManager(userId, communityId);
     return this.repo.setCashDefault(communityId, enabled);
   }
 
@@ -129,9 +131,9 @@ export class CommunityService {
     role: 'ADMIN' | 'MEMBER',
     requestId: string,
   ) {
-    const actor = await this.requireAdmin(userId, communityId);
+    const actor = await this.requireManager(userId, communityId);
     if (actor.role !== 'OWNER') {
-      throw new AppError(403, 'OWNER_REQUIRED', 'Only an owner can change admin roles.');
+      throw new AppError(403, 'OWNER_REQUIRED', 'Only an owner can change manager roles.');
     }
     return this.repo.setMemberRolePreservingOwner(
       communityId,
@@ -148,7 +150,7 @@ export class CommunityService {
     targetMembershipId: string,
     requestId: string,
   ) {
-    const actor = await this.requireAdmin(userId, communityId);
+    const actor = await this.requireManager(userId, communityId);
     if (actor.role !== 'OWNER') {
       throw new AppError(403, 'OWNER_REQUIRED', 'Only an owner can transfer ownership.');
     }
@@ -156,7 +158,7 @@ export class CommunityService {
   }
 
   async ban(userId: string, communityId: string, membershipId: string, requestId: string) {
-    await this.requireAdmin(userId, communityId);
+    await this.requireManager(userId, communityId);
     return this.repo.banMember(communityId, membershipId, userId, requestId);
   }
 }
