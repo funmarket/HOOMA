@@ -1,6 +1,6 @@
 # HOOMA Whistle Living Implementation Plan
 
-Last updated: 2026-08-23
+Last updated: 2026-08-24
 Repository: `funmarket/HOOMA`
 Working branch: `feat/whistle-foundation-v1`
 Baseline main SHA: `07b6130173259718473f41d087739b154efcd503`
@@ -72,7 +72,7 @@ All keys use absolute `PEXPIREAT` at the next 00:00 UTC. API reads only the curr
 
 ### Service / HTTP
 
-Planned source:
+Implemented source:
 
 - `apps/api/src/modules/whistle/application/whistle.service.ts`
 - `apps/api/src/modules/whistle/http/whistle.controller.ts`
@@ -277,16 +277,71 @@ Gate decision: **PASSED — F4 may begin after this verification-ledger commit i
 
 ### F4 — Whistle application service + community API
 
-Status: **PENDING**
+Status: **VERIFIED COMPLETE**
 
-Deliverables:
+Deliverables completed:
 
-- active-community membership gate
-- GET/POST community endpoints
-- stable daily-limit and unavailable errors
-- current-day-only reads
-- one retry on a midnight stale-window transition using a fresh UTC window
-- API docs and permanent service/controller tests
+- canonical active-community membership gate before Redis access
+- `GET /api/v1/whistles/communities/:communityId`
+- `POST /api/v1/whistles/communities/:communityId`
+- shared Whistle response contracts with day, daily limit, remaining allowance, reset time, and item/feed payloads
+- canonical identity presentation snapshot using existing `effectiveDisplayName` and `effectivePhotoUrl`
+- stable `429 WHISTLE_DAILY_LIMIT_REACHED`
+- stable `503 WHISTLE_UNAVAILABLE` for unavailable/corrupt transient store
+- current-UTC-day-only reads and one fresh-window retry on a midnight stale transition
+- grapheme-aware POST validation through the shared contract
+- shared cross-workspace Zod error recognition so contract validation correctly returns `400 VALIDATION_ERROR` instead of an accidental 500
+- API documentation and permanent service/real-HTTP tests
+
+Proof:
+
+- Initial F4 CI `#526`, run ID `32668816828`, stopped on the canonical identity `Promise<unknown>` boundary. F4 did not advance.
+- The service was corrected to runtime-narrow the existing canonical identity presentation rather than inventing duplicate profile typing or using `any`.
+- CI `#530`, run ID `32669015113`, passed typecheck and 114/115 tests; the single failure exposed the cross-workspace Zod error-boundary bug. F4 did not advance.
+- The shared API error boundary was fixed at source; CI `#531`, run ID `32669106234`, passed architecture, lint, typecheck, migrations and **115/115 tests**, stopping only on repository formatting.
+- Repository-pinned Prettier was applied only to `whistle.service.ts` and `whistle.controller.ts`; the temporary formatter workflow was then deleted.
+- Exact pre-sync F4 cleanup head `54681f80ebd165d5b6abba0dbea3758cd9be2e0b` passed GitHub Actions CI `#565`, run ID `32672711143`: **SUCCESS** across install, preflight, database validation/generation, architecture, lint, typecheck, migrations, tests, format, build, security, and migration checks.
+- Before final verification, current `main` had advanced to `ce7aa454c4a9de6f6e32add4ff49c92804a27aa8`. A temporary synchronization PR `#71` proved the current main and Whistle histories were cleanly mergeable.
+- The synchronized Whistle head `94ae939e17d117ce14498ede970a86d2178f512b` includes current main and passed GitHub Actions CI `#577`, run ID `32675147217`: **SUCCESS** through every repository quality gate.
+- PR `#61` reports `mergeable: true` after synchronization.
+
+Created files:
+
+- `apps/api/src/modules/whistle/application/whistle.service.ts`
+- `apps/api/src/modules/whistle/http/whistle.controller.ts`
+- `tests/whistle-service.test.ts`
+- `tests/whistle-http.test.ts`
+
+Modified files:
+
+- `packages/contracts/src/whistle.ts`
+- `apps/api/src/bootstrap/container.ts`
+- `apps/api/src/http/v1/router.ts`
+- `apps/api/src/http/middleware/error-handler.ts`
+- `docs/API.md`
+- this living plan
+
+Intentionally untouched:
+
+- Prisma schema and migrations: still no Whistle model or migration
+- Play Mini App UI
+- Team business domain
+- Gamers business domain
+- Chat and Notifications
+- Railway production infrastructure
+- generic rate-limit storage architecture
+- `funmarket/HoomaUltimate`
+
+Conflict status:
+
+- Current main and active concurrent work were re-read before final F4 verification.
+- Current main changes, including merged Gamers and RIDE work, were combined with the Whistle branch through GitHub's clean merge result rather than overwritten downstream.
+- The synchronized head passed full CI, including shared router/container compilation and all repository tests.
+- PR `#61` is mergeable against current main.
+
+Implementation score: **10/10**
+
+Gate decision: **PASSED — F5 may begin after this verification-ledger commit itself passes exact-head CI.**
 
 ### F5 — Play Whistle Board
 
