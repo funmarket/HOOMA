@@ -18,8 +18,8 @@ export function MorePage() {
   const { active } = useCommunity();
   const webSession = getWebSession();
   const platformAdmin = useQuery({
-    queryKey: ['app-admin', 'me'],
-    queryFn: () => get<PlatformAdminAccess>('/api/v1/app-admin/me'),
+    queryKey: ['platform-admin', 'me'],
+    queryFn: () => get<PlatformAdminAccess>('/api/v1/admin/me'),
   });
 
   async function signOut() {
@@ -49,9 +49,9 @@ export function MorePage() {
         {active && ['OWNER', 'ADMIN'].includes(active.role) && (
           <ActionRow
             icon={<ShieldCheck />}
-            title="Coach Control Room"
+            title="Community Management"
             subtitle="Manage your scoped Team and community responsibilities"
-            onClick={() => navigate('/admin')}
+            onClick={() => navigate('/community-management')}
             variant="vintage"
           />
         )}
@@ -61,10 +61,10 @@ export function MorePage() {
             title={platformAdmin.data?.isPlatformAdmin ? 'HOOMA Admin' : 'HOOMA Admin Setup'}
             subtitle={
               platformAdmin.data?.isPlatformAdmin
-                ? 'Global application administration'
-                : 'Claim the one-time creator Platform Admin role'
+                ? 'App Owner administration'
+                : 'Claim the one-time App Owner Admin role'
             }
-            onClick={() => navigate('/app-admin')}
+            onClick={() => navigate('/admin')}
             variant="vintage"
           />
         ) : null}
