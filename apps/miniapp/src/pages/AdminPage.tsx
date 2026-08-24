@@ -144,8 +144,7 @@ export function AdminPage() {
 
   const managedCommunities = useQuery({
     queryKey: ['community-management', 'communities'],
-    queryFn: () =>
-      get<CommunityManagementMembership[]>('/api/v1/community-management/communities'),
+    queryFn: () => get<CommunityManagementMembership[]>('/api/v1/community-management/communities'),
   });
 
   const communityId = selected || managedCommunities.data?.[0]?.community.id || '';
