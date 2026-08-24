@@ -9,6 +9,20 @@ export function placeRouter(service: PlaceService) {
   const router = Router();
 
   router.get(
+    '/discover',
+    asyncHandler(async (req, res) => {
+      const query = typeof req.query.q === 'string' ? req.query.q : undefined;
+      const limit = typeof req.query.limit === 'string' ? Number(req.query.limit) : undefined;
+      res.json(
+        await service.discover(getAuth(req).user.id, {
+          ...(query !== undefined ? { query } : {}),
+          ...(limit !== undefined ? { limit } : {}),
+        }),
+      );
+    }),
+  );
+
+  router.get(
     '/',
     asyncHandler(async (req, res) => {
       const communityId =
