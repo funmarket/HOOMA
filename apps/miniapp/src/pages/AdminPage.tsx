@@ -111,6 +111,11 @@ function communityRoleLabel(role: 'OWNER' | 'ADMIN' | 'MEMBER'): string {
   return 'Member';
 }
 
+function inviteSummary(invite: CommunityInvite): string {
+  const maxUses = invite.maxUses ?? '∞';
+  return `${communityRoleLabel(invite.role)} · ${invite.useCount}/${maxUses} uses · ${inviteState(invite)}`;
+}
+
 export function AdminPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -650,10 +655,7 @@ export function AdminPage() {
             <div className="reference-row flex items-center gap-3 p-3" key={invite.id}>
               <div className="min-w-0 flex-1">
                 <div className="font-mono text-sm font-black">{invite.codePrefix}••••</div>
-                <div className="mt-1 text-xs muted">
-                  {communityRoleLabel(invite.role)} · {invite.useCount}/
-                  {invite.maxUses ?? '∞'} uses · {inviteState(invite)}
-                </div>
+                <div className="mt-1 text-xs muted">{inviteSummary(invite)}</div>
               </div>
               {!invite.revokedAt && (
                 <button
