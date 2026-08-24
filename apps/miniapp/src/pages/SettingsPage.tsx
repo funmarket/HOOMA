@@ -95,18 +95,36 @@ export function SettingsPage() {
       <div className="mt-5 grid gap-3">
         {(
           [
-            ['telegram', 'Telegram theme'],
-            ['dark', 'Pitch black / gold'],
-            ['light', 'White / orange'],
+            ['telegram', 'Telegram theme', null],
+            ['dark', 'Pitch black / gold', null],
+            ['light', 'White / orange', null],
+            [
+              'matchday-neon',
+              'Matchday Neon',
+              'Dark football-console inspired theme with neon match-night accents.',
+            ],
           ] as const
-        ).map(([value, label]) => (
+        ).map(([value, label, description]) => (
           <button
             key={value}
             onClick={() => setMode(value)}
             className="reference-row flex items-center px-5 text-left"
           >
-            <span className="flex-1 font-black">{label}</span>
-            {mode === value && <Check style={{ color: 'var(--accent)' }} />}
+            <span className="min-w-0 flex-1">
+              <span className="block font-black">{label}</span>
+              {description && (
+                <span className="mt-1 block text-xs font-medium leading-5 muted">{description}</span>
+              )}
+              {value === 'matchday-neon' && (
+                <span className="theme-palette-preview mt-2" aria-hidden="true">
+                  <span style={{ background: '#070B12' }} />
+                  <span style={{ background: '#2BFF88' }} />
+                  <span style={{ background: '#41D9FF' }} />
+                  <span style={{ background: '#7C6DFF' }} />
+                </span>
+              )}
+            </span>
+            {mode === value && <Check className="theme-option-check" />}
           </button>
         ))}
       </div>
