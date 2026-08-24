@@ -87,8 +87,7 @@ function applyResolvedTheme(resolved: ResolvedTheme) {
 
 function applyStoredThemeBeforeRender() {
   const stored = storedTheme();
-  if (stored === 'telegram') return;
-  applyResolvedTheme(stored);
+  applyResolvedTheme(stored === 'telegram' ? telegramTheme() : stored);
 }
 
 applyStoredThemeBeforeRender();
