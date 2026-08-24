@@ -3,26 +3,25 @@
 Last updated: 2026-08-24
 Repository: `funmarket/HOOMA`
 Working branch: `feat/whistle-foundation-v1`
-Baseline main SHA: `07b6130173259718473f41d087739b154efcd503`
 Draft PR: `#61`
 
 ## Purpose
 
-This is the canonical living plan for the shared HOOMA Whistle domain. Update it after every verified implementation slice. Repository truth wins over chat history.
+This is the canonical living plan for the shared HOOMA Whistle domain. Repository truth wins over chat history. Update this ledger after every verified implementation slice.
 
 ## Non-negotiable working rules
 
 - Work only in `funmarket/HOOMA`.
 - Treat `funmarket/HoomaUltimate` as read-only reference only.
-- Re-read current `main` and open PRs before every slice.
+- Re-read current `main` and open PRs before every slice and before declaring a slice complete.
 - Fix/build at the source. No patches, duplicate domains, workaround stores, or parallel authority systems.
 - One shared Whistle quota applies across every Whistle context.
 - Whistle must not become permanent chat or a permanent social feed.
 - No Whistle message body may be persisted in PostgreSQL.
 - No Prisma Whistle model or migration unless the product rules explicitly change later.
 - Redis is the authoritative transient Whistle store.
-- A slice may advance only after proof of success and an implementation score above 8/10.
-- After every verified slice record proof, touched files, created files, intentionally untouched files, conflict status, and score.
+- A slice advances only after evidence and an implementation score above 8/10.
+- Every verified slice records proof, created/modified files, intentionally untouched files, conflict status, score, and next gate.
 
 ## Canonical product rules
 
@@ -30,33 +29,33 @@ This is the canonical living plan for the shared HOOMA Whistle domain. Update it
 2. Daily allowance: **11 Whistles per canonical HOOMA user across all contexts combined**.
 3. Quota window: UTC calendar day, never rolling 24 hours.
 4. Reset: **00:00 UTC** every day.
-5. Unused allowance does not roll over. Every UTC day starts at 11.
-6. Every Whistle message from the prior UTC day becomes inaccessible at midnight UTC and its Redis key expires at that same boundary.
+5. Unused allowance does not roll over; every new UTC day starts at 11.
+6. Prior-day Whistles become inaccessible at midnight UTC and their Redis keys expire at that same boundary.
 7. No 24-hour-per-message TTL.
-8. No 60-second per-viewer expiry or reveal state.
+8. No 60-second per-viewer expiry/reveal state.
 9. No permanent message archive/history.
 10. PostgreSQL must not contain Whistle body/history copies.
-11. Notifications, when added later, must never contain the Whistle body.
+11. Notifications, if added later, must never persist the Whistle body.
 12. Redis quota enforcement must be atomic so concurrent sends cannot exceed 11.
-13. If Redis cannot enforce the quota, Whistle writes fail closed while unrelated HOOMA features remain available.
+13. If Redis cannot enforce quota, Whistle fails closed while unrelated HOOMA features remain available.
 14. V1 Play Whistle reads/writes require an authenticated active community member.
-15. Future Team and ULTRAS boards reuse the same domain and user quota; they must not introduce separate daily counters.
+15. Future Team and ULTRAS boards reuse the same domain and global user/day quota.
 
-## Target architecture
+## Canonical architecture
 
-### Shared contract
+### Contracts
 
 `packages/contracts/src/whistle.ts`
 
-Owns Whistle constants, grapheme-aware body validation, and request/response contract types as they are introduced.
+Owns constants, grapheme-aware validation, response schemas, and shared request/response types.
 
-### UTC window domain
+### UTC day boundary
 
 `apps/api/src/modules/whistle/domain/utc-day.ts`
 
-Owns canonical UTC day identity, start/reset timestamps, and current-window validation. Redis code must consume this helper rather than reproducing midnight arithmetic.
+Owns UTC day identity, start/reset timestamps, and current-window validation.
 
-### Redis infrastructure
+### Redis runtime/store
 
 - `apps/api/src/infrastructure/redis/client.ts`
 - `apps/api/src/modules/whistle/application/whistle-store.ts`
@@ -66,13 +65,11 @@ Canonical key families:
 
 - `whistle:v1:quota:<YYYY-MM-DD>:<userId>`
 - `whistle:v1:feed:<YYYY-MM-DD>:community:<communityId>`
-- future Team and ULTRAS feed keys use the same day namespace and global quota key
+- future Team/ULTRAS feeds use the same day namespace and global quota key
 
-All keys use absolute `PEXPIREAT` at the next 00:00 UTC. API reads only the current UTC-day namespace.
+Every Whistle Redis key uses absolute expiry at the canonical next UTC midnight.
 
 ### Service / HTTP
-
-Implemented source:
 
 - `apps/api/src/modules/whistle/application/whistle.service.ts`
 - `apps/api/src/modules/whistle/http/whistle.controller.ts`
@@ -82,18 +79,16 @@ V1 routes:
 - `GET /api/v1/whistles/communities/:communityId`
 - `POST /api/v1/whistles/communities/:communityId`
 
-The service reuses existing canonical authentication and `CommunityService.requireMembership()`; it does not invent a second membership system.
+The service reuses canonical authentication, community membership, and identity presentation.
 
 ### Mini App
-
-Planned source:
 
 - `apps/miniapp/src/features/whistle/api.ts`
 - `apps/miniapp/src/components/whistle/WhistleBoard.tsx`
 - `apps/miniapp/src/components/whistle/WhistleBoard.css`
 - `apps/miniapp/src/pages/PlayPage.tsx`
 
-V1 presentation is an inline Play Whistle Board under the Play hero. It must use the shared HTTP client and HOOMA design tokens. No likes, comments, threads, permanent history, or generic social-feed mechanics.
+The V1 board is inline beneath the Play hero. It uses the shared HTTP client, React Query, shared Whistle contracts, and HOOMA visual tokens. No likes, comments, threads, follows, modal feed, or permanent history.
 
 ## Implementation ledger
 
@@ -101,86 +96,71 @@ V1 presentation is an inline Play Whistle Board under the Play hero. It must use
 
 Status: **VERIFIED COMPLETE**
 
-Deliverables completed:
+Implemented:
 
-- canonical constants `WHISTLE_DAILY_LIMIT = 11` and `WHISTLE_MAX_GRAPHEMES = 33`
-- grapheme-aware validation using `Intl.Segmenter`
+- `WHISTLE_DAILY_LIMIT = 11`
+- `WHISTLE_MAX_GRAPHEMES = 33`
+- `Intl.Segmenter` grapheme validation
 - canonical UTC day/start/reset helper
-- permanent tests for Unicode grapheme clusters, exact 33/34 boundaries, whitespace rejection, midnight reset, and year rollover
+- permanent Unicode, 33/34 boundary, whitespace, midnight, and year-rollover tests
 
 Proof:
 
-- Draft PR `#61` exact tested head: `e7b1131ac2e5aa8ddbb25bb8f03ab53f57a35598`
-- GitHub Actions CI run `#481`, run ID `32666033801`: **SUCCESS**
-- Branch comparison against baseline main before CI: ahead 6 commits, behind 0, exactly 6 touched files
-- Current main remained `07b6130173259718473f41d087739b154efcd503` at the verification gate
+- implementation head `e7b1131ac2e5aa8ddbb25bb8f03ab53f57a35598`
+- CI `#481`, run ID `32666033801`: **SUCCESS**
+- verification-ledger head `7589497638be4e4dfcd9948bb5e7a60874bf7882`
+- CI `#483`: **SUCCESS**
 
-Created files:
+Created:
 
-- `docs/WHISTLE_LIVING_PLAN.md`
 - `packages/contracts/src/whistle.ts`
 - `apps/api/src/modules/whistle/domain/utc-day.ts`
 - `tests/whistle-contract.test.ts`
 - `tests/whistle-utc-day.test.ts`
-
-Modified files:
-
-- `packages/contracts/src/index.ts`
 - this living plan
 
-Intentionally untouched:
+Modified:
 
-- Redis/runtime infrastructure
-- Railway
-- Prisma schema and migrations
-- Team domain
-- Gamers domain
-- Play UI
-- API router/container
-- Chat and Notifications
+- `packages/contracts/src/index.ts`
 
-Conflict status:
+Intentionally untouched: Redis, Railway, Prisma Whistle persistence, API Whistle routes, Play UI, Team/Gamers/Chat/Notifications.
 
-- F1 did not touch the shared files changed by concurrent Gamers work.
-- No Team/Gamers business source was edited.
+Conflict status: no concurrent Team/Gamers business source touched.
 
 Implementation score: **10/10**
 
-Gate decision: **PASSED — F2 may begin.**
+Gate: **PASSED**
 
 ### F2 — Redis runtime foundation
 
 Status: **VERIFIED COMPLETE**
 
-Deliverables completed:
+Implemented:
 
-- pinned API dependency `redis = 5.8.2` with npm-generated root lockfile
-- lazy, isolated `RedisRuntime` connection lifecycle and stable `RedisUnavailableError`
-- exact inferred node-redis client type; no unsafe generic cast workaround
+- pinned `redis = 5.8.2`
+- lazy isolated `RedisRuntime`
+- stable `RedisUnavailableError`
 - production `REDIS_URL` validation
-- graceful Redis shutdown alongside PostgreSQL
-- local `redis:7.4-alpine` Docker service
-- CI Redis service with health check and `REDIS_URL`
-- production deploy-preflight requirement for `REDIS_URL`
-- permanent runtime tests proving no-config fail-closed behavior, single shared connection, and real Redis `PING/PONG`
+- graceful shutdown
+- local and CI Redis `7.4-alpine`
+- production deploy-preflight requirement
+- permanent runtime tests
 
 Proof:
 
-- First F2 CI run `#507`, run ID `32667038001`, correctly FAILED at typecheck because an explicit generic `RedisClientType` was too narrow under the repository's `exactOptionalPropertyTypes` rules. F2 was not advanced.
-- The source type was corrected using `ReturnType<typeof createClient>` and a captured non-null client rather than a cast.
-- Corrected implementation exact tested head: `38734ddceddf7b43286a3dadb757334765104196`.
-- GitHub Actions CI run `#508`, run ID `32667143503`: quality job **SUCCESS** through install, preflight, database validation/generation, architecture check, lint, typecheck, migrations, tests, format, build, security, and migration checks.
-- Exact F2 verification-ledger head `43eb3b1a64a03c771f4af793dd5e76180eb24204` passed CI `#510`, run ID `32667288962`: **SUCCESS**.
-- CI Redis service `redis:7.4-alpine` became healthy; runtime integration test ran with `REDIS_URL=redis://localhost:6379`.
-- `npm ci` reported 0 vulnerabilities.
-- Root `package-lock.json` was produced by npm on a temporary branch-only lockfile-sync workflow; that temporary workflow was deleted and leaves no final repository file.
+- first CI `#507` correctly stopped on a TypeScript boundary; no advancement
+- corrected implementation head `38734ddceddf7b43286a3dadb757334765104196`
+- CI `#508`, run ID `32667143503`: **SUCCESS**
+- ledger head `43eb3b1a64a03c771f4af793dd5e76180eb24204`
+- CI `#510`: **SUCCESS**
+- `npm ci`: 0 vulnerabilities
 
-Created files:
+Created:
 
 - `apps/api/src/infrastructure/redis/client.ts`
 - `tests/redis-runtime.test.ts`
 
-Modified files:
+Modified:
 
 - `apps/api/package.json`
 - `package-lock.json`
@@ -191,170 +171,172 @@ Modified files:
 - `docker-compose.yml`
 - `.github/workflows/ci.yml`
 - `scripts/deploy-preflight.mjs`
-- this living plan
 
-Intentionally untouched:
+Intentionally untouched: Prisma Whistle persistence, Whistle API, Play UI, Railway production, Team/Gamers/Chat/Notifications, generic rate-limit storage.
 
-- Prisma schema and migrations
-- Whistle API router/controller/service
-- Play UI
-- Team domain
-- Gamers domain
-- Chat and Notifications
-- Railway production services and variables
-- generic `RATE_LIMIT_STORE=memory` architecture
-
-Conflict status:
-
-- Concurrent Team and Gamers lanes were inspected before implementation.
-- No Team/Gamers business logic was duplicated or modified.
+Conflict status: concurrent Team/Gamers lanes inspected; no duplicate business logic introduced.
 
 Implementation score: **10/10**
 
-Gate decision: **PASSED — F3 may begin.**
+Gate: **PASSED**
 
 ### F3 — Atomic Redis Whistle store
 
 Status: **VERIFIED COMPLETE**
 
-Deliverables completed:
+Implemented:
 
-- one global user/day quota key shared across every Whistle scope
-- Redis Stream feed keys scoped by UTC day and context
-- atomic Lua send operation using Redis server `TIME`
-- exact 11/day enforcement under concurrency
-- absolute `PEXPIREAT` expiry for quota and feed at next 00:00 UTC
-- stale-window rejection before mutation and before stale reads are surfaced
-- fail-closed behavior for unavailable Redis and malformed Redis key types/values
-- minimal transient author snapshot only; no PostgreSQL persistence
-- permanent real-Redis integration tests
+- one global user/day quota key across all Whistle scopes
+- Redis Stream daily feed keys
+- atomic Lua send using Redis server `TIME`
+- exact 11/day concurrency enforcement
+- absolute `PEXPIREAT` at next 00:00 UTC
+- stale-window rejection
+- unavailable/corrupt Redis fail-closed behavior
+- transient author snapshot only; no PostgreSQL persistence
 
 Proof:
 
-- Initial F3 implementation CI `#514`, run ID `32667947432`, correctly stopped on a TypeScript boundary around the node-redis `TIME` return type. The implementation did not advance.
-- The TIME result boundary was corrected by accepting the library's array type and explicitly validating both required elements and finite numeric conversion.
-- Corrected behavior CI `#515`, run ID `32668044838`, passed typecheck and all **108/108 tests**, including the F3 Redis tests; it stopped only on repository formatting.
-- Repository-pinned Prettier was then applied to the two new Whistle store source files. The temporary formatting workflow was deleted and leaves no final repository file.
-- Exact final F3 implementation head: `c97632c9ffc9275f164cd2238cf32c5c9722864b`.
-- GitHub Actions CI run `#520`, run ID `32668386562`: **SUCCESS** through install, preflight, DB validation/generation, architecture, lint, typecheck, migrations, all tests, format, build, security, and migration checks.
-- Concurrency proof: 20 simultaneous sends by one fresh user split across two community scopes produced exactly **11 accepted and 9 limit-reached** results; total feed entries across both contexts remained exactly 11 and quota became `{ used: 11, remaining: 0 }`.
-- Expiry proof: Redis `PEXPIRETIME` for both quota and feed exactly equaled the canonical next UTC midnight timestamp, not creation time + 24 hours.
-- Stale-day proof: yesterday-window send/list/quota returned `stale_window` and created no quota key.
-- Corruption proof: invalid Redis quota key type fails closed with `WhistleStoreCorruptError`.
-- PR CI checked a synthetic merge of the Whistle head against current main `84007ba2353f7a65acae0424b242772e9205ed8e`, proving the slice remains compatible with the merged Team Control Room work.
+- CI `#514` correctly stopped on node-redis `TIME` typing; no advancement
+- CI `#515` passed typecheck and **108/108 tests**, stopping only on formatting
+- final implementation head `c97632c9ffc9275f164cd2238cf32c5c9722864b`
+- CI `#520`, run ID `32668386562`: **SUCCESS**
+- ledger head `80783a02a638a523f5e67b568a5da74e866f6b47`
+- CI `#521`: **SUCCESS**
+- 20 concurrent sends across two scopes => exactly **11 accepted / 9 limited**
+- feed total remained 11; quota became `{ used: 11, remaining: 0 }`
+- quota/feed expiry exactly matched next UTC midnight
+- stale-day operations exposed no stale data and created no quota key
 
-Created files:
+Created:
 
 - `apps/api/src/modules/whistle/application/whistle-store.ts`
 - `apps/api/src/modules/whistle/infrastructure/redis-whistle.store.ts`
 - `tests/redis-whistle-store.test.ts`
 
-Modified files:
+Modified: this living plan only for verification.
 
-- this living plan
+Intentionally untouched: Prisma Whistle persistence, Whistle HTTP/service, Play UI, Railway production, Team/Gamers/Chat/Notifications.
 
-Intentionally untouched:
-
-- Prisma schema and migrations
-- API Whistle controller/service/routes
-- Play UI
-- Team domain
-- Gamers domain
-- Chat and Notifications
-- Railway production infrastructure
-- generic HTTP rate-limit storage
-
-Conflict status:
-
-- Current main and active PRs were re-read before F3.
-- Team Control Room PR `#62` had merged into main before F3 verification.
-- Concurrent Gamers PR `#64` explicitly excluded Whistle; F3 touched only Whistle/Redis test sources.
-- Synthetic-merge CI against current main passed all repository gates.
+Conflict status: synthetic merge against then-current main passed all repository gates.
 
 Implementation score: **10/10**
 
-Gate decision: **PASSED — F4 may begin after this verification-ledger commit itself passes exact-head CI.**
+Gate: **PASSED**
 
 ### F4 — Whistle application service + community API
 
 Status: **VERIFIED COMPLETE**
 
-Deliverables completed:
+Implemented:
 
-- canonical active-community membership gate before Redis access
-- `GET /api/v1/whistles/communities/:communityId`
-- `POST /api/v1/whistles/communities/:communityId`
-- shared Whistle response contracts with day, daily limit, remaining allowance, reset time, and item/feed payloads
-- canonical identity presentation snapshot using existing `effectiveDisplayName` and `effectivePhotoUrl`
+- active-community membership gate before Redis
+- GET/POST community Whistle routes
+- shared response contracts with day, limit, remaining, resetAt and items
+- canonical `effectiveDisplayName` / `effectivePhotoUrl` snapshot
 - stable `429 WHISTLE_DAILY_LIMIT_REACHED`
-- stable `503 WHISTLE_UNAVAILABLE` for unavailable/corrupt transient store
-- current-UTC-day-only reads and one fresh-window retry on a midnight stale transition
-- grapheme-aware POST validation through the shared contract
-- shared cross-workspace Zod error recognition so contract validation correctly returns `400 VALIDATION_ERROR` instead of an accidental 500
-- API documentation and permanent service/real-HTTP tests
+- stable `503 WHISTLE_UNAVAILABLE`
+- current-day-only reads and one fresh-window retry across midnight
+- shared cross-workspace Zod error recognition so contract errors return canonical 400
+- API docs and permanent service/HTTP tests
 
 Proof:
 
-- Initial F4 CI `#526`, run ID `32668816828`, stopped on the canonical identity `Promise<unknown>` boundary. F4 did not advance.
-- The service was corrected to runtime-narrow the existing canonical identity presentation rather than inventing duplicate profile typing or using `any`.
-- CI `#530`, run ID `32669015113`, passed typecheck and 114/115 tests; the single failure exposed the cross-workspace Zod error-boundary bug. F4 did not advance.
-- The shared API error boundary was fixed at source; CI `#531`, run ID `32669106234`, passed architecture, lint, typecheck, migrations and **115/115 tests**, stopping only on repository formatting.
-- Repository-pinned Prettier was applied only to `whistle.service.ts` and `whistle.controller.ts`; the temporary formatter workflow was then deleted.
-- Exact pre-sync F4 cleanup head `54681f80ebd165d5b6abba0dbea3758cd9be2e0b` passed GitHub Actions CI `#565`, run ID `32672711143`: **SUCCESS** across install, preflight, database validation/generation, architecture, lint, typecheck, migrations, tests, format, build, security, and migration checks.
-- Before final verification, current `main` had advanced to `ce7aa454c4a9de6f6e32add4ff49c92804a27aa8`. A temporary synchronization PR `#71` proved the current main and Whistle histories were cleanly mergeable.
-- The synchronized Whistle head `94ae939e17d117ce14498ede970a86d2178f512b` includes current main and passed GitHub Actions CI `#577`, run ID `32675147217`: **SUCCESS** through every repository quality gate.
-- PR `#61` reports `mergeable: true` after synchronization.
+- CI `#526` stopped on canonical identity `Promise<unknown>` boundary; no advancement
+- CI `#530` passed typecheck and 114/115 tests; exposed shared Zod boundary bug
+- source-level error boundary fix made **115/115 tests pass** in CI `#531`; format only remained
+- pre-sync cleanup head `54681f80ebd165d5b6abba0dbea3758cd9be2e0b`
+- CI `#565`, run ID `32672711143`: **SUCCESS**
+- synchronization PR `#71` proved clean merge with then-current main
+- synchronized head `94ae939e17d117ce14498ede970a86d2178f512b`
+- CI `#577`, run ID `32675147217`: **SUCCESS**
+- F4 ledger head `aee7874ef9e3f49e22814352622ba4401545b54b`
+- CI `#580`: **SUCCESS**
 
-Created files:
+Created:
 
 - `apps/api/src/modules/whistle/application/whistle.service.ts`
 - `apps/api/src/modules/whistle/http/whistle.controller.ts`
 - `tests/whistle-service.test.ts`
 - `tests/whistle-http.test.ts`
 
-Modified files:
+Modified:
 
 - `packages/contracts/src/whistle.ts`
 - `apps/api/src/bootstrap/container.ts`
 - `apps/api/src/http/v1/router.ts`
 - `apps/api/src/http/middleware/error-handler.ts`
 - `docs/API.md`
+
+Intentionally untouched: Prisma Whistle persistence, Play Mini App UI, Railway production, Team/Gamers/Chat/Notifications, generic rate-limit architecture.
+
+Conflict status: synchronized head included then-current main and passed all shared router/container/repository gates.
+
+Implementation score: **10/10**
+
+Gate: **PASSED**
+
+### F5 — Play Whistle Board
+
+Status: **VERIFIED COMPLETE**
+
+Implemented:
+
+- inline Whistle Board directly beneath `PlayHero` and before Players/Open Matches
+- preserved canonical global proximity-ranked Play discovery from current main
+- shared-client API wrapper for current community feed/send routes
+- React Query polling every 15 seconds with background polling disabled
+- immediate cache update plus canonical invalidation after send
+- server-provided `day`, `remaining`, `dailyLimit`, and `resetAt` presentation
+- shared `countWhistleGraphemes()` and `WHISTLE_MAX_GRAPHEMES` client feedback; server remains authoritative
+- quota-exhausted send lockout
+- loading, empty, unavailable/error, mutation-error, and over-limit states
+- avatar/name/body/relative-time terrace rows
+- responsive HOOMA vintage styling using existing tokens
+- no likes/comments/threads/follows and no direct frontend `fetch`
+- permanent Mini App source-contract tests
+
+Proof:
+
+- before F5, current main had advanced to `dbff53f220e71c863b1417a4c77ddab09dc66867` with global proximity-ranked Play/Watch feeds
+- temporary synchronization PR `#73` proved a clean merge before touching Play
+- Whistle branch synchronized to combined head `835a4b9d755e1e3f3e9a1c616e9e5ffe27f53205`
+- first F5 implementation CI `#589`, run ID `32675628861`, passed architecture, lint, typecheck, migrations and **144/144 tests**; only repository formatting failed on two new files
+- repository-pinned Prettier changed only `WhistleBoard.css` and `features/whistle/api.ts`; temporary formatter workflow was deleted
+- exact cleaned F5 head `c228d522b43722b7f5fe31e9866abb0d0f3fc230`
+- CI `#592`, run ID `32675779105`: **SUCCESS** across install, preflight, DB validation/generation, architecture, lint, typecheck, migrations, **144/144 tests**, formatting, build, security and migration checks
+- final concurrency check: current main remained `dbff53f220e71c863b1417a4c77ddab09dc66867`
+- final open-PR check: only Whistle PR `#61` remained open
+
+Created:
+
+- `apps/miniapp/src/features/whistle/api.ts`
+- `apps/miniapp/src/components/whistle/WhistleBoard.tsx`
+- `apps/miniapp/src/components/whistle/WhistleBoard.css`
+- `tests/whistle-ui.test.ts`
+
+Modified:
+
+- `apps/miniapp/src/pages/PlayPage.tsx`
 - this living plan
 
 Intentionally untouched:
 
-- Prisma schema and migrations: still no Whistle model or migration
-- Play Mini App UI
-- Team business domain
-- Gamers business domain
-- Chat and Notifications
+- canonical Play proximity/ranking helper and backend discovery source
+- Prisma schema/migrations: still no Whistle model/migration
+- Team, Gamers, RIDE, Watch, Chat and Notifications business domains
 - Railway production infrastructure
-- generic rate-limit storage architecture
 - `funmarket/HoomaUltimate`
 
 Conflict status:
 
-- Current main and active concurrent work were re-read before final F4 verification.
-- Current main changes, including merged Gamers and RIDE work, were combined with the Whistle branch through GitHub's clean merge result rather than overwritten downstream.
-- The synchronized head passed full CI, including shared router/container compilation and all repository tests.
-- PR `#61` is mergeable against current main.
+- F5 started only after synchronizing to the current global Play/Watch main implementation.
+- No other open implementation PR existed at the final conflict gate except Whistle `#61`.
+- The exact cleaned head passed the complete repository CI pipeline.
 
 Implementation score: **10/10**
 
-Gate decision: **PASSED — F5 may begin after this verification-ledger commit itself passes exact-head CI.**
-
-### F5 — Play Whistle Board
-
-Status: **PENDING**
-
-Deliverables:
-
-- Play-page inline board
-- remaining quota/reset display
-- 33-grapheme composer
-- loading/empty/error/exhausted states
-- polling through the existing shared HTTP architecture
-- responsive Telegram/web presentation using HOOMA tokens
+Gate: **PASSED — F6 may begin after this ledger-only head passes exact-head CI.**
 
 ### F6 — Production Redis + release verification
 
@@ -362,24 +344,24 @@ Status: **PENDING**
 
 Deliverables:
 
-- Railway Redis service/private connectivity
-- `REDIS_URL` wiring without exposing secrets
-- exact-head full CI green
-- conflict audit against current `main`
-- merge
-- verify exact merged SHA deployed successfully to HOOMA API and Mini App
-- smoke-check health and Whistle failure boundaries
+- re-audit current Railway project/services/config before writes
+- provision private Redis in the HOOMA Railway project only
+- wire API `REDIS_URL` by private reference/secret; no Mini App Redis variable
+- keep generic `RATE_LIMIT_STORE=memory` unless separately redesigned
+- exact-head full CI and final conflict audit
+- update PR `#61` title/body to reflect the complete Whistle V1 scope
+- merge exact verified PR head with expected-head protection
+- verify HOOMA API and Mini App deploy the exact merged main SHA successfully
+- smoke-check health and Whistle availability/failure boundaries where tooling permits
 
 ### F7 — Team / ULTRAS integrations
 
-Status: **BLOCKED UNTIL THEIR CANONICAL MEMBER SURFACES ARE STABLE**
+Status: **BLOCKED UNTIL CANONICAL MEMBER SURFACES ARE STABLE**
 
-Reuse F1-F6. No new quotas, no duplicate store, no parallel Whistle domain.
+Reuse F1-F6. No new quota, duplicate store, or parallel Whistle domain.
 
 ## Verification policy
 
-A step is only **VERIFIED COMPLETE** when evidence exists. Implementation scoring:
-
-- 10/10: architecture correct, tests/CI green, no known defects/conflicts, deployment proof when applicable.
-- 9/10: fully correct and verified with only non-blocking polish remaining.
-- 8/10 or below: do not advance; repair/retest the same step.
+- **10/10**: architecture correct, tests/CI green, no known defects/conflicts, deployment proof when applicable.
+- **9/10**: fully correct and verified with only non-blocking polish remaining.
+- **8/10 or below**: do not advance; repair and retest the same slice.
