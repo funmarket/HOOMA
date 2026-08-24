@@ -5,7 +5,8 @@ import {
   type WhistleMessageView,
 } from '@hooma/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FormEvent, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import {
   getCommunityWhistles,
   sendCommunityWhistle,
@@ -84,7 +85,7 @@ export function WhistleBoard({ communityId }: { communityId: string }) {
         items: [
           response.item,
           ...(current?.day === response.day
-            ? (current.items.filter((item) => item.id !== response.item.id) ?? [])
+            ? current.items.filter((item) => item.id !== response.item.id)
             : []),
         ],
       }));
