@@ -63,7 +63,10 @@ export function MembersPage() {
 
   const ban = useMutation({
     mutationFn: (membershipId: string) =>
-      patch(`/api/v1/community-management/communities/${active?.id}/members/${membershipId}/ban`, {}),
+      patch(
+        `/api/v1/community-management/communities/${active?.id}/members/${membershipId}/ban`,
+        {},
+      ),
     onSuccess: () => {
       notify('success');
       refresh();
