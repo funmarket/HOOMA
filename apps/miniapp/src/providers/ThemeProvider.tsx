@@ -11,8 +11,8 @@ import { themeParams } from '@tma.js/sdk-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCurrentProfile, profileQueryKeys, updateCurrentProfile } from '../features/profile/api';
 
-type ThemeMode = 'telegram' | 'dark' | 'light' | 'matchday-neon';
-type ResolvedTheme = 'dark' | 'light' | 'matchday-neon';
+type ThemeMode = 'telegram' | 'dark' | 'light' | 'matchday-neon' | 'future-pitch';
+type ResolvedTheme = 'dark' | 'light' | 'matchday-neon' | 'future-pitch';
 type ThemeContextValue = {
   mode: ThemeMode;
   resolved: ResolvedTheme;
@@ -46,12 +46,16 @@ function fromServerTheme(value?: string | null): ThemeMode | null {
   if (value === 'DARK') return 'dark';
   if (value === 'LIGHT') return 'light';
   if (value === 'MATCHDAY_NEON') return 'matchday-neon';
+  if (value === 'FUTURE_PITCH') return 'future-pitch';
   return null;
 }
 
-function toServerTheme(value: ThemeMode): 'TELEGRAM' | 'DARK' | 'LIGHT' | 'MATCHDAY_NEON' {
+function toServerTheme(
+  value: ThemeMode,
+): 'TELEGRAM' | 'DARK' | 'LIGHT' | 'MATCHDAY_NEON' | 'FUTURE_PITCH' {
   if (value === 'telegram') return 'TELEGRAM';
   if (value === 'matchday-neon') return 'MATCHDAY_NEON';
+  if (value === 'future-pitch') return 'FUTURE_PITCH';
   return value === 'dark' ? 'DARK' : 'LIGHT';
 }
 
@@ -59,7 +63,8 @@ function validStoredTheme(value: string | null): ThemeMode | null {
   return value === 'dark' ||
     value === 'light' ||
     value === 'telegram' ||
-    value === 'matchday-neon'
+    value === 'matchday-neon' ||
+    value === 'future-pitch'
     ? value
     : null;
 }
@@ -67,6 +72,26 @@ function validStoredTheme(value: string | null): ThemeMode | null {
 function storedTheme(): ThemeMode {
   return validStoredTheme(localStorage.getItem(STORAGE_KEY)) ?? 'telegram';
 }
+
+function applyResolvedTheme(resolved: ResolvedTheme) {
+  document.documentElement.dataset.theme = resolved;
+  document.documentElement.style.backgroundColor =
+    resolved === 'matchday-neon'
+      ? '#03050B'
+      : resolved === 'future-pitch'
+        ? '#020302'
+        : resolved === 'dark'
+          ? '#050505'
+          : '#ffffff';
+}
+
+function applyStoredThemeBeforeRender() {
+  const stored = storedTheme();
+  if (stored === 'telegram') return;
+  applyResolvedTheme(stored);
+}
+
+applyStoredThemeBeforeRender();
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
@@ -100,9 +125,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = resolved;
-    document.documentElement.style.backgroundColor =
-      resolved === 'matchday-neon' ? '#03050B' : resolved === 'dark' ? '#050505' : '#ffffff';
+    applyResolvedTheme(resolved);
   }, [resolved]);
 
   const setMode = useCallback(
