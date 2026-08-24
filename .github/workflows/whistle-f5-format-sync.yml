@@ -1,0 +1,34 @@
+name: Whistle F5 Format Sync
+
+on:
+  push:
+    branches: [feat/whistle-foundation-v1]
+    paths:
+      - '.github/workflows/whistle-f5-format-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write apps/miniapp/src/components/whistle/WhistleBoard.css apps/miniapp/src/features/whistle/api.ts
+      - name: Commit exact repository formatting
+        run: |
+          if git diff --quiet -- apps/miniapp/src/components/whistle/WhistleBoard.css apps/miniapp/src/features/whistle/api.ts; then
+            echo 'F5 Whistle sources are already formatted.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/miniapp/src/components/whistle/WhistleBoard.css apps/miniapp/src/features/whistle/api.ts
+          git commit -m 'style(whistle): apply F5 repository Prettier'
+          git push origin HEAD:${GITHUB_REF_NAME}
