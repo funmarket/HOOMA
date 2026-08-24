@@ -13,3 +13,4 @@ export * from './chat.js';
 export * from './teams.js';
 export * from './pitch.js';
 export * from './gamers.js';
+export * from './whistle.js';
