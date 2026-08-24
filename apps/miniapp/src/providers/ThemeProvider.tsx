@@ -65,7 +65,7 @@ function validStoredTheme(value: string | null): ThemeMode | null {
 }
 
 function storedTheme(): ThemeMode {
-  return validStoredTheme(localStorage.getItem(STORAGE_KEY)) ?? 'telegram';
+  return validStoredTheme(localStorage.getItem(STORAGE_KEY)) ?? 'matchday-neon';
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
