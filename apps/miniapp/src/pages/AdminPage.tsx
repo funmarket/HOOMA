@@ -323,7 +323,9 @@ export function AdminPage() {
     onSuccess: async () => {
       notify('success');
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['community-management', 'cash-due', communityId] }),
+        queryClient.invalidateQueries({
+          queryKey: ['community-management', 'cash-due', communityId],
+        }),
         queryClient.invalidateQueries({
           queryKey: ['community-management', 'dashboard', communityId],
         }),
@@ -649,8 +651,8 @@ export function AdminPage() {
               <div className="min-w-0 flex-1">
                 <div className="font-mono text-sm font-black">{invite.codePrefix}••••</div>
                 <div className="mt-1 text-xs muted">
-                  {communityRoleLabel(invite.role)} · {invite.useCount}/{invite.maxUses ?? '∞'} uses ·{' '}
-                  {inviteState(invite)}
+                  {communityRoleLabel(invite.role)} · {invite.useCount}/
+                  {invite.maxUses ?? '∞'} uses · {inviteState(invite)}
                 </div>
               </div>
               {!invite.revokedAt && (
