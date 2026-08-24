@@ -18,7 +18,9 @@ export function AppAdminPage() {
   });
   const bootstrap = useMutation({
     mutationFn: () =>
-      post<PlatformAdminAccess>('/api/v1/admin/bootstrap', { token: bootstrapToken.trim() }),
+      post<PlatformAdminAccess>('/api/v1/admin/bootstrap', {
+        token: bootstrapToken.trim(),
+      }),
     onSuccess: async () => {
       setBootstrapToken('');
       await queryClient.invalidateQueries({ queryKey: ['platform-admin', 'me'] });
