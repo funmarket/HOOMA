@@ -436,7 +436,8 @@ export class PrismaIdentityRepository implements IdentityRepository {
                   | 'TELEGRAM'
                   | 'LIGHT'
                   | 'DARK'
-                  | 'MATCHDAY_NEON',
+                  | 'MATCHDAY_NEON'
+                  | 'FUTURE_PITCH',
               }
             : {}),
         },
@@ -447,7 +448,8 @@ export class PrismaIdentityRepository implements IdentityRepository {
                   | 'TELEGRAM'
                   | 'LIGHT'
                   | 'DARK'
-                  | 'MATCHDAY_NEON',
+                  | 'MATCHDAY_NEON'
+                  | 'FUTURE_PITCH',
               }
             : {},
       });
