@@ -42,6 +42,7 @@ The current API router/container/auth conventions remain in place. Reference rep
 ## Persistence
 
 Extend the current Prisma schema non-destructively with:
+
 - GamerChallenge and GamerChallengeStatus.
 - GamerMatchSession, GamerMatchSubmission, GamerMatchSessionStatus, GamerMatchSide, GamerMatchResolution.
 - required relations/indexes/check constraints through timestamped migrations.
@@ -51,15 +52,19 @@ Existing GamerGame/GamerProfile tables remain canonical and are extended only wh
 ## Shared dependencies
 
 ### Identity
+
 Use current `UserProfileIdentity(GAMER)`. Add the narrow additive Gamer enrollment operation needed by the reference onboarding flow without replacing full profile state.
 
 ### Whistle
+
 Extend the existing Redis Whistle store/service with a Gamer-direct scope. Keep the existing global daily quota and expiry semantics; do not create Gamer messaging tables.
 
 ### Object storage
+
 Add the minimal shared S3-compatible storage package required by reference match-proof handling. This is shared infrastructure, not a Gamers-only storage implementation.
 
 ### Worker
+
 Add a minimal HOOMA worker workspace whose initial owned job is Gamer match reconciliation every 15 seconds. It uses the canonical database package and does not duplicate API business logic.
 
 ## Safety and migration rules

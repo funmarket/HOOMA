@@ -34,6 +34,7 @@
 ### Task 1: Contracts, persistence, and reference behavior tests
 
 **Files:**
+
 - Modify: `packages/contracts/src/gamers.ts`
 - Modify: `packages/contracts/src/index.ts`
 - Modify: `packages/database/prisma/schema.prisma`
@@ -41,6 +42,7 @@
 - Create/modify Gamer-focused tests under `tests/`
 
 **Interfaces:**
+
 - Produces Gamer challenge, Arena and match contracts plus Prisma models used by later API tasks.
 
 - [ ] Add adapted tests first for challenge lifecycle, global Arena, identity eligibility and match reconciliation.
@@ -51,11 +53,13 @@
 ### Task 2: Gamers API discovery, challenge and Arena
 
 **Files:**
+
 - Modify/create under `apps/api/src/modules/gamers/**`
 - Modify `apps/api/src/bootstrap/container.ts`
 - Modify `apps/api/src/http/v1/router.ts`
 
 **Interfaces:**
+
 - Consumes Task 1 contracts/models.
 - Produces public discovery/Arena/game reads and protected profile/challenge lifecycle endpoints.
 
@@ -67,12 +71,14 @@
 ### Task 3: Direct Gamer Whistle
 
 **Files:**
+
 - Modify `apps/api/src/modules/whistle/**`
 - Modify Gamers repository/service for direct-pair resolution.
 - Modify `packages/contracts/src/whistle.ts`
 - Add/modify direct Gamer Whistle tests.
 
 **Interfaces:**
+
 - Consumes Gamer profile/eligibility repository.
 - Produces `/api/v1/whistles/gamers/:otherProfileId` using the shared Redis engine.
 
@@ -84,6 +90,7 @@
 ### Task 4: EA FC match verification and Platform Admin disputes
 
 **Files:**
+
 - Create/modify Gamers match repository/service/API files.
 - Modify Platform Admin router as required.
 - Add `packages/storage`.
@@ -91,6 +98,7 @@
 - Add match tests.
 
 **Interfaces:**
+
 - Consumes accepted GamerChallenge.
 - Produces room-code, result-proof, dispute queue/resolve behavior.
 
@@ -102,10 +110,12 @@
 ### Task 5: Gamer reconciliation worker
 
 **Files:**
+
 - Create `apps/worker/package.json`, tsconfig, `src/main.ts`, and `src/gamers/match-reconciliation.ts`.
 - Modify root workspace scripts/package lock as required.
 
 **Interfaces:**
+
 - Consumes Task 4 Prisma match models.
 - Produces a 15-second reconciliation loop matching the reference behavior.
 
@@ -116,11 +126,13 @@
 ### Task 6: Mini App Gamers UI
 
 **Files:**
+
 - Create `apps/miniapp/src/features/gamers/**`.
 - Replace/adapt `apps/miniapp/src/pages/GamersPage.tsx`.
 - Modify `apps/miniapp/src/App.tsx`.
 
 **Interfaces:**
+
 - Consumes Tasks 2-4 APIs.
 - Produces global Gamers tabs, game hub, HUD card, Match Card, challenge setup, direct Whistle and EA FC bridge.
 

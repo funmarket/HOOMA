@@ -247,7 +247,10 @@ export const gamerMatchSessionSchema = z.object({
   id: z.string().min(1),
   challengeId: z.string().min(1),
   status: gamerMatchSessionStatusSchema,
-  roomCode: z.string().regex(/^\d{6}$/).nullable(),
+  roomCode: z
+    .string()
+    .regex(/^\d{6}$/)
+    .nullable(),
   submissionDeadline: z.string().datetime().nullable(),
   finalChallengerScore: z.number().int().min(0).nullable(),
   finalChallengedScore: z.number().int().min(0).nullable(),
