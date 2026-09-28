@@ -178,7 +178,7 @@ export class GamerService {
   }
 
   async createChallenge(userId: string, gameId: string, challengedProfileId: string) {
-    const { participation, challenges, eligibility } = this.requireParticipationDependencies();
+    const { participation, challenges, eligibility } =\n      this.requireParticipationDependencies();
     await this.requireActiveGame(gameId);
     await this.requireGamerIdentity(userId);
 
