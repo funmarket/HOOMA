@@ -45,6 +45,34 @@ enum GamerSocialProvider {
   OTHER
 }
 
+enum GamerChallengeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+enum GamerMatchSessionStatus {
+  WAITING_FOR_CODE
+  IN_PROGRESS
+  PENDING_VERIFICATION
+  VERIFIED
+  DISPUTED
+  VOIDED
+}
+
+enum GamerMatchSide {
+  CHALLENGER
+  CHALLENGED
+}
+
+enum GamerMatchResolution {
+  MATCHED_SUBMISSIONS
+  SINGLE_SUBMISSION_TIMEOUT
+  PLATFORM_ADMIN
+  PLATFORM_ADMIN_VOID
+}
+
 model GamerGame {
   id             String              @id @default(cuid())
   slug           String              @unique @db.VarChar(120)
@@ -61,6 +89,7 @@ model GamerGame {
   updatedAt      DateTime            @updatedAt
 
   gamerProfiles GamerProfile[]
+  challenges    GamerChallenge[]
 
   @@index([status, featured, name, id])
   @@index([featured, status, createdAt])
@@ -74,16 +103,18 @@ model GamerProfile {
   bio             String?         @db.VarChar(280)
   playStyle       GamerPlayStyle  @default(CASUAL)
   openToChallenge Boolean         @default(true)
-  region           String?         @db.VarChar(80)
-  language         String?         @db.VarChar(40)
-  preferredTimes   String?         @db.VarChar(160)
-  visibility       GamerVisibility @default(PUBLIC)
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  region          String?         @db.VarChar(80)
+  language        String?         @db.VarChar(40)
+  preferredTimes  String?         @db.VarChar(160)
+  visibility      GamerVisibility @default(PUBLIC)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   game               GamerGame               @relation(fields: [gameId], references: [id], onDelete: Restrict)
   platformIdentities GamerPlatformIdentity[]
   socialLinks        GamerSocialLink[]
+  challengesSent     GamerChallenge[]         @relation("GamerChallengeChallenger")
+  challengesReceived GamerChallenge[]         @relation("GamerChallengeChallenged")
 
   @@unique([userId, gameId])
   @@index([gameId, openToChallenge, visibility, createdAt])
@@ -120,4 +151,66 @@ model GamerSocialLink {
 
   @@unique([gamerProfileId, provider, url])
   @@index([gamerProfileId, provider])
+}
+
+model GamerChallenge {
+  id                   String               @id @default(cuid())
+  gameId               String
+  challengerProfileId  String
+  challengedProfileId  String
+  pairKey              String
+  status               GamerChallengeStatus @default(PENDING)
+  createdAt            DateTime             @default(now())
+  respondedAt          DateTime?
+  cancelledAt          DateTime?
+  updatedAt            DateTime             @updatedAt
+
+  game       GamerGame     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  challenger GamerProfile  @relation("GamerChallengeChallenger", fields: [challengerProfileId], references: [id], onDelete: Cascade)
+  challenged GamerProfile  @relation("GamerChallengeChallenged", fields: [challengedProfileId], references: [id], onDelete: Cascade)
+  matchSession GamerMatchSession?
+
+  @@index([gameId, status, createdAt])
+  @@index([challengerProfileId, status, createdAt])
+  @@index([challengedProfileId, status, createdAt])
+  @@index([gameId, pairKey, status])
+}
+
+model GamerMatchSession {
+  id                    String                  @id @default(cuid())
+  challengeId           String                  @unique
+  status                GamerMatchSessionStatus @default(WAITING_FOR_CODE)
+  roomCode              String?
+  submissionDeadline    DateTime?
+  finalChallengerScore  Int?
+  finalChallengedScore  Int?
+  winnerSide            GamerMatchSide?
+  resolution            GamerMatchResolution?
+  resolvedAt            DateTime?
+  moderatorNotes        String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  challenge   GamerChallenge          @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  submissions GamerMatchSubmission[]
+
+  @@index([status, updatedAt])
+}
+
+model GamerMatchSubmission {
+  id                 String            @id @default(cuid())
+  matchSessionId     String
+  side               GamerMatchSide
+  challengerScore    Int
+  challengedScore    Int
+  proofObjectKey     String
+  proofContentType   String
+  proofSizeBytes     Int
+  submittedAt        DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  matchSession GamerMatchSession @relation(fields: [matchSessionId], references: [id], onDelete: Cascade)
+
+  @@unique([matchSessionId, side])
+  @@index([matchSessionId, submittedAt])
 }
