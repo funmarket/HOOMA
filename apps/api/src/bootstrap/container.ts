@@ -33,6 +33,9 @@ import { PlaceService } from '../modules/places/application/place.service.js';
 import { PrismaPitchRepository } from '../modules/pitch/infrastructure/prisma-pitch.repository.js';
 import { PitchService } from '../modules/pitch/application/pitch.service.js';
 import { PrismaGamerGameRepository } from '../modules/gamers/infrastructure/prisma-gamer-game.repository.js';
+import { PrismaGamerParticipationRepository } from '../modules/gamers/infrastructure/prisma-gamer-participation.repository.js';
+import { PrismaGamerChallengeRepository } from '../modules/gamers/infrastructure/prisma-gamer-challenge.repository.js';
+import { PrismaGamerEligibilityRepository } from '../modules/gamers/infrastructure/prisma-gamer-eligibility.repository.js';
 import { GamerService } from '../modules/gamers/application/gamer.service.js';
 import { PrismaPlayRepository } from '../modules/play/infrastructure/prisma-play.repository.js';
 import { PlayService } from '../modules/play/application/play.service.js';
@@ -104,7 +107,15 @@ export function buildContainer() {
   const pitchRepository = new PrismaPitchRepository(db);
   const pitch = new PitchService(pitchRepository);
   const gamerGameRepository = new PrismaGamerGameRepository(db);
-  const gamers = new GamerService(gamerGameRepository);
+  const gamerParticipationRepository = new PrismaGamerParticipationRepository(db);
+  const gamerChallengeRepository = new PrismaGamerChallengeRepository(db);
+  const gamerEligibilityRepository = new PrismaGamerEligibilityRepository(db);
+  const gamers = new GamerService(
+    gamerGameRepository,
+    gamerParticipationRepository,
+    gamerChallengeRepository,
+    gamerEligibilityRepository,
+  );
 
   const playRepository = new PrismaPlayRepository(db);
   const play = new PlayService(playRepository, communities);
@@ -153,6 +164,9 @@ export function buildContainer() {
       places: placeRepository,
       pitch: pitchRepository,
       gamerGames: gamerGameRepository,
+      gamerParticipation: gamerParticipationRepository,
+      gamerChallenges: gamerChallengeRepository,
+      gamerEligibility: gamerEligibilityRepository,
       play: playRepository,
       chat: chatRepository,
       adminRead: adminReadRepository,
